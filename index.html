@@ -76,7 +76,7 @@
                 <div>
                     <h1 class="font-bold text-base text-slate-100 leading-tight">Wainwright Analyzer</h1>
                     <p class="text-xs text-slate-400">Lake District Fell & GPX Tracker</p>
-                    <p class="text-[10px] text-slate-500 font-mono tracking-wide mt-0.5">v1.0.6</p>
+                    <p class="text-[10px] text-slate-500 font-mono tracking-wide mt-0.5">v1.0.7</p>
                 </div>
             </div>
             <button id="unit-toggle" onclick="toggleUnits()" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
@@ -198,39 +198,39 @@
         let unvisitedLayerGroup = L.layerGroup();
         let tracksLayerGroup = L.layerGroup();
 
-        // Exact verified coordinate set
+        // Ordnance Survey / DoBIH Calibrated Wainwright Summit Coordinates
         const wainwrights = [
-            { name: "Scafell Pike", elevation: 978, lat: 54.4542, lng: -3.2116, region: "Southern" },
-            { name: "Scafell", elevation: 964, lat: 54.4475, lng: -3.2183, region: "Southern" },
-            { name: "Helvellyn", elevation: 950, lat: 54.5270, lng: -3.0177, region: "Eastern" },
-            { name: "Skiddaw", elevation: 931, lat: 54.6513, lng: -3.1482, region: "Northern" },
-            { name: "Great End", elevation: 910, lat: 54.4633, lng: -3.2033, region: "Southern" },
-            { name: "Bowfell", elevation: 902, lat: 54.4482, lng: -3.1724, region: "Southern" },
-            { name: "Great Gable", elevation: 899, lat: 54.4819, lng: -3.2192, region: "Western" },
-            { name: "Pillar", elevation: 892, lat: 54.4988, lng: -3.2789, region: "Western" },
-            { name: "Nethermost Pike", elevation: 891, lat: 54.5160, lng: -3.0232, region: "Eastern" },
-            { name: "Catstycam", elevation: 890, lat: 54.5323, lng: -3.0033, region: "Eastern" },
-            { name: "Esk Pike", elevation: 885, lat: 54.4447, lng: -3.1601, region: "Southern" },
-            { name: "Raise", elevation: 883, lat: 54.5427, lng: -3.0270, region: "Eastern" },
-            { name: "Fairfield", elevation: 873, lat: 54.4975, lng: -2.9926, region: "Eastern" },
-            { name: "Blencathra", elevation: 868, lat: 54.6397, lng: -3.0487, region: "Northern" },
-            { name: "Skiddaw Little Man", elevation: 865, lat: 54.6402, lng: -3.1420, region: "Northern" },
-            { name: "White Side", elevation: 863, lat: 54.5366, lng: -3.0286, region: "Eastern" },
-            { name: "Crinkle Crags", elevation: 859, lat: 54.4343, lng: -3.1678, region: "Southern" },
-            { name: "Dollywagon Pike", elevation: 858, lat: 54.5054, lng: -3.0202, region: "Eastern" },
-            { name: "Great Dodd", elevation: 857, lat: 54.5707, lng: -3.0185, region: "Eastern" },
+            { name: "Scafell Pike", elevation: 978, lat: 54.4543, lng: -3.2117, region: "Southern" },
+            { name: "Scafell", elevation: 964, lat: 54.4475, lng: -3.2247, region: "Southern" },
+            { name: "Helvellyn", elevation: 950, lat: 54.5270, lng: -3.0175, region: "Eastern" },
+            { name: "Skiddaw", elevation: 931, lat: 54.6514, lng: -3.1478, region: "Northern" },
+            { name: "Great End", elevation: 910, lat: 54.4649, lng: -3.1945, region: "Southern" },
+            { name: "Bowfell", elevation: 902, lat: 54.4478, lng: -3.1662, region: "Southern" },
+            { name: "Great Gable", elevation: 899, lat: 54.4821, lng: -3.2193, region: "Western" },
+            { name: "Pillar", elevation: 892, lat: 54.4975, lng: -3.2811, region: "Western" },
+            { name: "Nethermost Pike", elevation: 891, lat: 54.5190, lng: -3.0154, region: "Eastern" },
+            { name: "Catstycam", elevation: 890, lat: 54.5335, lng: -3.0089, region: "Eastern" },
+            { name: "Esk Pike", elevation: 885, lat: 54.4572, lng: -3.1792, region: "Southern" },
+            { name: "Raise", elevation: 883, lat: 54.5477, lng: -3.0175, region: "Eastern" },
+            { name: "Fairfield", elevation: 873, lat: 54.4971, lng: -2.9916, region: "Eastern" },
+            { name: "Blencathra", elevation: 868, lat: 54.6399, lng: -3.0498, region: "Northern" },
+            { name: "Skiddaw Little Man", elevation: 865, lat: 54.6399, lng: -3.1420, region: "Northern" },
+            { name: "White Side", elevation: 863, lat: 54.5410, lng: -3.0232, region: "Eastern" },
+            { name: "Crinkle Crags", elevation: 859, lat: 54.4372, lng: -3.1678, region: "Southern" },
+            { name: "Dollywagon Pike", elevation: 858, lat: 54.5090, lng: -3.0180, region: "Eastern" },
+            { name: "Great Dodd", elevation: 857, lat: 54.5760, lng: -3.0220, region: "Eastern" },
             { name: "Grasmoor", elevation: 852, lat: 54.5732, lng: -3.2796, region: "Northwestern" },
             { name: "St Sunday Crag", elevation: 841, lat: 54.4820, lng: -2.9818, region: "Eastern" },
             { name: "High Street", elevation: 828, lat: 54.4912, lng: -2.8631, region: "Far Eastern" },
             { name: "Red Screes", elevation: 776, lat: 54.4682, lng: -2.9238, region: "Eastern" },
-            { name: "Glaramara", elevation: 783, lat: 54.4754, lng: -3.1755, region: "Southern" },
+            { name: "Glaramara", elevation: 783, lat: 54.4640, lng: -3.1670, region: "Southern" },
             { name: "Coniston Old Man", elevation: 803, lat: 54.3705, lng: -3.1189, region: "Southern" },
             { name: "Swirl How", elevation: 802, lat: 54.3854, lng: -3.1118, region: "Southern" },
             { name: "Pike o' Blisco", elevation: 705, lat: 54.4379, lng: -3.1362, region: "Southern" },
             { name: "Harrison Stickle", elevation: 736, lat: 54.4538, lng: -3.1042, region: "Central" },
             { name: "Pavey Ark", elevation: 700, lat: 54.4586, lng: -3.1009, region: "Central" },
             { name: "Pike o' Stickle", elevation: 709, lat: 54.4519, lng: -3.1154, region: "Central" },
-            { name: "Catbells", elevation: 451, lat: 54.5684, lng: -3.1643, region: "Northwestern" },
+            { name: "Catbells", elevation: 451, lat: 54.5683, lng: -3.1707, region: "Northwestern" },
             { name: "Latrigg", elevation: 368, lat: 54.6158, lng: -3.1126, region: "Northern" },
             { name: "Loughrigg Fell", elevation: 335, lat: 54.4378, lng: -3.0031, region: "Central" },
             { name: "Wansfell", elevation: 482, lat: 54.4326, lng: -2.9392, region: "Far Eastern" },
@@ -285,7 +285,7 @@
         window.onload = function() {
             initMap();
             loadHistoryFromStorage();
-            plotAllFellsOnMap(); // <-- FIXED: Plots fells AFTER history is loaded so pins show correct colors!
+            plotAllFellsOnMap();
             renderFellList();
             updateOverallProgress();
             setupDropZone();
@@ -295,7 +295,7 @@
         function registerServiceWorker() {
             if ('serviceWorker' in navigator) {
                 const swCode = `
-                    const CACHE = 'wainwright-cache-v1.0.6';
+                    const CACHE = 'wainwright-cache-v1.0.7';
                     self.addEventListener('install', e => { self.skipWaiting(); });
                     self.addEventListener('activate', e => { self.clients.claim(); });
                     self.addEventListener('fetch', e => {
@@ -304,7 +304,7 @@
                 `;
                 const blob = new Blob([swCode], { type: 'application/javascript' });
                 navigator.serviceWorker.register(URL.createObjectURL(blob))
-                    .then(r => console.log('PWA Service Worker Live v1.0.6!'))
+                    .then(r => console.log('PWA Service Worker Live v1.0.7!'))
                     .catch(e => console.log('SW Note:', e));
             }
         }
