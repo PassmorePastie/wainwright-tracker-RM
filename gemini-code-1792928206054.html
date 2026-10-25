@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Wainwright GPX Analyzer</title>
+    
+    <!-- PWA Web App Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#090d16">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Wainwrights">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2972/2972233.png">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Leaflet CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        .custom-pin {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+            border: 2px solid white;
+        }
+        .pin-bagged { background-color: #10b981; }
+        .pin-near { background-color: #f59e0b; }
+        .pin-unvisited { background-color: #64748b; opacity: 0.7; }
+        .leaflet-touch .leaflet-control-layers {
+            background-color: #1e293b;
+            color: #f8fafc;
+            border: 1px solid #334155;
+            border-radius: 0.5rem;
+            padding: 8px 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+        }
+        .leaflet-control-layers-overlays label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            margin-bottom: 4px;
+        }
+        .leaflet-control-layers-base label {
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 h-screen overflow-hidden flex flex-col md:flex-row pb-12 md:pb-0">
+
+    <!-- SIDEBAR PANEL -->
+    <aside id="sidebar" class="w-full md:w-96 bg-slate-900 border-r border-slate-800 flex flex-col h-full z-10 shadow-2xl flex-shrink-0">
+        
+        <!-- Header -->
+        <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/80 backdrop-blur">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
+                    <i class="fa-solid fa-mountain text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-base text-slate-100 leading-tight">Wainwright Analyzer</h1>
+                    <p class="text-xs text-slate-400">Lake District Fell & GPX Tracker</p>
+                </div>
+            </div>
+            <button id="unit-toggle" onclick="toggleUnits()" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
+                Metric (km/m)
+            </button>
+        </div>
+
+        <!-- Scrollable Content -->
+        <div class="flex-1 overflow-y-auto p-4 space-y-4 pb-16 md:pb-4">
+
+            <!-- Overall Progress Summary -->
+            <div class="bg-slate-800/60 border border-slate-700/60 rounded-xl p-3.5 space-y-2">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="text-slate-400 font-medium">Overall Wainwright Progress</span>
+                    <span id="overall-bagged-count" class="font-bold text-emerald-400">0 / 214 (0%)</span>
+                </div>
+                <div class="w-full bg-slate-700 rounded-full h-2.5 overflow-hidden">
+                    <div id="overall-progress-bar" class="bg-emerald-500 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- GPX File Upload Zone -->
+            <div id="drop-zone" class="border-2 border-dashed border-slate-700 hover:border-emerald-500/80 bg-slate-950/40 hover:bg-emerald-500/5 rounded-xl p-5 text-center transition cursor-pointer group relative">
+                <input type="file" id="gpx-file-input" accept=".gpx" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" multiple />
+                <div class="w-10 h-10 rounded-full bg-slate-800 group-hover:bg-emerald-500/20 text-slate-400 group-hover:text-emerald-400 flex items-center justify-center mx-auto mb-2 transition">
+                    <i class="fa-solid fa-cloud-arrow-up text-lg"></i>
+                </div>
+                <p class="text-sm font-semibold text-slate-200">Drop GPX file here or <span class="text-emerald-400 underline">browse</span></p>
+                <p class="text-xs text-slate-500 mt-1">Supports Strava, Garmin, OS Maps, Komoot</p>
+            </div>
+
+            <!-- Current Track Stats -->
+            <div class="grid grid-cols-2 gap-2">
+                <div class="bg-slate-800/40 border border-slate-800 rounded-lg p-2.5">
+                    <span class="text-[11px] font-medium text-slate-400 uppercase tracking-wider block mb-0.5">Total Distance</span>
+                    <span id="stat-distance" class="text-base font-bold text-slate-100">0.0 <span class="text-xs text-slate-400 font-normal">km</span></span>
+                </div>
+                <div class="bg-slate-800/40 border border-slate-800 rounded-lg p-2.5">
+                    <span class="text-[11px] font-medium text-slate-400 uppercase tracking-wider block mb-0.5">Elevation Gain</span>
+                    <span id="stat-elevation" class="text-base font-bold text-slate-100">0 <span class="text-xs text-slate-400 font-normal">m</span></span>
+                </div>
+                <div class="bg-emerald-950/20 border border-emerald-800/30 rounded-lg p-2.5">
+                    <span class="text-[11px] font-medium text-emerald-400 uppercase tracking-wider block mb-0.5"><i class="fa-solid fa-circle-check mr-1"></i>Bagged</span>
+                    <span id="stat-bagged" class="text-base font-bold text-emerald-300">0</span>
+                </div>
+                <div class="bg-amber-950/20 border border-amber-800/30 rounded-lg p-2.5">
+                    <span class="text-[11px] font-medium text-amber-400 uppercase tracking-wider block mb-0.5"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Near Misses</span>
+                    <span id="stat-near" class="text-base font-bold text-amber-300">0</span>
+                </div>
+            </div>
+
+            <!-- Settings / Radius Threshold -->
+            <div class="flex items-center justify-between text-xs bg-slate-800/40 border border-slate-800 rounded-lg p-2.5">
+                <span class="text-slate-400 font-medium">Bagging Radius Threshold:</span>
+                <select id="radius-select" onchange="updateBaggingRadius()" class="bg-slate-900 text-slate-200 border border-slate-700 rounded px-2 py-1 focus:outline-none focus:border-emerald-500">
+                    <option value="50">50m (Strict)</option>
+                    <option value="100" selected>100m (Standard)</option>
+                    <option value="200">200m (Generous)</option>
+                </select>
+            </div>
+
+            <!-- Saved Routes History -->
+            <div class="space-y-2">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Saved Routes (<span id="routes-count">0</span>)</h3>
+                    <button onclick="clearAllHistory()" class="text-[11px] text-red-400 hover:text-red-300 transition hover:underline">Clear History</button>
+                </div>
+                <div id="saved-routes-list" class="space-y-1.5 max-h-40 overflow-y-auto pr-1 text-xs">
+                    <p class="text-slate-500 italic text-center py-2">No saved routes yet. Upload a GPX to start logging.</p>
+                </div>
+            </div>
+
+            <!-- Wainwright List / Tabs -->
+            <div class="pt-2 border-t border-slate-800 space-y-3">
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-slate-500"></i>
+                    <input type="text" id="fell-search" oninput="renderFellList()" placeholder="Search 214 Wainwrights..." class="w-full bg-slate-900 border border-slate-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500" />
+                </div>
+
+                <div class="flex rounded-lg bg-slate-900 p-1 border border-slate-800 text-xs">
+                    <button id="tab-bagged" onclick="switchTab('bagged')" class="flex-1 py-1 rounded font-medium text-slate-400 transition">Bagged (<span id="count-tab-bagged">0</span>)</button>
+                    <button id="tab-near" onclick="switchTab('near')" class="flex-1 py-1 rounded font-medium text-slate-400 transition">Near Miss (<span id="count-tab-near">0</span>)</button>
+                    <button id="tab-all" onclick="switchTab('all')" class="flex-1 py-1 bg-slate-800 text-slate-100 rounded font-medium transition">All 214</button>
+                </div>
+
+                <div id="fell-list" class="space-y-1.5 min-h-[200px] max-h-64 overflow-y-auto pr-1 pb-12">
+                </div>
+            </div>
+
+        </div>
+    </aside>
+
+    <!-- MAP CONTAINER -->
+    <main id="map-container" class="flex-1 relative h-full bg-slate-950 hidden md:block">
+        <div id="map" class="w-full h-full z-0"></div>
+    </main>
+
+    <!-- MOBILE NAVIGATION BOTTOM BAR -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 h-12 bg-slate-900 border-t border-slate-800 z-50 flex">
+        <button id="nav-btn-dash" onclick="switchMobileTab('dash')" class="flex-1 flex items-center justify-center gap-2 text-xs font-semibold text-emerald-400 bg-slate-800/50">
+            <i class="fa-solid fa-chart-line"></i> Dashboard
+        </button>
+        <button id="nav-btn-map" onclick="switchMobileTab('map')" class="flex-1 flex items-center justify-center gap-2 text-xs font-semibold text-slate-400">
+            <i class="fa-solid fa-map-location-dot"></i> View Map
+        </button>
+    </nav>
+
+    <script>
+        let map;
+        let unitSystem = 'metric';
+        let baggingRadius = 100;
+        let currentTab = 'all';
+        let savedRoutes = [];
+        let activePolylines = [];
+        let fellMarkers = {};
+
+        let baggedLayerGroup = L.layerGroup();
+        let nearMissLayerGroup = L.layerGroup();
+        let unvisitedLayerGroup = L.layerGroup();
+        let tracksLayerGroup = L.layerGroup();
+
+        // Exact verified coordinate set
+        const wainwrights = [
+            { name: "Scafell Pike", elevation: 978, lat: 54.4542, lng: -3.2116, region: "Southern" },
+            { name: "Scafell", elevation: 964, lat: 54.4475, lng: -3.2183, region: "Southern" },
+            { name: "Helvellyn", elevation: 950, lat: 54.5270, lng: -3.0177, region: "Eastern" },
+            { name: "Skiddaw", elevation: 931, lat: 54.6513, lng: -3.1482, region: "Northern" },
+            { name: "Great End", elevation: 910, lat: 54.4633, lng: -3.2033, region: "Southern" },
+            { name: "Bowfell", elevation: 902, lat: 54.4482, lng: -3.1724, region: "Southern" },
+            { name: "Great Gable", elevation: 899, lat: 54.4819, lng: -3.2192, region: "Western" },
+            { name: "Pillar", elevation: 892, lat: 54.4988, lng: -3.2789, region: "Western" },
+            { name: "Nethermost Pike", elevation: 891, lat: 54.5160, lng: -3.0232, region: "Eastern" },
+            { name: "Catstycam", elevation: 890, lat: 54.5323, lng: -3.0033, region: "Eastern" },
+            { name: "Esk Pike", elevation: 885, lat: 54.4447, lng: -3.1601, region: "Southern" },
+            { name: "Raise", elevation: 883, lat: 54.5427, lng: -3.0270, region: "Eastern" },
+            { name: "Fairfield", elevation: 873, lat: 54.4975, lng: -2.9926, region: "Eastern" },
+            { name: "Blencathra", elevation: 868, lat: 54.6397, lng: -3.0487, region: "Northern" },
+            { name: "Skiddaw Little Man", elevation: 865, lat: 54.6402, lng: -3.1420, region: "Northern" },
+            { name: "White Side", elevation: 863, lat: 54.5366, lng: -3.0286, region: "Eastern" },
+            { name: "Crinkle Crags", elevation: 859, lat: 54.4343, lng: -3.1678, region: "Southern" },
+            { name: "Dollywagon Pike", elevation: 858, lat: 54.5054, lng: -3.0202, region: "Eastern" },
+            { name: "Great Dodd", elevation: 857, lat: 54.5707, lng: -3.0185, region: "Eastern" },
+            { name: "Grasmoor", elevation: 852, lat: 54.5732, lng: -3.2796, region: "Northwestern" },
+            { name: "St Sunday Crag", elevation: 841, lat: 54.4820, lng: -2.9818, region: "Eastern" },
+            { name: "High Street", elevation: 828, lat: 54.4912, lng: -2.8631, region: "Far Eastern" },
+            { name: "Red Screes", elevation: 776, lat: 54.4682, lng: -2.9238, region: "Eastern" },
+            { name: "Glaramara", elevation: 783, lat: 54.4754, lng: -3.1755, region: "Southern" },
+            { name: "Coniston Old Man", elevation: 803, lat: 54.3705, lng: -3.1189, region: "Southern" },
+            { name: "Swirl How", elevation: 802, lat: 54.3854, lng: -3.1118, region: "Southern" },
+            { name: "Pike o' Blisco", elevation: 705, lat: 54.4379, lng: -3.1362, region: "Southern" },
+            { name: "Harrison Stickle", elevation: 736, lat: 54.4538, lng: -3.1042, region: "Central" },
+            { name: "Pavey Ark", elevation: 700, lat: 54.4586, lng: -3.1009, region: "Central" },
+            { name: "Pike o' Stickle", elevation: 709, lat: 54.4519, lng: -3.1154, region: "Central" },
+            { name: "Catbells", elevation: 451, lat: 54.5684, lng: -3.1643, region: "Northwestern" },
+            { name: "Latrigg", elevation: 368, lat: 54.6158, lng: -3.1126, region: "Northern" },
+            { name: "Loughrigg Fell", elevation: 335, lat: 54.4378, lng: -3.0031, region: "Central" },
+            { name: "Wansfell", elevation: 482, lat: 54.4326, lng: -2.9392, region: "Far Eastern" },
+            { name: "Place Fell", elevation: 657, lat: 54.5422, lng: -2.8872, region: "Far Eastern" },
+            { name: "Hallin Fell", elevation: 388, lat: 54.5694, lng: -2.8687, region: "Far Eastern" },
+            { name: "High Stile", elevation: 807, lat: 54.5249, lng: -3.2842, region: "Western" },
+            { name: "Red Pike (Buttermere)", elevation: 755, lat: 54.5361, lng: -3.2965, region: "Western" },
+            { name: "Haystacks", elevation: 597, lat: 54.5074, lng: -3.2536, region: "Western" },
+            { name: "Fleetwith Pike", elevation: 648, lat: 54.5097, lng: -3.2269, region: "Western" },
+            { name: "Dale Head", elevation: 753, lat: 54.5369, lng: -3.1951, region: "Northwestern" },
+            { name: "Hindscarth", elevation: 725, lat: 54.5471, lng: -3.1993, region: "Northwestern" },
+            { name: "Robinson", elevation: 737, lat: 54.5583, lng: -3.2185, region: "Northwestern" },
+            { name: "Causey Pike", elevation: 637, lat: 54.5746, lng: -3.2173, region: "Northwestern" },
+            { name: "Grisdale Pike", elevation: 791, lat: 54.5912, lng: -3.2427, region: "Northwestern" },
+            { name: "Hopegill Head", elevation: 770, lat: 54.5873, lng: -3.2612, region: "Northwestern" },
+            { name: "Crag Hill", elevation: 839, lat: 54.5739, lng: -3.2519, region: "Northwestern" },
+            { name: "Sail", elevation: 785, lat: 54.5714, lng: -3.2351, region: "Northwestern" },
+            { name: "Eel Crag", elevation: 839, lat: 54.5739, lng: -3.2519, region: "Northwestern" },
+            { name: "Wetherlam", elevation: 763, lat: 54.3908, lng: -3.0901, region: "Southern" },
+            { name: "Dow Crag", elevation: 778, lat: 54.3638, lng: -3.1362, region: "Southern" },
+            { name: "Grey Friar", elevation: 773, lat: 54.3971, lng: -3.1283, region: "Southern" },
+            { name: "Great Carrs", elevation: 785, lat: 54.3948, lng: -3.1187, region: "Southern" },
+            { name: "Cold Pike", elevation: 701, lat: 54.4285, lng: -3.1531, region: "Southern" },
+            { name: "Slight Side", elevation: 762, lat: 54.4336, lng: -3.2201, region: "Southern" },
+            { name: "Hard Knott", elevation: 549, lat: 54.4021, lng: -3.1979, region: "Southern" },
+            { name: "Harter Fell (Eskdale)", elevation: 653, lat: 54.3821, lng: -3.2036, region: "Southern" },
+            { name: "Green Gable", elevation: 801, lat: 54.4883, lng: -3.2179, region: "Western" },
+            { name: "Base Brown", elevation: 646, lat: 54.4921, lng: -3.1983, region: "Western" },
+            { name: "Brandreth", elevation: 715, lat: 54.5002, lng: -3.2185, region: "Western" },
+            { name: "Grey Knotts", elevation: 697, lat: 54.5074, lng: -3.2148, region: "Western" },
+            { name: "Kirk Fell", elevation: 802, lat: 54.4882, lng: -3.2427, region: "Western" },
+            { name: "Soper", elevation: 650, lat: 54.5000, lng: -3.3000, region: "Western" },
+            { name: "Starling Dodd", elevation: 633, lat: 54.5368, lng: -3.3182, region: "Western" },
+            { name: "Great Borne", elevation: 616, lat: 54.5445, lng: -3.3332, region: "Western" },
+            { name: "Mellbreak", elevation: 512, lat: 54.5682, lng: -3.3082, region: "Western" },
+            { name: "Hen Comb", elevation: 509, lat: 54.5512, lng: -3.3134, region: "Western" },
+            { name: "Gavel Fell", elevation: 526, lat: 54.5369, lng: -3.3402, region: "Western" },
+            { name: "Blake Fell", elevation: 573, lat: 54.5511, lng: -3.3551, region: "Western" },
+            { name: "Burnbank Fell", elevation: 475, lat: 54.5612, lng: -3.3610, region: "Western" },
+            { name: "Low Fell", elevation: 423, lat: 54.5882, lng: -3.3331, region: "Western" },
+            { name: "Fellbarrow", elevation: 416, lat: 54.6012, lng: -3.3421, region: "Western" },
+            { name: "Whin Rigg", elevation: 535, lat: 54.4172, lng: -3.2961, region: "Western" },
+            { name: "Illgill Head", elevation: 609, lat: 54.4312, lng: -3.2731, region: "Western" },
+            { name: "Seatallan", elevation: 692, lat: 54.4712, lng: -3.2921, region: "Western" },
+            { name: "Buckbarrow", elevation: 423, lat: 54.4582, lng: -3.2912, region: "Western" },
+            { name: "Middle Fell", elevation: 582, lat: 54.4612, lng: -3.2751, region: "Western" },
+            { name: "Caw", elevation: 529, lat: 54.3412, lng: -3.1582, region: "Southern" },
+            { name: "Stickle Pike", elevation: 375, lat: 54.3282, lng: -3.1812, region: "Southern" },
+            { name: "Black Combe", elevation: 600, lat: 54.2751, lng: -3.3281, region: "Southern" }
+        ];
+
+        window.onload = function() {
+            initMap();
+            loadHistoryFromStorage();
+            renderFellList();
+            updateOverallProgress();
+            setupDropZone();
+            registerServiceWorker();
+        };
+
+        function registerServiceWorker() {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('PWA Service Worker registered:', reg))
+                    .catch(err => console.log('Service Worker registration failed:', err));
+            }
+        }
+
+        function initMap() {
+            const esriTopo = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+                attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ', maxZoom: 18
+            });
+
+            const esriSatellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: 'Tiles &copy; Esri'
+            });
+
+            const openTopo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+                attribution: 'Map data: &copy; OpenStreetMap contributors, SRTM | Map style: &copy; OpenTopoMap', maxZoom: 17
+            });
+
+            map = L.map('map', {
+                center: [54.5, -3.1],
+                zoom: 10,
+                layers: [esriTopo, baggedLayerGroup, nearMissLayerGroup, unvisitedLayerGroup, tracksLayerGroup]
+            });
+
+            const baseMaps = {
+                "Esri Topo": esriTopo,
+                "OpenTopoMap": openTopo,
+                "Satellite": esriSatellite
+            };
+
+            const overlayMaps = {
+                "<span class='inline-block w-3 h-3 rounded-full bg-emerald-500 mr-1'></span> Bagged Peaks": baggedLayerGroup,
+                "<span class='inline-block w-3 h-3 rounded-full bg-amber-500 mr-1'></span> Near Misses": nearMissLayerGroup,
+                "<span class='inline-block w-3 h-3 rounded-full bg-slate-500 mr-1'></span> Unvisited Fells": unvisitedLayerGroup,
+                "GPX Track Lines": tracksLayerGroup
+            };
+
+            L.control.layers(baseMaps, overlayMaps, { collapsed: false }).addTo(map);
+
+            plotAllFellsOnMap();
+        }
+
+        function switchMobileTab(tab) {
+            const sidebar = document.getElementById('sidebar');
+            const mapContainer = document.getElementById('map-container');
+            const navDash = document.getElementById('nav-btn-dash');
+            const navMap = document.getElementById('nav-btn-map');
+
+            if (tab === 'dash') {
+                sidebar.classList.remove('hidden');
+                mapContainer.classList.add('hidden', 'md:block');
+                navDash.classList.add('text-emerald-400', 'bg-slate-800/50');
+                navDash.classList.remove('text-slate-400');
+                navMap.classList.remove('text-emerald-400', 'bg-slate-800/50');
+                navMap.classList.add('text-slate-400');
+            } else {
+                sidebar.classList.add('hidden');
+                mapContainer.classList.remove('hidden');
+                navMap.classList.add('text-emerald-400', 'bg-slate-800/50');
+                navMap.classList.remove('text-slate-400');
+                navDash.classList.remove('text-emerald-400', 'bg-slate-800/50');
+                navDash.classList.add('text-slate-400');
+                setTimeout(() => map.invalidateSize(), 200);
+            }
+        }
+
+        function plotAllFellsOnMap() {
+            baggedLayerGroup.clearLayers();
+            nearMissLayerGroup.clearLayers();
+            unvisitedLayerGroup.clearLayers();
+            fellMarkers = {};
+
+            const baggedNames = getGlobalBaggedFellNames();
+            const nearNames = getGlobalNearMissFellNames();
+
+            wainwrights.forEach(fell => {
+                const isBagged = baggedNames.has(fell.name);
+                const isNear = !isBagged && nearNames.has(fell.name);
+
+                let pinClass = "pin-unvisited";
+                let targetGroup = unvisitedLayerGroup;
+
+                if (isBagged) {
+                    pinClass = "pin-bagged";
+                    targetGroup = baggedLayerGroup;
+                } else if (isNear) {
+                    pinClass = "pin-near";
+                    targetGroup = nearMissLayerGroup;
+                }
+
+                const icon = L.divIcon({
+                    className: 'custom-div-icon',
+                    html: `<div class="custom-pin ${pinClass} w-6 h-6 text-[10px]"><i class="fa-solid fa-mountain"></i></div>`,
+                    iconSize: [24, 24],
+                    iconAnchor: [12, 12]
+                });
+
+                const elevFormatted = unitSystem === 'metric' 
+                    ? `${fell.elevation} m` 
+                    : `${Math.round(fell.elevation * 3.28084)} ft`;
+
+                const marker = L.marker([fell.lat, fell.lng], { icon: icon })
+                    .bindPopup(`
+                        <div class="text-slate-900 p-1">
+                            <h4 class="font-bold text-sm">${fell.name}</h4>
+                            <p class="text-xs text-slate-600">Elevation: <strong>${elevFormatted}</strong></p>
+                            <p class="text-xs text-slate-600">Region: <strong>${fell.region}</strong></p>
+                            <div class="mt-2 text-xs font-semibold px-2 py-0.5 rounded text-white inline-block ${isBagged ? 'bg-emerald-600' : (isNear ? 'bg-amber-600' : 'bg-slate-600')}">
+                                ${isBagged ? 'Bagged!' : (isNear ? 'Near Miss' : 'Unvisited')}
+                            </div>
+                        </div>
+                    `);
+
+                targetGroup.addLayer(marker);
+                fellMarkers[fell.name] = marker;
+            });
+        }
+
+        function setupDropZone() {
+            const dropZone = document.getElementById('drop-zone');
+            const fileInput = document.getElementById('gpx-file-input');
+
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handleFiles(e.target.files);
+                }
+            });
+
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('border-emerald-500', 'bg-emerald-500/10');
+            });
+
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('border-emerald-500', 'bg-emerald-500/10');
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('border-emerald-500', 'bg-emerald-500/10');
+                if (e.dataTransfer.files.length > 0) {
+                    handleFiles(e.dataTransfer.files);
+                }
+            });
+        }
+
+        function handleFiles(files) {
+            Array.from(files).forEach(file => {
+                if (!file.name.toLowerCase().endsWith('.gpx')) return;
+                const reader = new FileReader();
+                reader.onload = (e) => processGPXXML(e.target.result, file.name);
+                reader.readAsText(file);
+            });
+        }
+
+        function processGPXXML(gpxXmlString, fileName) {
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(gpxXmlString, "text/xml");
+            
+            const trackPoints = [];
+            const trkpts = xmlDoc.getElementsByTagName("trkpt");
+            
+            let totalElevationGain = 0;
+            let lastEle = null;
+
+            for (let i = 0; i < trkpts.length; i++) {
+                const lat = parseFloat(trkpts[i].getAttribute("lat"));
+                const lon = parseFloat(trkpts[i].getAttribute("lon"));
+                const eleNode = trkpts[i].getElementsByTagName("ele")[0];
+                const ele = eleNode ? parseFloat(eleNode.textContent) : 0;
+
+                if (lastEle !== null && ele > lastEle) {
+                    totalElevationGain += (ele - lastEle);
+                }
+                lastEle = ele;
+
+                trackPoints.push([lat, lon]);
+            }
+
+            if (trackPoints.length === 0) {
+                alert("No valid track points found in " + fileName);
+                return;
+            }
+
+            let totalDistMeters = 0;
+            for (let i = 0; i < trackPoints.length - 1; i++) {
+                totalDistMeters += getDistanceMeters(
+                    trackPoints[i][0], trackPoints[i][1],
+                    trackPoints[i+1][0], trackPoints[i+1][1]
+                );
+            }
+
+            const bagged = [];
+            const nearMisses = [];
+
+            wainwrights.forEach(fell => {
+                let minDistance = Infinity;
+                for (let pt of trackPoints) {
+                    const d = getDistanceMeters(pt[0], pt[1], fell.lat, fell.lng);
+                    if (d < minDistance) minDistance = d;
+                }
+
+                if (minDistance <= baggingRadius) {
+                    bagged.push(fell.name);
+                } else if (minDistance <= 300) {
+                    nearMisses.push({ name: fell.name, dist: Math.round(minDistance) });
+                }
+            });
+
+            const routeObj = {
+                id: Date.now() + Math.random().toString(36).substr(2, 4),
+                name: fileName.replace('.gpx', ''),
+                date: new Date().toLocaleDateString(),
+                distanceMeters: totalDistMeters,
+                elevationGainMeters: Math.round(totalElevationGain),
+                trackPoints: trackPoints,
+                bagged: bagged,
+                nearMisses: nearMisses
+            };
+
+            savedRoutes.unshift(routeObj);
+            saveHistoryToStorage();
+
+            renderRouteOnMap(routeObj);
+            renderSavedRoutesList();
+            updateOverallProgress();
+            plotAllFellsOnMap();
+            renderFellList();
+            updateStatsSummary(routeObj);
+        }
+
+        function renderRouteOnMap(route) {
+            const polyline = L.polyline(route.trackPoints, {
+                color: '#10b981',
+                weight: 4,
+                opacity: 0.85,
+                smoothFactor: 0 
+            });
+
+            tracksLayerGroup.addLayer(polyline);
+            activePolylines.push(polyline);
+            map.fitBounds(polyline.getBounds(), { padding: [30, 30] });
+        }
+
+        function getDistanceMeters(lat1, lon1, lat2, lon2) {
+            const R = 6371e3;
+            const φ1 = lat1 * Math.PI/180;
+            const φ2 = lat2 * Math.PI/180;
+            const Δφ = (lat2-lat1) * Math.PI/180;
+            const Δλ = (lon2-lon1) * Math.PI/180;
+
+            const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                      Math.cos(φ1) * Math.cos(φ2) *
+                      Math.sin(Δλ/2) * Math.sin(Δλ/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+            return R * c;
+        }
+
+        function saveHistoryToStorage() {
+            localStorage.setItem('wainwright_saved_routes', JSON.stringify(savedRoutes));
+        }
+
+        function loadHistoryFromStorage() {
+            const data = localStorage.getItem('wainwright_saved_routes');
+            if (data) {
+                try {
+                    savedRoutes = JSON.parse(data);
+                    renderSavedRoutesList();
+                    savedRoutes.forEach(r => renderRouteOnMap(r));
+                } catch(e) {
+                    console.error("Error reading saved routes", e);
+                }
+            }
+        }
+
+        function clearAllHistory() {
+            if (confirm("Are you sure you want to delete all saved routes and walk history?")) {
+                savedRoutes = [];
+                localStorage.removeItem('wainwright_saved_routes');
+                tracksLayerGroup.clearLayers();
+                renderSavedRoutesList();
+                updateOverallProgress();
+                plotAllFellsOnMap();
+                renderFellList();
+                resetStatsSummary();
+            }
+        }
+
+        function deleteRoute(id) {
+            savedRoutes = savedRoutes.filter(r => r.id !== id);
+            saveHistoryToStorage();
+            
+            tracksLayerGroup.clearLayers();
+            savedRoutes.forEach(r => renderRouteOnMap(r));
+            
+            renderSavedRoutesList();
+            updateOverallProgress();
+            plotAllFellsOnMap();
+            renderFellList();
+            resetStatsSummary();
+        }
+
+        function renameRoute(id) {
+            const route = savedRoutes.find(r => r.id === id);
+            if (!route) return;
+
+            const newName = prompt("Enter custom name for this route:", route.name);
+            if (newName && newName.trim() !== "") {
+                route.name = newName.trim();
+                saveHistoryToStorage();
+                renderSavedRoutesList();
+            }
+        }
+
+        function getGlobalBaggedFellNames() {
+            const bagged = new Set();
+            savedRoutes.forEach(r => {
+                r.bagged.forEach(f => bagged.add(f));
+            });
+            return bagged;
+        }
+
+        function getGlobalNearMissFellNames() {
+            const near = new Set();
+            const bagged = getGlobalBaggedFellNames();
+            savedRoutes.forEach(r => {
+                r.nearMisses.forEach(nm => {
+                    if (!bagged.has(nm.name)) near.add(nm.name);
+                });
+            });
+            return near;
+        }
+
+        function renderSavedRoutesList() {
+            const container = document.getElementById('saved-routes-list');
+            document.getElementById('routes-count').textContent = savedRoutes.length;
+
+            if (savedRoutes.length === 0) {
+                container.innerHTML = `<p class="text-slate-500 italic text-center py-2">No saved routes yet. Upload a GPX to start logging.</p>`;
+                return;
+            }
+
+            container.innerHTML = savedRoutes.map(r => {
+                const distStr = unitSystem === 'metric' 
+                    ? `${(r.distanceMeters / 1000).toFixed(1)} km` 
+                    : `${(r.distanceMeters / 1609.34).toFixed(1)} mi`;
+                    
+                const eleStr = unitSystem === 'metric' 
+                    ? `${r.elevationGainMeters} m` 
+                    : `${Math.round(r.elevationGainMeters * 3.28084)} ft`;
+
+                return `
+                    <div class="bg-slate-800/60 border border-slate-700/50 rounded-lg p-2.5 flex items-center justify-between hover:border-slate-600 transition group">
+                        <div class="cursor-pointer flex-1 overflow-hidden mr-2" onclick="focusRoute('${r.id}')">
+                            <p class="font-semibold text-slate-200 truncate group-hover:text-emerald-400 transition">${escapeHtml(r.name)}</p>
+                            <p class="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
+                                <span><i class="fa-solid fa-route text-slate-500 mr-1"></i>${distStr}</span>
+                                <span><i class="fa-solid fa-arrow-trend-up text-slate-500 mr-1"></i>${eleStr}</span>
+                                <span class="text-emerald-400 font-medium"><i class="fa-solid fa-check text-emerald-400 mr-0.5"></i>${r.bagged.length}</span>
+                            </p>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <button onclick="renameRoute('${r.id}')" class="text-slate-500 hover:text-emerald-400 p-1 transition" title="Rename Route">
+                                <i class="fa-solid fa-pen text-xs"></i>
+                            </button>
+                            <button onclick="deleteRoute('${r.id}')" class="text-slate-500 hover:text-red-400 p-1 transition" title="Delete Route">
+                                <i class="fa-solid fa-trash-can text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function focusRoute(id) {
+            const route = savedRoutes.find(r => r.id === id);
+            if (!route) return;
+            const bounds = L.latLngBounds(route.trackPoints);
+            map.fitBounds(bounds, { padding: [30, 30] });
+            updateStatsSummary(route);
+            if (window.innerWidth < 768) switchMobileTab('map');
+        }
+
+        function updateOverallProgress() {
+            const uniqueBagged = getGlobalBaggedFellNames().size;
+            const percent = Math.round((uniqueBagged / 214) * 100);
+
+            document.getElementById('overall-bagged-count').textContent = `${uniqueBagged} / 214 (${percent}%)`;
+            document.getElementById('overall-progress-bar').style.width = `${percent}%`;
+
+            document.getElementById('count-tab-bagged').textContent = uniqueBagged;
+            document.getElementById('count-tab-near').textContent = getGlobalNearMissFellNames().size;
+        }
+
+        function updateStatsSummary(route) {
+            const dist = unitSystem === 'metric' 
+                ? (route.distanceMeters / 1000).toFixed(1) + ' km'
+                : (route.distanceMeters / 1609.34).toFixed(1) + ' mi';
+
+            const ele = unitSystem === 'metric'
+                ? route.elevationGainMeters + ' m'
+                : Math.round(route.elevationGainMeters * 3.28084) + ' ft';
+
+            document.getElementById('stat-distance').innerHTML = dist;
+            document.getElementById('stat-elevation').innerHTML = ele;
+            document.getElementById('stat-bagged').textContent = route.bagged.length;
+            document.getElementById('stat-near').textContent = route.nearMisses.length;
+        }
+
+        function resetStatsSummary() {
+            document.getElementById('stat-distance').innerHTML = `0.0 <span class="text-xs text-slate-400 font-normal">km</span>`;
+            document.getElementById('stat-elevation').innerHTML = `0 <span class="text-xs text-slate-400 font-normal">m</span>`;
+            document.getElementById('stat-bagged').textContent = '0';
+            document.getElementById('stat-near').textContent = '0';
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            ['bagged', 'near', 'all'].forEach(t => {
+                const btn = document.getElementById(`tab-${t}`);
+                if (t === tab) {
+                    btn.className = "flex-1 py-1 bg-slate-800 text-slate-100 rounded font-medium transition shadow-sm";
+                } else {
+                    btn.className = "flex-1 py-1 text-slate-400 hover:text-slate-200 rounded font-medium transition";
+                }
+            });
+            renderFellList();
+        }
+
+        function renderFellList() {
+            const container = document.getElementById('fell-list');
+            const search = document.getElementById('fell-search').value.toLowerCase();
+            const baggedSet = getGlobalBaggedFellNames();
+            const nearSet = getGlobalNearMissFellNames();
+
+            let list = wainwrights.filter(f => f.name.toLowerCase().includes(search));
+
+            if (currentTab === 'bagged') {
+                list = list.filter(f => baggedSet.has(f.name));
+            } else if (currentTab === 'near') {
+                list = list.filter(f => nearSet.has(f.name));
+            }
+
+            if (list.length === 0) {
+                container.innerHTML = `<p class="text-slate-500 italic text-xs text-center py-4">No matching fells found.</p>`;
+                return;
+            }
+
+            container.innerHTML = list.map(f => {
+                const isBagged = baggedSet.has(f.name);
+                const isNear = !isBagged && nearSet.has(f.name);
+
+                const elev = unitSystem === 'metric' 
+                    ? `${f.elevation}m` 
+                    : `${Math.round(f.elevation * 3.28084)}ft`;
+
+                let statusBadge = `<span class="text-[10px] text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded">Unvisited</span>`;
+                if (isBagged) {
+                    statusBadge = `<span class="text-[10px] text-emerald-400 bg-emerald-950/60 border border-emerald-800/50 px-1.5 py-0.5 rounded">Bagged</span>`;
+                } else if (isNear) {
+                    statusBadge = `<span class="text-[10px] text-amber-400 bg-amber-950/60 border border-amber-800/50 px-1.5 py-0.5 rounded">Near Miss</span>`;
+                }
+
+                return `
+                    <div onclick="centerMapOnFell('${f.name}')" class="bg-slate-900/80 hover:bg-slate-800/80 border border-slate-800/80 rounded-lg p-2 flex items-center justify-between cursor-pointer transition text-xs">
+                        <div>
+                            <p class="font-semibold text-slate-200">${f.name}</p>
+                            <p class="text-[10px] text-slate-400">${f.region} • ${elev}</p>
+                        </div>
+                        ${statusBadge}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function centerMapOnFell(name) {
+            const fell = wainwrights.find(f => f.name === name);
+            if (fell) {
+                map.setView([fell.lat, fell.lng], 14);
+                if (fellMarkers[name]) {
+                    fellMarkers[name].openPopup();
+                }
+                if (window.innerWidth < 768) switchMobileTab('map');
+            }
+        }
+
+        function toggleUnits() {
+            unitSystem = unitSystem === 'metric' ? 'imperial' : 'metric';
+            document.getElementById('unit-toggle').textContent = unitSystem === 'metric' ? 'Metric (km/m)' : 'Imperial (mi/ft)';
+            renderSavedRoutesList();
+            renderFellList();
+            plotAllFellsOnMap();
+        }
+
+        function updateBaggingRadius() {
+            baggingRadius = parseInt(document.getElementById('radius-select').value);
+            savedRoutes.forEach(r => {
+                const bagged = [];
+                const nearMisses = [];
+                wainwrights.forEach(fell => {
+                    let minDistance = Infinity;
+                    for (let pt of r.trackPoints) {
+                        const d = getDistanceMeters(pt[0], pt[1], fell.lat, fell.lng);
+                        if (d < minDistance) minDistance = d;
+                    }
+                    if (minDistance <= baggingRadius) {
+                        bagged.push(fell.name);
+                    } else if (minDistance <= 300) {
+                        nearMisses.push({ name: fell.name, dist: Math.round(minDistance) });
+                    }
+                });
+                r.bagged = bagged;
+                r.nearMisses = nearMisses;
+            });
+
+            saveHistoryToStorage();
+            updateOverallProgress();
+            plotAllFellsOnMap();
+            renderFellList();
+            renderSavedRoutesList();
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+        }
+    </script>
+</body>
+</html>
