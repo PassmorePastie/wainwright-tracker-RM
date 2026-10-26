@@ -83,7 +83,7 @@
                 <div>
                     <h1 class="font-bold text-base text-slate-100 leading-tight">Wainwright Analyzer</h1>
                     <p class="text-xs text-slate-400">Lake District Fell & GPX Tracker</p>
-                    <p class="text-[10px] text-slate-500 font-mono tracking-wide mt-0.5">v1.1.1</p>
+                    <p class="text-[10px] text-slate-500 font-mono tracking-wide mt-0.5">v1.1.2</p>
                 </div>
             </div>
             <button id="unit-toggle" onclick="toggleUnits()" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
@@ -311,7 +311,7 @@
         function registerServiceWorker() {
             if ('serviceWorker' in navigator) {
                 const swCode = `
-                    const CACHE = 'wainwright-cache-v1.1.1';
+                    const CACHE = 'wainwright-cache-v1.1.2';
                     self.addEventListener('install', e => { self.skipWaiting(); });
                     self.addEventListener('activate', e => { self.clients.claim(); });
                     self.addEventListener('fetch', e => {
@@ -320,7 +320,7 @@
                 `;
                 const blob = new Blob([swCode], { type: 'application/javascript' });
                 navigator.serviceWorker.register(URL.createObjectURL(blob))
-                    .then(r => console.log('PWA Service Worker Live v1.1.1!'))
+                    .then(r => console.log('PWA Service Worker Live v1.1.2!'))
                     .catch(e => console.log('SW Note:', e));
             }
         }
@@ -344,7 +344,6 @@
                 layers: [openTopo, baggedLayerGroup, nearMissLayerGroup, unvisitedLayerGroup, tracksLayerGroup]
             });
 
-            // FIXED: Force map layout recalculation immediately so it never loads blank
             setTimeout(() => {
                 map.invalidateSize();
             }, 100);
@@ -352,21 +351,20 @@
             window.baseLayers = { topo: esriTopo, opentopo: openTopo, satellite: esriSatellite };
             window.currentBaseLayer = openTopo;
 
-            // Route Legend Control (Top-Left, below zoom buttons)
+            // Legend Control (Top-Left, right under zoom controls)
             const LegendControl = L.Control.extend({
                 options: { position: 'topleft' },
                 onAdd: function (map) {
                     const div = L.DomUtil.create('div', 'leaflet-control-custom-panel p-2.5 text-xs shadow-md');
                     div.innerHTML = `
-                        <p class="font-bold text-slate-200 mb-1.5 border-b border-slate-700 pb-1">Route Legend</p>
-                        <div class="space-y-1">
+                        <div class="space-y-1.5">
                             <div class="flex items-center gap-2">
                                 <span class="w-4 h-1 bg-emerald-500 rounded-full inline-block"></span>
-                                <span class="text-slate-300">Completed Hike</span>
+                                <span class="text-slate-300 font-medium">Completed Hike</span>
                             </div>
                             <div class="flex items-center gap-2">
                                 <span class="w-4 h-1 border-t-2 border-indigo-400 border-dashed inline-block"></span>
-                                <span class="text-slate-300">Planned Route</span>
+                                <span class="text-slate-300 font-medium">Planned Route</span>
                             </div>
                         </div>
                     `;
@@ -647,13 +645,7 @@
                 ? `${route.elevationGainMeters} m` 
                 : `${Math.round(route.elevationGainMeters * 3.28084)} ft`;
 
-            const polyline = L.polyline(route.trackPoints, {
-                color: isPlanned ? '#818cf8' : '#10b981',
-                weight: 4,
-                opacity: 0.85,
-                dashArray: isPlanned ? '6, 6' : null,
-                smoothFactor: 0 
-            }).bindPopup(`
+            const popupContent = `
                 <div class="text-slate-900 p-1">
                     <div class="flex items-center gap-1.5 mb-1">
                         <span class="text-[10px] font-bold px-2 py-0.5 rounded text-white ${isPlanned ? 'bg-indigo-600' : 'bg-emerald-600'}">
@@ -665,10 +657,29 @@
                     <p class="text-xs text-slate-600"><i class="fa-solid fa-arrow-trend-up mr-1"></i>Elevation Gain: <strong>${eleStr}</strong></p>
                     <p class="text-xs text-slate-600"><i class="fa-solid fa-mountain mr-1"></i>Fells Bagged: <strong>${route.bagged.length}</strong></p>
                 </div>
-            `);
+            `;
 
-            tracksLayerGroup.addLayer(polyline);
-            map.fitBounds(polyline.getBounds(), { padding: [30, 30] });
+            // Invisible wide buffer line underneath for easy mobile tapping/clicking
+            const bufferLine = L.polyline(route.trackPoints, {
+                color: 'transparent',
+                weight: 16,
+                opacity: 0,
+                smoothFactor: 0
+            }).bindPopup(popupContent);
+
+            // Main visible track line
+            const visibleLine = L.polyline(route.trackPoints, {
+                color: isPlanned ? '#818cf8' : '#10b981',
+                weight: 4,
+                opacity: 0.85,
+                dashArray: isPlanned ? '6, 6' : null,
+                smoothFactor: 0
+            }).bindPopup(popupContent);
+
+            // Group both into a feature group so tapping anywhere near the thick buffer opens the popup
+            const group = L.featureGroup([bufferLine, visibleLine]);
+            tracksLayerGroup.addLayer(group);
+            map.fitBounds(visibleLine.getBounds(), { padding: [30, 30] });
         }
 
         function getDistanceMeters(lat1, lon1, lat2, lon2) {
@@ -714,13 +725,7 @@
                 ? `${route.elevationGainMeters} m` 
                 : `${Math.round(route.elevationGainMeters * 3.28084)} ft`;
 
-            const polyline = L.polyline(route.trackPoints, {
-                color: isPlanned ? '#818cf8' : '#10b981',
-                weight: 4,
-                opacity: 0.85,
-                dashArray: isPlanned ? '6, 6' : null,
-                smoothFactor: 0 
-            }).bindPopup(`
+            const popupContent = `
                 <div class="text-slate-900 p-1">
                     <div class="flex items-center gap-1.5 mb-1">
                         <span class="text-[10px] font-bold px-2 py-0.5 rounded text-white ${isPlanned ? 'bg-indigo-600' : 'bg-emerald-600'}">
@@ -732,9 +737,25 @@
                     <p class="text-xs text-slate-600"><i class="fa-solid fa-arrow-trend-up mr-1"></i>Elevation Gain: <strong>${eleStr}</strong></p>
                     <p class="text-xs text-slate-600"><i class="fa-solid fa-mountain mr-1"></i>Fells Bagged: <strong>${route.bagged.length}</strong></p>
                 </div>
-            `);
+            `;
 
-            tracksLayerGroup.addLayer(polyline);
+            const bufferLine = L.polyline(route.trackPoints, {
+                color: 'transparent',
+                weight: 16,
+                opacity: 0,
+                smoothFactor: 0
+            }).bindPopup(popupContent);
+
+            const visibleLine = L.polyline(route.trackPoints, {
+                color: isPlanned ? '#818cf8' : '#10b981',
+                weight: 4,
+                opacity: 0.85,
+                dashArray: isPlanned ? '6, 6' : null,
+                smoothFactor: 0
+            }).bindPopup(popupContent);
+
+            const group = L.featureGroup([bufferLine, visibleLine]);
+            tracksLayerGroup.addLayer(group);
         }
 
         function clearAllHistory() {
