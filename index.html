@@ -42,7 +42,6 @@
         .pin-near { background-color: #f59e0b; }
         .pin-unvisited { background-color: #64748b; opacity: 0.7; }
 
-        /* Zoom-dependent label styling */
         .fell-label {
             background: rgba(15, 23, 42, 0.85);
             border: 1px solid rgba(51, 65, 85, 0.8);
@@ -55,25 +54,19 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.4);
             pointer-events: none;
         }
-        
-        .leaflet-touch .leaflet-control-layers {
+
+        /* Custom Collapsible Control Panel styling */
+        .leaflet-control-custom-panel {
             background-color: #1e293b;
             color: #f8fafc;
             border: 1px solid #334155;
             border-radius: 0.5rem;
-            padding: 8px 12px;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
         }
-        .leaflet-control-layers-overlays label {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-            font-size: 0.875rem;
-            margin-bottom: 4px;
-        }
-        .leaflet-control-layers-base label {
-            font-size: 0.875rem;
+        .leaflet-control-custom-panel select, .leaflet-control-custom-panel label {
+            font-size: 0.8rem;
+            color: #cbd5e1;
         }
     </style>
 </head>
@@ -91,7 +84,7 @@
                 <div>
                     <h1 class="font-bold text-base text-slate-100 leading-tight">Wainwright Analyzer</h1>
                     <p class="text-xs text-slate-400">Lake District Fell & GPX Tracker</p>
-                    <p class="text-[10px] text-slate-500 font-mono tracking-wide mt-0.5">v1.0.8</p>
+                    <p class="text-[10px] text-slate-500 font-mono tracking-wide mt-0.5">v1.0.9</p>
                 </div>
             </div>
             <button id="unit-toggle" onclick="toggleUnits()" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
@@ -322,7 +315,7 @@
         function registerServiceWorker() {
             if ('serviceWorker' in navigator) {
                 const swCode = `
-                    const CACHE = 'wainwright-cache-v1.0.8';
+                    const CACHE = 'wainwright-cache-v1.0.9';
                     self.addEventListener('install', e => { self.skipWaiting(); });
                     self.addEventListener('activate', e => { self.clients.claim(); });
                     self.addEventListener('fetch', e => {
@@ -331,7 +324,7 @@
                 `;
                 const blob = new Blob([swCode], { type: 'application/javascript' });
                 navigator.serviceWorker.register(URL.createObjectURL(blob))
-                    .then(r => console.log('PWA Service Worker Live v1.0.8!'))
+                    .then(r => console.log('PWA Service Worker Live v1.0.9!'))
                     .catch(e => console.log('SW Note:', e));
             }
         }
@@ -368,12 +361,95 @@
                 "GPX Track Lines": tracksLayerGroup
             };
 
-            L.control.layers(baseMaps, overlayMaps, { collapsed: false }).addTo(map);
-
-            // Listen to zoom changes to show/hide fell names dynamically
-            map.on('zoomend', () => {
-                plotAllFellsOnMap();
+            // 1. Map Key (Top-Left)
+            const LegendControl = L.Control.extend({
+                options: { position: 'topleft' },
+                onAdd: function (map) {
+                    const div = L.DomUtil.create('div', 'leaflet-control-custom-panel p-2.5 text-xs shadow-md');
+                    div.innerHTML = `
+                        <p class="font-bold text-slate-200 mb-1.5 border-b border-slate-700 pb-1">Route Legend</p>
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-2">
+                                <span class="w-4 h-1 bg-emerald-500 rounded-full inline-block"></span>
+                                <span class="text-slate-300">Completed Hike</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-4 h-1 border-t-2 border-indigo-400 border-dashed inline-block"></span>
+                                <span class="text-slate-300">Planned Route</span>
+                            </div>
+                        </div>
+                    `;
+                    return div;
+                }
             });
+            map.addControl(new LegendControl());
+
+            // 2. Collapsible Filter Control (Top-Right Filter Icon)
+            const FilterControl = L.Control.extend({
+                options: { position: 'topright' },
+                onAdd: function (map) {
+                    const container = L.DomUtil.create('div', 'leaflet-control-custom-panel');
+                    container.innerHTML = `
+                        <button id="filter-toggle-btn" class="p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center w-9 h-9 rounded-lg transition" title="Toggle Map Filters">
+                            <i class="fa-solid fa-filter text-sm"></i>
+                        </button>
+                        <div id="filter-dropdown-content" class="p-3 hidden bg-slate-900 border-t border-slate-700 space-y-3 w-52">
+                            <div>
+                                <label class="block font-semibold mb-1 text-slate-400">Map Style</label>
+                                <select id="basemap-select" onchange="changeBaseMap(this.value)" class="w-full bg-slate-800 text-slate-200 border border-slate-700 rounded p-1 focus:outline-none focus:border-emerald-500">
+                                    <option value="topo">Esri Topo</option>
+                                    <option value="opentopo" selected>OpenTopoMap</option>
+                                    <option value="satellite">Satellite</option>
+                                </select>
+                            </div>
+                            <div class="space-y-1.5 pt-1 border-t border-slate-800">
+                                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked onchange="toggleLayerGroup(baggedLayerGroup, this.checked)" class="rounded bg-slate-800 border-slate-700 text-emerald-500"> Bagged Peaks</label>
+                                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked onchange="toggleLayerGroup(nearMissLayerGroup, this.checked)" class="rounded bg-slate-800 border-slate-700 text-amber-500"> Near Misses</label>
+                                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked onchange="toggleLayerGroup(unvisitedLayerGroup, this.checked)" class="rounded bg-slate-800 border-slate-700 text-slate-500"> Unvisited Fells</label>
+                                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked onchange="toggleLayerGroup(tracksLayerGroup, this.checked)" class="rounded bg-slate-800 border-slate-700 text-indigo-500"> GPX Track Lines</label>
+                            </div>
+                        </div>
+                    `;
+
+                    L.DomEvent.disableClickPropagation(container);
+                    return container;
+                }
+            });
+            map.addControl(new FilterControl());
+
+            // Toggle filter dropdown visibility
+            setTimeout(() => {
+                const btn = document.getElementById('filter-toggle-btn');
+                const dropdown = document.getElementById('filter-dropdown-content');
+                btn.onclick = (e) => {
+                    e.stopPropagation();
+                    dropdown.classList.toggle('hidden');
+                };
+                document.addEventListener('click', () => {
+                    dropdown.classList.add('hidden');
+                });
+            }, 100);
+
+            // Store base map layers for selection
+            window.baseLayers = { topo: esriTopo, opentopo: openTopo, satellite: esriSatellite };
+            window.currentBaseLayer = openTopo;
+
+            map.on('zoomend', () => { plotAllFellsOnMap(); });
+        }
+
+        function changeBaseMap(key) {
+            if (window.currentBaseLayer) map.removeLayer(window.currentBaseLayer);
+            window.currentBaseLayer = window.baseLayers[key];
+            map.addLayer(window.currentBaseLayer);
+            window.currentBaseLayer.bringToBack();
+        }
+
+        function toggleLayerGroup(layer, show) {
+            if (show) {
+                map.addLayer(layer);
+            } else {
+                map.removeLayer(layer);
+            }
         }
 
         function switchMobileTab(tab) {
@@ -409,7 +485,7 @@
             const baggedNames = getGlobalBaggedFellNames();
             const nearNames = getGlobalNearMissFellNames();
             const currentZoom = map ? map.getZoom() : 10;
-            const showLabels = currentZoom >= 13; // Show names when zoomed in past level 13
+            const showLabels = currentZoom >= 13;
 
             wainwrights.forEach(fell => {
                 const isBagged = baggedNames.has(fell.name);
@@ -546,7 +622,7 @@
                 id: Date.now() + Math.random().toString(36).substr(2, 4),
                 name: fileName.replace('.gpx', ''),
                 date: new Date().toLocaleDateString(),
-                type: type, // 'completed' or 'planned'
+                type: type,
                 distanceMeters: totalDistMeters,
                 elevationGainMeters: Math.round(totalElevationGain),
                 trackPoints: trackPoints,
@@ -567,13 +643,32 @@
 
         function renderRouteOnMap(route) {
             const isPlanned = route.type === 'planned';
+            const distStr = unitSystem === 'metric' 
+                ? `${(route.distanceMeters / 1000).toFixed(1)} km` 
+                : `${(route.distanceMeters / 1609.34).toFixed(1)} mi`;
+            const eleStr = unitSystem === 'metric' 
+                ? `${route.elevationGainMeters} m` 
+                : `${Math.round(route.elevationGainMeters * 3.28084)} ft`;
+
             const polyline = L.polyline(route.trackPoints, {
-                color: isPlanned ? '#818cf8' : '#10b981', // Indigo for planned, Emerald for completed
+                color: isPlanned ? '#818cf8' : '#10b981',
                 weight: 4,
                 opacity: 0.85,
-                dashArray: isPlanned ? '6, 6' : null, // Dashed line for planned routes
+                dashArray: isPlanned ? '6, 6' : null,
                 smoothFactor: 0 
-            });
+            }).bindPopup(`
+                <div class="text-slate-900 p-1">
+                    <div class="flex items-center gap-1.5 mb-1">
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded text-white ${isPlanned ? 'bg-indigo-600' : 'bg-emerald-600'}">
+                            ${isPlanned ? 'Planned Route' : 'Completed Hike'}
+                        </span>
+                    </div>
+                    <h4 class="font-bold text-sm">${escapeHtml(route.name)}</h4>
+                    <p class="text-xs text-slate-600 mt-1"><i class="fa-solid fa-route mr-1"></i>Distance: <strong>${distStr}</strong></p>
+                    <p class="text-xs text-slate-600"><i class="fa-solid fa-arrow-trend-up mr-1"></i>Elevation Gain: <strong>${eleStr}</strong></p>
+                    <p class="text-xs text-slate-600"><i class="fa-solid fa-mountain mr-1"></i>Fells Bagged: <strong>${route.bagged.length}</strong></p>
+                </div>
+            `);
 
             tracksLayerGroup.addLayer(polyline);
             map.fitBounds(polyline.getBounds(), { padding: [30, 30] });
@@ -615,13 +710,33 @@
 
         function renderRouteOnMapLoad(route) {
             const isPlanned = route.type === 'planned';
+            const distStr = unitSystem === 'metric' 
+                ? `${(route.distanceMeters / 1000).toFixed(1)} km` 
+                : `${(route.distanceMeters / 1609.34).toFixed(1)} mi`;
+            const eleStr = unitSystem === 'metric' 
+                ? `${route.elevationGainMeters} m` 
+                : `${Math.round(route.elevationGainMeters * 3.28084)} ft`;
+
             const polyline = L.polyline(route.trackPoints, {
                 color: isPlanned ? '#818cf8' : '#10b981',
                 weight: 4,
                 opacity: 0.85,
                 dashArray: isPlanned ? '6, 6' : null,
                 smoothFactor: 0 
-            });
+            }).bindPopup(`
+                <div class="text-slate-900 p-1">
+                    <div class="flex items-center gap-1.5 mb-1">
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded text-white ${isPlanned ? 'bg-indigo-600' : 'bg-emerald-600'}">
+                            ${isPlanned ? 'Planned Route' : 'Completed Hike'}
+                        </span>
+                    </div>
+                    <h4 class="font-bold text-sm">${escapeHtml(route.name)}</h4>
+                    <p class="text-xs text-slate-600 mt-1"><i class="fa-solid fa-route mr-1"></i>Distance: <strong>${distStr}</strong></p>
+                    <p class="text-xs text-slate-600"><i class="fa-solid fa-arrow-trend-up mr-1"></i>Elevation Gain: <strong>${eleStr}</strong></p>
+                    <p class="text-xs text-slate-600"><i class="fa-solid fa-mountain mr-1"></i>Fells Bagged: <strong>${route.bagged.length}</strong></p>
+                </div>
+            `);
+
             tracksLayerGroup.addLayer(polyline);
         }
 
@@ -661,13 +776,15 @@
                 route.name = newName.trim();
                 saveHistoryToStorage();
                 renderSavedRoutesList();
+                tracksLayerGroup.clearLayers();
+                savedRoutes.forEach(r => renderRouteOnMapLoad(r));
             }
         }
 
         function getGlobalBaggedFellNames() {
             const bagged = new Set();
             savedRoutes.forEach(r => {
-                if (r.type !== 'planned') { // Only completed hikes count towards bagged fells
+                if (r.type !== 'planned') {
                     r.bagged.forEach(f => bagged.add(f));
                 }
             });
@@ -758,7 +875,7 @@
             let totalElevationMeters = 0;
 
             savedRoutes.forEach(r => {
-                if (r.type !== 'planned') { // Only completed hikes count towards total stats
+                if (r.type !== 'planned') {
                     totalDistMeters += r.distanceMeters;
                     totalElevationMeters += r.elevationGainMeters;
                 }
@@ -865,6 +982,8 @@
             renderFellList();
             plotAllFellsOnMap();
             updateCumulativeStatsSummary();
+            tracksLayerGroup.clearLayers();
+            savedRoutes.forEach(r => renderRouteOnMapLoad(r));
         }
 
         function updateBaggingRadius() {
