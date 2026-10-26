@@ -41,6 +41,21 @@
         .pin-bagged { background-color: #10b981; }
         .pin-near { background-color: #f59e0b; }
         .pin-unvisited { background-color: #64748b; opacity: 0.7; }
+
+        /* Zoom-dependent label styling */
+        .fell-label {
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(51, 65, 85, 0.8);
+            color: #f8fafc;
+            font-weight: 600;
+            font-size: 10px;
+            padding: 1px 5px;
+            border-radius: 4px;
+            white-space: nowrap;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+            pointer-events: none;
+        }
+        
         .leaflet-touch .leaflet-control-layers {
             background-color: #1e293b;
             color: #f8fafc;
@@ -76,7 +91,7 @@
                 <div>
                     <h1 class="font-bold text-base text-slate-100 leading-tight">Wainwright Analyzer</h1>
                     <p class="text-xs text-slate-400">Lake District Fell & GPX Tracker</p>
-                    <p class="text-[10px] text-slate-500 font-mono tracking-wide mt-0.5">v1.0.7</p>
+                    <p class="text-[10px] text-slate-500 font-mono tracking-wide mt-0.5">v1.0.8</p>
                 </div>
             </div>
             <button id="unit-toggle" onclick="toggleUnits()" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
@@ -98,17 +113,30 @@
                 </div>
             </div>
 
-            <!-- GPX File Upload Zone -->
-            <div id="drop-zone" class="border-2 border-dashed border-slate-700 hover:border-emerald-500/80 bg-slate-950/40 hover:bg-emerald-500/5 rounded-xl p-5 text-center transition cursor-pointer group relative">
-                <input type="file" id="gpx-file-input" accept=".gpx" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" multiple />
-                <div class="w-10 h-10 rounded-full bg-slate-800 group-hover:bg-emerald-500/20 text-slate-400 group-hover:text-emerald-400 flex items-center justify-center mx-auto mb-2 transition">
-                    <i class="fa-solid fa-cloud-arrow-up text-lg"></i>
+            <!-- Dual Upload Zones: Completed vs Planned -->
+            <div class="grid grid-cols-2 gap-2">
+                <!-- Completed Upload -->
+                <div id="drop-zone-completed" class="border-2 border-dashed border-emerald-600/60 hover:border-emerald-500 bg-emerald-950/10 hover:bg-emerald-500/10 rounded-xl p-3 text-center transition cursor-pointer group relative">
+                    <input type="file" id="gpx-completed-input" accept=".gpx" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" multiple />
+                    <div class="w-8 h-8 rounded-full bg-emerald-900/40 group-hover:bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto mb-1 transition">
+                        <i class="fa-solid fa-check text-sm"></i>
+                    </div>
+                    <p class="text-xs font-semibold text-emerald-300">+ Completed Hike</p>
+                    <p class="text-[10px] text-slate-500 mt-0.5">Adds to stats & bags</p>
                 </div>
-                <p class="text-sm font-semibold text-slate-200">Drop GPX file here or <span class="text-emerald-400 underline">browse</span></p>
-                <p class="text-xs text-slate-500 mt-1">Supports Strava, Garmin, OS Maps, Komoot</p>
+
+                <!-- Planned Upload -->
+                <div id="drop-zone-planned" class="border-2 border-dashed border-indigo-600/60 hover:border-indigo-500 bg-indigo-950/10 hover:bg-indigo-500/10 rounded-xl p-3 text-center transition cursor-pointer group relative">
+                    <input type="file" id="gpx-planned-input" accept=".gpx" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" multiple />
+                    <div class="w-8 h-8 rounded-full bg-indigo-900/40 group-hover:bg-indigo-500/20 text-indigo-400 flex items-center justify-center mx-auto mb-1 transition">
+                        <i class="fa-solid fa-map text-sm"></i>
+                    </div>
+                    <p class="text-xs font-semibold text-indigo-300">+ Planned Route</p>
+                    <p class="text-[10px] text-slate-500 mt-0.5">Previews on map</p>
+                </div>
             </div>
 
-            <!-- Current Track Stats -->
+            <!-- Current Track Stats (Completed Hikes Only) -->
             <div class="grid grid-cols-2 gap-2">
                 <div class="bg-slate-800/40 border border-slate-800 rounded-lg p-2.5">
                     <span class="text-[11px] font-medium text-slate-400 uppercase tracking-wider block mb-0.5">Total Distance</span>
@@ -190,7 +218,6 @@
         let baggingRadius = 100;
         let currentTab = 'all';
         let savedRoutes = [];
-        let activePolylines = [];
         let fellMarkers = {};
 
         let baggedLayerGroup = L.layerGroup();
@@ -288,14 +315,14 @@
             plotAllFellsOnMap();
             renderFellList();
             updateOverallProgress();
-            setupDropZone();
+            setupUploadInputs();
             registerServiceWorker();
         };
 
         function registerServiceWorker() {
             if ('serviceWorker' in navigator) {
                 const swCode = `
-                    const CACHE = 'wainwright-cache-v1.0.7';
+                    const CACHE = 'wainwright-cache-v1.0.8';
                     self.addEventListener('install', e => { self.skipWaiting(); });
                     self.addEventListener('activate', e => { self.clients.claim(); });
                     self.addEventListener('fetch', e => {
@@ -304,7 +331,7 @@
                 `;
                 const blob = new Blob([swCode], { type: 'application/javascript' });
                 navigator.serviceWorker.register(URL.createObjectURL(blob))
-                    .then(r => console.log('PWA Service Worker Live v1.0.7!'))
+                    .then(r => console.log('PWA Service Worker Live v1.0.8!'))
                     .catch(e => console.log('SW Note:', e));
             }
         }
@@ -342,6 +369,11 @@
             };
 
             L.control.layers(baseMaps, overlayMaps, { collapsed: false }).addTo(map);
+
+            // Listen to zoom changes to show/hide fell names dynamically
+            map.on('zoomend', () => {
+                plotAllFellsOnMap();
+            });
         }
 
         function switchMobileTab(tab) {
@@ -376,6 +408,8 @@
 
             const baggedNames = getGlobalBaggedFellNames();
             const nearNames = getGlobalNearMissFellNames();
+            const currentZoom = map ? map.getZoom() : 10;
+            const showLabels = currentZoom >= 13; // Show names when zoomed in past level 13
 
             wainwrights.forEach(fell => {
                 const isBagged = baggedNames.has(fell.name);
@@ -392,12 +426,25 @@
                     targetGroup = nearMissLayerGroup;
                 }
 
-                const icon = L.divIcon({
-                    className: 'custom-div-icon',
-                    html: `<div class="custom-pin ${pinClass} w-6 h-6 text-[10px]"><i class="fa-solid fa-mountain"></i></div>`,
-                    iconSize: [24, 24],
-                    iconAnchor: [12, 12]
-                });
+                let icon;
+                if (showLabels) {
+                    icon = L.divIcon({
+                        className: 'custom-div-icon',
+                        html: `<div style="display: flex; align-items: center; gap: 4px;">
+                                   <div class="custom-pin ${pinClass} w-5 h-5 text-[9px]"><i class="fa-solid fa-mountain"></i></div>
+                                   <div class="fell-label">${fell.name}</div>
+                               </div>`,
+                        iconSize: [120, 24],
+                        iconAnchor: [10, 12]
+                    });
+                } else {
+                    icon = L.divIcon({
+                        className: 'custom-div-icon',
+                        html: `<div class="custom-pin ${pinClass} w-6 h-6 text-[10px]"><i class="fa-solid fa-mountain"></i></div>`,
+                        iconSize: [24, 24],
+                        iconAnchor: [12, 12]
+                    });
+                }
 
                 const elevFormatted = unitSystem === 'metric' 
                     ? `${fell.elevation} m` 
@@ -420,44 +467,28 @@
             });
         }
 
-        function setupDropZone() {
-            const dropZone = document.getElementById('drop-zone');
-            const fileInput = document.getElementById('gpx-file-input');
-
-            fileInput.addEventListener('change', (e) => {
-                if (e.target.files.length > 0) {
-                    handleFiles(e.target.files);
-                }
+        function setupUploadInputs() {
+            const completedInput = document.getElementById('gpx-completed-input');
+            completedInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) handleFiles(e.target.files, 'completed');
             });
 
-            dropZone.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                dropZone.classList.add('border-emerald-500', 'bg-emerald-500/10');
-            });
-
-            dropZone.addEventListener('dragleave', () => {
-                dropZone.classList.remove('border-emerald-500', 'bg-emerald-500/10');
-            });
-
-            dropZone.addEventListener('drop', (e) => {
-                e.preventDefault();
-                dropZone.classList.remove('border-emerald-500', 'bg-emerald-500/10');
-                if (e.dataTransfer.files.length > 0) {
-                    handleFiles(e.dataTransfer.files);
-                }
+            const plannedInput = document.getElementById('gpx-planned-input');
+            plannedInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) handleFiles(e.target.files, 'planned');
             });
         }
 
-        function handleFiles(files) {
+        function handleFiles(files, type) {
             Array.from(files).forEach(file => {
                 if (!file.name.toLowerCase().endsWith('.gpx')) return;
                 const reader = new FileReader();
-                reader.onload = (e) => processGPXXML(e.target.result, file.name);
+                reader.onload = (e) => processGPXXML(e.target.result, file.name, type);
                 reader.readAsText(file);
             });
         }
 
-        function processGPXXML(gpxXmlString, fileName) {
+        function processGPXXML(gpxXmlString, fileName, type) {
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(gpxXmlString, "text/xml");
             
@@ -515,6 +546,7 @@
                 id: Date.now() + Math.random().toString(36).substr(2, 4),
                 name: fileName.replace('.gpx', ''),
                 date: new Date().toLocaleDateString(),
+                type: type, // 'completed' or 'planned'
                 distanceMeters: totalDistMeters,
                 elevationGainMeters: Math.round(totalElevationGain),
                 trackPoints: trackPoints,
@@ -534,15 +566,17 @@
         }
 
         function renderRouteOnMap(route) {
+            const isPlanned = route.type === 'planned';
             const polyline = L.polyline(route.trackPoints, {
-                color: '#10b981',
+                color: isPlanned ? '#818cf8' : '#10b981', // Indigo for planned, Emerald for completed
                 weight: 4,
                 opacity: 0.85,
+                dashArray: isPlanned ? '6, 6' : null, // Dashed line for planned routes
                 smoothFactor: 0 
             });
 
             tracksLayerGroup.addLayer(polyline);
-            activePolylines.push(polyline);
+            map.fitBounds(polyline.getBounds(), { padding: [30, 30] });
         }
 
         function getDistanceMeters(lat1, lon1, lat2, lon2) {
@@ -570,12 +604,25 @@
                 try {
                     savedRoutes = JSON.parse(data);
                     renderSavedRoutesList();
-                    savedRoutes.forEach(r => renderRouteOnMap(r));
+                    tracksLayerGroup.clearLayers();
+                    savedRoutes.forEach(r => renderRouteOnMapLoad(r));
                     updateCumulativeStatsSummary();
                 } catch(e) {
                     console.error("Error reading saved routes", e);
                 }
             }
+        }
+
+        function renderRouteOnMapLoad(route) {
+            const isPlanned = route.type === 'planned';
+            const polyline = L.polyline(route.trackPoints, {
+                color: isPlanned ? '#818cf8' : '#10b981',
+                weight: 4,
+                opacity: 0.85,
+                dashArray: isPlanned ? '6, 6' : null,
+                smoothFactor: 0 
+            });
+            tracksLayerGroup.addLayer(polyline);
         }
 
         function clearAllHistory() {
@@ -596,8 +643,7 @@
             saveHistoryToStorage();
             
             tracksLayerGroup.clearLayers();
-            activePolylines = [];
-            savedRoutes.forEach(r => renderRouteOnMap(r));
+            savedRoutes.forEach(r => renderRouteOnMapLoad(r));
             
             renderSavedRoutesList();
             updateOverallProgress();
@@ -621,7 +667,9 @@
         function getGlobalBaggedFellNames() {
             const bagged = new Set();
             savedRoutes.forEach(r => {
-                r.bagged.forEach(f => bagged.add(f));
+                if (r.type !== 'planned') { // Only completed hikes count towards bagged fells
+                    r.bagged.forEach(f => bagged.add(f));
+                }
             });
             return bagged;
         }
@@ -647,6 +695,7 @@
             }
 
             container.innerHTML = savedRoutes.map(r => {
+                const isPlanned = r.type === 'planned';
                 const distStr = unitSystem === 'metric' 
                     ? `${(r.distanceMeters / 1000).toFixed(1)} km` 
                     : `${(r.distanceMeters / 1609.34).toFixed(1)} mi`;
@@ -655,10 +704,17 @@
                     ? `${r.elevationGainMeters} m` 
                     : `${Math.round(r.elevationGainMeters * 3.28084)} ft`;
 
+                const typeBadge = isPlanned 
+                    ? `<span class="text-[9px] font-semibold bg-indigo-950 text-indigo-400 border border-indigo-800/60 px-1.5 py-0.5 rounded ml-1">Planned</span>`
+                    : `<span class="text-[9px] font-semibold bg-emerald-950 text-emerald-400 border border-emerald-800/60 px-1.5 py-0.5 rounded ml-1">Completed</span>`;
+
                 return `
                     <div class="bg-slate-800/60 border border-slate-700/50 rounded-lg p-2.5 flex items-center justify-between hover:border-slate-600 transition group">
                         <div class="cursor-pointer flex-1 overflow-hidden mr-2" onclick="focusRoute('${r.id}')">
-                            <p class="font-semibold text-slate-200 truncate group-hover:text-emerald-400 transition">${escapeHtml(r.name)}</p>
+                            <div class="flex items-center">
+                                <p class="font-semibold text-slate-200 truncate group-hover:text-emerald-400 transition">${escapeHtml(r.name)}</p>
+                                ${typeBadge}
+                            </div>
                             <p class="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
                                 <span><i class="fa-solid fa-route text-slate-500 mr-1"></i>${distStr}</span>
                                 <span><i class="fa-solid fa-arrow-trend-up text-slate-500 mr-1"></i>${eleStr}</span>
@@ -702,8 +758,10 @@
             let totalElevationMeters = 0;
 
             savedRoutes.forEach(r => {
-                totalDistMeters += r.distanceMeters;
-                totalElevationMeters += r.elevationGainMeters;
+                if (r.type !== 'planned') { // Only completed hikes count towards total stats
+                    totalDistMeters += r.distanceMeters;
+                    totalElevationMeters += r.elevationGainMeters;
+                }
             });
 
             const dist = unitSystem === 'metric' 
