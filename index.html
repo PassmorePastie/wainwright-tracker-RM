@@ -83,7 +83,7 @@
                 <div>
                     <h1 class="font-bold text-base text-slate-100 leading-tight">Wainwright Analyzer</h1>
                     <p class="text-xs text-slate-400">Lake District Fell & GPX Tracker</p>
-                    <p class="text-[10px] text-slate-500 font-mono tracking-wide mt-0.5">v1.1.2</p>
+                    <p class="text-[10px] text-slate-500 font-mono tracking-wide mt-0.5">v1.1.3</p>
                 </div>
             </div>
             <button id="unit-toggle" onclick="toggleUnits()" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
@@ -311,7 +311,7 @@
         function registerServiceWorker() {
             if ('serviceWorker' in navigator) {
                 const swCode = `
-                    const CACHE = 'wainwright-cache-v1.1.2';
+                    const CACHE = 'wainwright-cache-v1.1.3';
                     self.addEventListener('install', e => { self.skipWaiting(); });
                     self.addEventListener('activate', e => { self.clients.claim(); });
                     self.addEventListener('fetch', e => {
@@ -320,7 +320,7 @@
                 `;
                 const blob = new Blob([swCode], { type: 'application/javascript' });
                 navigator.serviceWorker.register(URL.createObjectURL(blob))
-                    .then(r => console.log('PWA Service Worker Live v1.1.2!'))
+                    .then(r => console.log('PWA Service Worker Live v1.1.3!'))
                     .catch(e => console.log('SW Note:', e));
             }
         }
@@ -341,8 +341,47 @@
             map = L.map('map', {
                 center: [54.5, -3.1],
                 zoom: 10,
-                layers: [openTopo, baggedLayerGroup, nearMissLayerGroup, unvisitedLayerGroup, tracksLayerGroup]
+                layers: [openTopo, baggedLayerGroup, nearMissLayerGroup, unvisitedLayerGroup, tracksLayerGroup],
+                zoomControl: false // We custom position zoom control to pair horizontally with the legend
             });
+
+            // Custom Zoom Control & Legend Container to lock them horizontally in the top-left slot
+            const TopLeftBar = L.Control.extend({
+                options: { position: 'topleft' },
+                onAdd: function (map) {
+                    const container = L.DomUtil.create('div', 'flex items-center gap-1.5');
+                    
+                    // Zoom controls
+                    const zoomDiv = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+                    zoomDiv.innerHTML = `
+                        <a class="leaflet-control-zoom-in bg-slate-800 text-slate-200 hover:bg-slate-700 flex items-center justify-center w-7 h-7 text-sm font-bold border-b border-slate-700" href="#" title="Zoom in" role="button" aria-label="Zoom in">+</a>
+                        <a class="leaflet-control-zoom-out bg-slate-800 text-slate-200 hover:bg-slate-700 flex items-center justify-center w-7 h-7 text-sm font-bold" href="#" title="Zoom out" role="button" aria-label="Zoom out">-</a>
+                    `;
+                    zoomDiv.children[0].onclick = (e) => { e.preventDefault(); map.zoomIn(); };
+                    zoomDiv.children[1].onclick = (e) => { e.preventDefault(); map.zoomOut(); };
+
+                    // Legend Box
+                    const legendDiv = L.DomUtil.create('div', 'leaflet-control-custom-panel px-2.5 py-1.5 text-xs shadow-md flex items-center gap-3');
+                    legendDiv.innerHTML = `
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-4 h-1 bg-emerald-500 rounded-full inline-block"></span>
+                            <span class="text-slate-300 font-medium">Completed Hike</span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-4 h-1 border-t-2 border-indigo-400 border-dashed inline-block"></span>
+                            <span class="text-slate-300 font-medium">Planned Route</span>
+                        </div>
+                    `;
+
+                    container.appendChild(zoomDiv);
+                    container.appendChild(legendDiv);
+
+                    L.DomEvent.disableClickPropagation(container);
+                    L.DomEvent.disableScrollPropagation(container);
+                    return container;
+                }
+            });
+            map.addControl(new TopLeftBar());
 
             setTimeout(() => {
                 map.invalidateSize();
@@ -350,28 +389,6 @@
 
             window.baseLayers = { topo: esriTopo, opentopo: openTopo, satellite: esriSatellite };
             window.currentBaseLayer = openTopo;
-
-            // Legend Control (Top-Left, right under zoom controls)
-            const LegendControl = L.Control.extend({
-                options: { position: 'topleft' },
-                onAdd: function (map) {
-                    const div = L.DomUtil.create('div', 'leaflet-control-custom-panel p-2.5 text-xs shadow-md');
-                    div.innerHTML = `
-                        <div class="space-y-1.5">
-                            <div class="flex items-center gap-2">
-                                <span class="w-4 h-1 bg-emerald-500 rounded-full inline-block"></span>
-                                <span class="text-slate-300 font-medium">Completed Hike</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <span class="w-4 h-1 border-t-2 border-indigo-400 border-dashed inline-block"></span>
-                                <span class="text-slate-300 font-medium">Planned Route</span>
-                            </div>
-                        </div>
-                    `;
-                    return div;
-                }
-            });
-            map.addControl(new LegendControl());
 
             // Filter Control (Top-Right)
             const FilterControl = L.Control.extend({
@@ -659,7 +676,6 @@
                 </div>
             `;
 
-            // Invisible wide buffer line underneath for easy mobile tapping/clicking
             const bufferLine = L.polyline(route.trackPoints, {
                 color: 'transparent',
                 weight: 16,
@@ -667,7 +683,6 @@
                 smoothFactor: 0
             }).bindPopup(popupContent);
 
-            // Main visible track line
             const visibleLine = L.polyline(route.trackPoints, {
                 color: isPlanned ? '#818cf8' : '#10b981',
                 weight: 4,
@@ -676,7 +691,6 @@
                 smoothFactor: 0
             }).bindPopup(popupContent);
 
-            // Group both into a feature group so tapping anywhere near the thick buffer opens the popup
             const group = L.featureGroup([bufferLine, visibleLine]);
             tracksLayerGroup.addLayer(group);
             map.fitBounds(visibleLine.getBounds(), { padding: [30, 30] });
