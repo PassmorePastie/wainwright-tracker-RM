@@ -83,7 +83,7 @@
                 <div>
                     <h1 class="font-bold text-base text-slate-100 leading-tight">Wainwright Analyzer</h1>
                     <p class="text-xs text-slate-400">Lake District Fell & GPX Tracker</p>
-                    <p class="text-[10px] text-slate-500 font-mono tracking-wide mt-0.5">v1.1.7</p>
+                    <p class="text-[10px] text-slate-500 font-mono tracking-wide mt-0.5">v1.1.8</p>
                 </div>
             </div>
             <button id="unit-toggle" onclick="toggleUnits()" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
@@ -171,7 +171,7 @@
             <div class="pt-2 border-t border-slate-800 space-y-3">
                 <div class="relative">
                     <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-slate-500"></i>
-                    <!-- Smart Town Search Placeholder Enabled -->
+                    <!-- Smart Town Search Enabled -->
                     <input type="text" id="fell-search" oninput="renderFellList()" placeholder="Search fell or gateway town (e.g. Keswick)..." class="w-full bg-slate-900 border border-slate-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500" />
                 </div>
 
@@ -535,7 +535,7 @@
         function registerServiceWorker() {
             if ('serviceWorker' in navigator) {
                 const swCode = `
-                    const CACHE = 'wainwright-cache-v1.1.7';
+                    const CACHE = 'wainwright-cache-v1.1.8';
                     self.addEventListener('install', e => { self.skipWaiting(); });
                     self.addEventListener('activate', e => { self.clients.claim(); });
                     self.addEventListener('fetch', e => {
@@ -544,7 +544,7 @@
                 `;
                 const blob = new Blob([swCode], { type: 'application/javascript' });
                 navigator.serviceWorker.register(URL.createObjectURL(blob))
-                    .then(r => console.log('PWA Service Worker Live v1.1.7!'))
+                    .then(r => console.log('PWA Service Worker Live v1.1.8!'))
                     .catch(e => console.log('SW Note:', e));
             }
         }
@@ -709,20 +709,67 @@
             }
         }
 
+        function getGlobalBaggedFellsWithDates() {
+            const baggedMap = new Map(); // Fell Name -> Completion Date (YYYY-MM-DD)
+
+            // 1. Process dates from completed GPX tracks
+            savedRoutes.forEach(r => {
+                if (r.type !== 'planned') {
+                    r.bagged.forEach(fellName => {
+                        if (!baggedMap.has(fellName) || new Date(r.date) < new Date(baggedMap.get(fellName))) {
+                            baggedMap.set(fellName, r.date);
+                        }
+                    });
+                }
+            });
+
+            // 2. Process manually logged fells from local storage
+            const manualBagged = JSON.parse(localStorage.getItem('wainwright_manual_bagged') || '{}');
+            Object.keys(manualBagged).forEach(fellName => {
+                baggedMap.set(fellName, manualBagged[fellName]);
+            });
+
+            return baggedMap;
+        }
+
+        function toggleManualBagged(fellName) {
+            const manualBagged = JSON.parse(localStorage.getItem('wainwright_manual_bagged') || '{}');
+
+            if (manualBagged[fellName]) {
+                if (confirm(`Remove manual completion record for ${fellName}?`)) {
+                    delete manualBagged[fellName];
+                    localStorage.setItem('wainwright_manual_bagged', JSON.stringify(manualBagged));
+                }
+            } else {
+                const todayStr = new Date().toISOString().split('T')[0];
+                const userDate = prompt(`Enter completion date for ${fellName} (YYYY-MM-DD):`, todayStr);
+                if (userDate && !isNaN(new Date(userDate).getTime())) {
+                    manualBagged[fellName] = userDate;
+                    localStorage.setItem('wainwright_manual_bagged', JSON.stringify(manualBagged));
+                }
+            }
+
+            updateOverallProgress();
+            plotAllFellsOnMap();
+            renderFellList();
+            updateCumulativeStatsSummary();
+        }
+
         function plotAllFellsOnMap() {
             baggedLayerGroup.clearLayers();
             nearMissLayerGroup.clearLayers();
             unvisitedLayerGroup.clearLayers();
             fellMarkers = {};
 
-            const baggedNames = getGlobalBaggedFellNames();
+            const baggedMap = getGlobalBaggedFellsWithDates();
             const nearNames = getGlobalNearMissFellNames();
             const currentZoom = map ? map.getZoom() : 10;
             const showLabels = currentZoom >= 13;
 
             wainwrights.forEach(fell => {
                 const hubData = wainwrightGatewayTowns[fell.name] || { town: "Lake District Hub", region: fell.region, desc: "Accessed via Lake District approach routes." };
-                const isBagged = baggedNames.has(fell.name);
+                const isBagged = baggedMap.has(fell.name);
+                const completionDate = baggedMap.get(fell.name);
                 const isNear = !isBagged && nearNames.has(fell.name);
 
                 let pinClass = "pin-unvisited";
@@ -763,6 +810,29 @@
                 const accomQuery = encodeURIComponent(`${hubData.town} Lake District accommodation hotels guesthouses`);
                 const accomUrl = `https://www.google.com/search?q=${accomQuery}`;
 
+                let statusBadgeHTML = '';
+                if (isBagged) {
+                    const formattedDate = new Date(completionDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+                    statusBadgeHTML = `
+                        <div class="mt-2.5 flex items-center justify-between bg-emerald-950/40 p-1.5 rounded border border-emerald-800/40">
+                            <span class="text-xs font-semibold px-2 py-0.5 rounded text-white bg-emerald-600 inline-block">
+                                <i class="fa-solid fa-check mr-1"></i>Bagged
+                            </span>
+                            <span class="text-[11px] font-medium text-emerald-300"><i class="fa-solid fa-calendar-day mr-1"></i>${formattedDate}</span>
+                        </div>
+                        <button onclick="toggleManualBagged('${fell.name}')" class="mt-1.5 text-[10px] text-slate-500 hover:text-red-400 underline block">Edit/Remove Completion Date</button>`;
+                } else {
+                    statusBadgeHTML = `
+                        <div class="mt-2.5 flex items-center justify-between">
+                            <span class="text-xs font-semibold px-2 py-0.5 rounded text-white ${isNear ? 'bg-amber-600' : 'bg-slate-600'} inline-block">
+                                ${isNear ? 'Near Miss' : 'Unvisited'}
+                            </span>
+                            <button onclick="toggleManualBagged('${fell.name}')" class="text-[11px] text-emerald-700 hover:text-emerald-800 font-semibold underline">
+                                + Log Date Manually
+                            </button>
+                        </div>`;
+                }
+
                 const marker = L.marker([fell.lat, fell.lng], { icon: icon })
                     .bindPopup(`
                         <div class="text-slate-900 p-1.5 max-w-xs">
@@ -778,9 +848,7 @@
                                 </a>
                             </div>
 
-                            <div class="mt-2.5 text-xs font-semibold px-2 py-0.5 rounded text-white inline-block ${isBagged ? 'bg-emerald-600' : (isNear ? 'bg-amber-600' : 'bg-slate-600')}">
-                                ${isBagged ? 'Bagged!' : (isNear ? 'Near Miss' : 'Unvisited')}
-                            </div>
+                            ${statusBadgeHTML}
                         </div>
                     `);
 
@@ -847,6 +915,19 @@
                 );
             }
 
+            // Extract route date from GPX <time> tag
+            let routeDate = null;
+            const timeNodes = xmlDoc.getElementsByTagName("time");
+            if (timeNodes.length > 0 && timeNodes[0].textContent) {
+                const parsedDate = new Date(timeNodes[0].textContent);
+                if (!isNaN(parsedDate.getTime())) {
+                    routeDate = parsedDate.toISOString().split('T')[0];
+                }
+            }
+            if (!routeDate) {
+                routeDate = new Date().toISOString().split('T')[0];
+            }
+
             const bagged = [];
             const nearMisses = [];
 
@@ -867,7 +948,7 @@
             const routeObj = {
                 id: Date.now() + Math.random().toString(36).substr(2, 4),
                 name: fileName.replace('.gpx', ''),
-                date: new Date().toLocaleDateString(),
+                date: routeDate,
                 type: type,
                 distanceMeters: totalDistMeters,
                 elevationGainMeters: Math.round(totalElevationGain),
@@ -900,7 +981,7 @@
                 <div class="text-slate-900 p-1">
                     <div class="flex items-center gap-1.5 mb-1">
                         <span class="text-[10px] font-bold px-2 py-0.5 rounded text-white ${isPlanned ? 'bg-indigo-600' : 'bg-emerald-600'}">
-                            ${isPlanned ? 'Planned Route' : 'Completed Hike'}
+                            ${isPlanned ? 'Planned Route' : 'Completed Hike'} (${route.date})
                         </span>
                     </div>
                     <h4 class="font-bold text-sm">${escapeHtml(route.name)}</h4>
@@ -977,7 +1058,7 @@
                 <div class="text-slate-900 p-1">
                     <div class="flex items-center gap-1.5 mb-1">
                         <span class="text-[10px] font-bold px-2 py-0.5 rounded text-white ${isPlanned ? 'bg-indigo-600' : 'bg-emerald-600'}">
-                            ${isPlanned ? 'Planned Route' : 'Completed Hike'}
+                            ${isPlanned ? 'Planned Route' : 'Completed Hike'} (${route.date})
                         </span>
                     </div>
                     <h4 class="font-bold text-sm">${escapeHtml(route.name)}</h4>
@@ -1054,6 +1135,8 @@
                     r.bagged.forEach(f => bagged.add(f));
                 }
             });
+            const manualBagged = JSON.parse(localStorage.getItem('wainwright_manual_bagged') || '{}');
+            Object.keys(manualBagged).forEach(f => bagged.add(f));
             return bagged;
         }
 
@@ -1089,7 +1172,7 @@
 
                 const typeBadge = isPlanned 
                     ? `<span class="text-[9px] font-semibold bg-indigo-950 text-indigo-400 border border-indigo-800/60 px-1.5 py-0.5 rounded ml-1">Planned</span>`
-                    : `<span class="text-[9px] font-semibold bg-emerald-950 text-emerald-400 border border-emerald-800/60 px-1.5 py-0.5 rounded ml-1">Completed</span>`;
+                    : `<span class="text-[9px] font-semibold bg-emerald-950 text-emerald-400 border border-emerald-800/60 px-1.5 py-0.5 rounded ml-1">Completed (${r.date})</span>`;
 
                 return `
                     <div class="bg-slate-800/60 border border-slate-700/50 rounded-lg p-2.5 flex items-center justify-between hover:border-slate-600 transition group">
@@ -1187,7 +1270,7 @@
         function renderFellList() {
             const container = document.getElementById('fell-list');
             const search = document.getElementById('fell-search').value.toLowerCase();
-            const baggedSet = getGlobalBaggedFellNames();
+            const baggedMap = getGlobalBaggedFellsWithDates();
             const nearSet = getGlobalNearMissFellNames();
 
             let list = wainwrights.filter(f => {
@@ -1199,7 +1282,7 @@
             });
 
             if (currentTab === 'bagged') {
-                list = list.filter(f => baggedSet.has(f.name));
+                list = list.filter(f => baggedMap.has(f.name));
             } else if (currentTab === 'near') {
                 list = list.filter(f => nearSet.has(f.name));
             }
@@ -1211,22 +1294,28 @@
 
             container.innerHTML = list.map(f => {
                 const hub = wainwrightGatewayTowns[f.name] || {};
-                const isBagged = baggedSet.has(f.name);
+                const isBagged = baggedMap.has(f.name);
+                const completionDate = baggedMap.get(f.name);
                 const isNear = !isBagged && nearSet.has(f.name);
 
                 const elev = unitSystem === 'metric' 
                     ? `${f.elevation}m` 
                     : `${Math.round(f.elevation * 3.28084)}ft`;
 
-                let statusBadge = `<span class="text-[10px] text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded">Unvisited</span>`;
+                let statusBadge = `<button onclick="event.stopPropagation(); toggleManualBagged('${f.name}')" class="text-[10px] text-slate-400 bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded transition border border-slate-700">+ Mark Completed</button>`;
+                
                 if (isBagged) {
-                    statusBadge = `<span class="text-[10px] text-emerald-400 bg-emerald-950/60 border border-emerald-800/50 px-1.5 py-0.5 rounded">Bagged</span>`;
+                    const formattedDate = new Date(completionDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+                    statusBadge = `<div class="text-right cursor-pointer" onclick="event.stopPropagation(); toggleManualBagged('${f.name}')" title="Click to edit/remove date">
+                        <span class="text-[10px] font-semibold text-emerald-400 bg-emerald-950/80 border border-emerald-800/60 px-1.5 py-0.5 rounded inline-block"><i class="fa-solid fa-check mr-1"></i>Bagged</span>
+                        <p class="text-[9px] text-emerald-300/80 mt-0.5 font-mono">${formattedDate}</p>
+                    </div>`;
                 } else if (isNear) {
-                    statusBadge = `<span class="text-[10px] text-amber-400 bg-amber-950/60 border border-amber-800/50 px-1.5 py-0.5 rounded">Near Miss</span>`;
+                    statusBadge = `<button onclick="event.stopPropagation(); toggleManualBagged('${f.name}')" class="text-[10px] text-amber-400 bg-amber-950/60 border border-amber-800/50 hover:bg-amber-900/50 px-1.5 py-0.5 rounded transition">Near Miss (+ Log)</button>`;
                 }
 
                 return `
-                    <div onclick="centerMapOnFell('${f.name}')" class="bg-slate-900/80 hover:bg-slate-800/80 border border-slate-800/80 rounded-lg p-2 flex items-center justify-between cursor-pointer transition text-xs">
+                    <div onclick="centerMapOnFell('${f.name}')" class="bg-slate-900/80 hover:bg-slate-800/80 border border-slate-800/80 rounded-lg p-2.5 flex items-center justify-between cursor-pointer transition text-xs">
                         <div>
                             <p class="font-semibold text-slate-200">${f.name}</p>
                             <p class="text-[10px] text-slate-400">${hub.town || f.region} • ${elev}</p>
