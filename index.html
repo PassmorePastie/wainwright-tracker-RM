@@ -83,7 +83,7 @@
                 <div>
                     <h1 class="font-bold text-base text-slate-100 leading-tight">Wainwright Analyzer</h1>
                     <p class="text-xs text-slate-400">Lake District Fell & GPX Tracker</p>
-                    <p class="text-[10px] text-slate-500 font-mono tracking-wide mt-0.5">v1.1.3</p>
+                    <p class="text-[10px] text-slate-500 font-mono tracking-wide mt-0.5">v1.1.4</p>
                 </div>
             </div>
             <button id="unit-toggle" onclick="toggleUnits()" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
@@ -171,7 +171,7 @@
             <div class="pt-2 border-t border-slate-800 space-y-3">
                 <div class="relative">
                     <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-slate-500"></i>
-                    <input type="text" id="fell-search" oninput="renderFellList()" placeholder="Search 214 Wainwrights..." class="w-full bg-slate-900 border border-slate-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500" />
+                    <input type="text" id="fell-search" oninput="renderFellList()" placeholder="Search fell name or hub (e.g. Keswick)..." class="w-full bg-slate-900 border border-slate-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500" />
                 </div>
 
                 <div class="flex rounded-lg bg-slate-900 p-1 border border-slate-800 text-xs">
@@ -214,6 +214,240 @@
         let nearMissLayerGroup = L.layerGroup();
         let unvisitedLayerGroup = L.layerGroup();
         let tracksLayerGroup = L.layerGroup();
+
+        // 214 Wainwright Gateway Town & Hub Dictionary
+        const wainwrightGatewayTowns = {
+            "Bakestall": { town: "Keswick", region: "Northern Fells", book: "Book Three" },
+            "Barf": { town: "Keswick", region: "North-Western Fells", book: "Book Six" },
+            "Barrow": { town: "Keswick", region: "North-Western Fells", book: "Book Six" },
+            "Binsey": { town: "Keswick", region: "Northern Fells", book: "Book Three" },
+            "Bleaberry Fell": { town: "Keswick", region: "Central Fells", book: "Book Three" },
+            "Blencathra": { town: "Keswick", region: "Northern Fells", book: "Book Three" },
+            "Bowscale Fell": { town: "Keswick", region: "Northern Fells", book: "Book Three" },
+            "Brae Fell": { town: "Keswick", region: "Northern Fells", book: "Book Three" },
+            "Broom Fell": { town: "Keswick", region: "North-Western Fells", book: "Book Six" },
+            "Carl Side": { town: "Keswick", region: "Northern Fells", book: "Book Three" },
+            "Carrock Fell": { town: "Keswick", region: "Northern Fells", book: "Book Three" },
+            "Castle Crag": { town: "Keswick", region: "North-Western Fells", book: "Book Six" },
+            "Catbells": { town: "Keswick", region: "North-Western Fells", book: "Book Six" },
+            "Causey Pike": { town: "Keswick", region: "North-Western Fells", book: "Book Six" },
+            "Coledale Hause": { town: "Keswick", region: "North-Western Fells", book: "Book Six" },
+            "Crag Hill": { town: "Keswick", region: "North-Western Fells", book: "Book Six" },
+            "Eel Crag": { town: "Keswick", region: "North-Western Fells", book: "Book Six" },
+            "Dale Head": { town: "Keswick", region: "North-Western Fells", book: "Book Six" },
+            "Dodd": { town: "Keswick", region: "Northern Fells", book: "Book Three" },
+            "Eagle Crag": { town: "Keswick", region: "Central Fells", book: "Book Three" },
+            "Gale Fell": { town: "Keswick", region: "Northern Fells", book: "Book Three" },
+            "Grange Fell": { town: "Keswick", region: "Central Fells", book: "Book Three" },
+            "Grasmoor": { town: "Keswick", region: "North-Western Fells", book: "Book Six" },
+            "Great Calva": { town: "Keswick", region: "Northern Fells", book: "Book Three" },
+            "Great Cockup": { town: "Keswick", region: "Northern Fells", book: "Book Three" },
+            "Great Crag": { town: "Keswick", region: "Central Fells", book: "Book Three" },
+            "Great Sca Fell": { town: "Keswick", region: "Northern Fells", book: "Book Three" },
+            "Grisdale Pike": { town: "Keswick", region: "North-Western Fells", book: "Book Six" },
+            "High Seat": { town: "Keswick", region: "Central Fells", book: "Book Three" },
+            "High Spy": { town: "Keswick", region: "North-Western Fells", book: "Book Six" },
+            "High Tove": { town: "Keswick", region: "Central Fells", book: "Book Three" },
+            "Hindscarth": { town: "Keswick", region: "North-Western Fells", book: "Book Six" },
+            "Hopegill Head": { town: "Keswick", region: "North-Western Fells", book: "Book Six" },
+            "Knott": { town: "Keswick", region: "Northern Fells", book: "Book Three" },
+            "Knott Rigg": { town: "Keswick", region: "North-Western Fells", book: "Book Six" },
+            "Latrigg": { town: "Keswick", region: "Northern Fells", book: "Book Three" },
+            "Ling Fell": { town: "Keswick", region: "North-Western Fells", book: "Book Six" },
+            "Long Side": { town: "Keswick", region: "Northern Fells", book: "Book Three" },
+            "Longlands Fell": { town: "Keswick", region: "Northern Fells", book: "Book Three" },
+            "Lonscale Fell": { town: "Keswick", region: "Northern Fells", book: "Book Three" },
+            "Lord's Seat": { town: "Keswick", region: "North-Western Fells", book: "Book Six" },
+            "Maiden Moor": { town: "Keswick", region: "North-Western Fells", book: "Book Six" },
+            "Meal Fell": { town: "Keswick", region: "Northern Fells", book: "Book Three" },
+            "Mungrisdale Common": { town: "Keswick", region: "Northern Fells", book: "Book Three" },
+            "Outerside": { town: "Keswick", region: "North-Western Fells", book: "Book Six" },
+            "Raven Crag": { town: "Keswick", region: "Central Fells", book: "Book Three" },
+            "Robinson": { town: "Keswick", region: "North-Western Fells", book: "Book Six" },
+            "Rosthwaite Fell": { town: "Keswick", region: "Central Fells", book: "Book Three" },
+            "Sail": { town: "Keswick", region: "North-Western Fells", book: "Book Six" },
+            "Scar Crags": { town: "Keswick", region: "North-Western Fells", book: "Book Six" },
+            "Sergeant's Crag": { town: "Keswick", region: "Central Fells", book: "Book Three" },
+            "Skiddaw": { town: "Keswick", region: "Northern Fells", book: "Book Three" },
+            "Skiddaw Little Man": { town: "Keswick", region: "Northern Fells", book: "Book Three" },
+            "Souther Fell": { town: "Keswick", region: "Northern Fells", book: "Book Three" },
+            "Thornthwaite Crag": { town: "Keswick", region: "Far Eastern Fells", book: "Book Two" },
+            "Ullock Pike": { town: "Keswick", region: "Northern Fells", book: "Book Three" },
+            "Ullscarf": { town: "Keswick", region: "Central Fells", book: "Book Three" },
+            "Walla Crag": { town: "Keswick", region: "Central Fells", book: "Book Three" },
+            "Wandope": { town: "Keswick", region: "North-Western Fells", book: "Book Six" },
+            "Whiteside": { town: "Keswick", region: "North-Western Fells", book: "Book Six" },
+            "Whinlatter": { town: "Keswick", region: "North-Western Fells", book: "Book Six" },
+            "Sale Fell": { town: "Keswick", region: "North-Western Fells", book: "Book Six" },
+            "Wythburn Fells": { town: "Keswick", region: "Central Fells", book: "Book Three" },
+            "Armboth Fell": { town: "Keswick", region: "Central Fells", book: "Book Three" },
+            "High Rigg": { town: "Keswick", region: "Central Fells", book: "Book Three" },
+            "Clough Head": { town: "Keswick", region: "Eastern Fells", book: "Book One" },
+
+            "Angle Tarn Pikes": { town: "Glenridding", region: "Far Eastern Fells", book: "Book Two" },
+            "Arnison Crag": { town: "Glenridding", region: "Eastern Fells", book: "Book One" },
+            "Beda Fell": { town: "Glenridding", region: "Far Eastern Fells", book: "Book Two" },
+            "Birkhouse Moor": { town: "Glenridding", region: "Eastern Fells", book: "Book One" },
+            "Birks": { town: "Glenridding", region: "Eastern Fells", book: "Book One" },
+            "Catstycam": { town: "Glenridding", region: "Eastern Fells", book: "Book One" },
+            "Dollywagon Pike": { town: "Glenridding", region: "Eastern Fells", book: "Book One" },
+            "Glenridding Dodd": { town: "Glenridding", region: "Eastern Fells", book: "Book One" },
+            "Gowbarrow Fell": { town: "Glenridding", region: "Eastern Fells", book: "Book One" },
+            "Great Dodd": { town: "Glenridding", region: "Eastern Fells", book: "Book One" },
+            "Hart Side": { town: "Glenridding", region: "Eastern Fells", book: "Book One" },
+            "Hartsop Above How": { town: "Glenridding", region: "Eastern Fells", book: "Book One" },
+            "Hartsop Dodd": { town: "Glenridding", region: "Far Eastern Fells", book: "Book Two" },
+            "Helvellyn": { town: "Glenridding", region: "Eastern Fells", book: "Book One" },
+            "High Hartsop Dodd": { town: "Glenridding", region: "Eastern Fells", book: "Book One" },
+            "Little Hart Crag": { town: "Glenridding", region: "Eastern Fells", book: "Book One" },
+            "Middle Dodd": { town: "Glenridding", region: "Eastern Fells", book: "Book One" },
+            "Nethermost Pike": { town: "Glenridding", region: "Eastern Fells", book: "Book One" },
+            "Place Fell": { town: "Glenridding", region: "Far Eastern Fells", book: "Book Two" },
+            "Raise": { town: "Glenridding", region: "Eastern Fells", book: "Book One" },
+            "Rest Dodd": { town: "Glenridding", region: "Far Eastern Fells", book: "Book Two" },
+            "Sheffield Pike": { town: "Glenridding", region: "Eastern Fells", book: "Book One" },
+            "St Sunday Crag": { town: "Glenridding", region: "Eastern Fells", book: "Book One" },
+            "Steel Knotts": { town: "Glenridding", region: "Far Eastern Fells", book: "Book Two" },
+            "Stybarrow Dodd": { town: "Glenridding", region: "Eastern Fells", book: "Book One" },
+            "Tarn Crag (Grisedale)": { town: "Glenridding", region: "Eastern Fells", book: "Book One" },
+            "The Nab": { town: "Glenridding", region: "Far Eastern Fells", book: "Book Two" },
+            "Watson's Dodd": { town: "Glenridding", region: "Eastern Fells", book: "Book One" },
+            "White Side": { town: "Glenridding", region: "Eastern Fells", book: "Book One" },
+            "Hallin Fell": { town: "Glenridding", region: "Far Eastern Fells", book: "Book Two" },
+            "Bonscale Pike": { town: "Glenridding", region: "Far Eastern Fells", book: "Book Two" },
+            "Arthur's Pike": { town: "Glenridding", region: "Far Eastern Fells", book: "Book Two" },
+
+            "Allen Crags": { town: "Ambleside", region: "Southern Fells", book: "Book Four" },
+            "Blea Rigg": { town: "Ambleside", region: "Central Fells", book: "Book Three" },
+            "Bowfell": { town: "Ambleside", region: "Southern Fells", book: "Book Four" },
+            "Brock Crags": { town: "Ambleside", region: "Far Eastern Fells", book: "Book Two" },
+            "Calf Crag": { town: "Ambleside", region: "Central Fells", book: "Book Three" },
+            "Caudale Moor": { town: "Ambleside", region: "Far Eastern Fells", book: "Book Two" },
+            "Cold Pike": { town: "Ambleside", region: "Southern Fells", book: "Book Four" },
+            "Crinkle Crags": { town: "Ambleside", region: "Southern Fells", book: "Book Four" },
+            "Dove Crag": { town: "Ambleside", region: "Eastern Fells", book: "Book One" },
+            "Esk Pike": { town: "Ambleside", region: "Southern Fells", book: "Book Four" },
+            "Fairfield": { town: "Ambleside", region: "Eastern Fells", book: "Book One" },
+            "Froswick": { town: "Ambleside", region: "Far Eastern Fells", book: "Book Two" },
+            "Gibson Knott": { town: "Ambleside", region: "Central Fells", book: "Book Three" },
+            "Glaramara": { town: "Ambleside", region: "Southern Fells", book: "Book Four" },
+            "Great Rigg": { town: "Ambleside", region: "Eastern Fells", book: "Book One" },
+            "Harrison Stickle": { town: "Ambleside", region: "Central Fells", book: "Book Three" },
+            "Hart Crag": { town: "Ambleside", region: "Eastern Fells", book: "Book One" },
+            "Helm Crag": { town: "Ambleside", region: "Central Fells", book: "Book Three" },
+            "Heron Pike": { town: "Ambleside", region: "Eastern Fells", book: "Book One" },
+            "High Pike (Scandale)": { town: "Ambleside", region: "Eastern Fells", book: "Book One" },
+            "High Raise (Langdale)": { town: "Ambleside", region: "Central Fells", book: "Book Three" },
+            "High Street": { town: "Ambleside", altTown: "Patterdale", region: "Far Eastern Fells", book: "Book Two" },
+            "Ill Bell": { town: "Ambleside", region: "Far Eastern Fells", book: "Book Two" },
+            "Kentmere Pike": { town: "Ambleside", region: "Far Eastern Fells", book: "Book Two" },
+            "Lingmoor Fell": { town: "Ambleside", region: "Southern Fells", book: "Book Four" },
+            "Loft Crag": { town: "Ambleside", region: "Central Fells", book: "Book Three" },
+            "Loughrigg Fell": { town: "Ambleside", region: "Central Fells", book: "Book Three" },
+            "Low Pike": { town: "Ambleside", region: "Eastern Fells", book: "Book One" },
+            "Nab Scar": { town: "Ambleside", region: "Eastern Fells", book: "Book One" },
+            "Pavey Ark": { town: "Ambleside", region: "Central Fells", book: "Book Three" },
+            "Pike o' Blisco": { town: "Ambleside", region: "Southern Fells", book: "Book Four" },
+            "Pike o' Stickle": { town: "Ambleside", region: "Central Fells", book: "Book Three" },
+            "Red Screes": { town: "Ambleside", region: "Eastern Fells", book: "Book One" },
+            "Rossett Pike": { town: "Ambleside", region: "Southern Fells", book: "Book Four" },
+            "Seat Sandal": { town: "Ambleside", region: "Eastern Fells", book: "Book One" },
+            "Sergeant Man": { town: "Ambleside", region: "Central Fells", book: "Book Three" },
+            "Shipman Knotts": { town: "Ambleside", region: "Far Eastern Fells", book: "Book Two" },
+            "Silver How": { town: "Ambleside", region: "Central Fells", book: "Book Three" },
+            "Sour Howes": { town: "Ambleside", region: "Far Eastern Fells", book: "Book Two" },
+            "Stone Arthur": { town: "Ambleside", region: "Eastern Fells", book: "Book One" },
+            "Stony Cove Pike": { town: "Ambleside", region: "Eastern Fells", book: "Book One" },
+            "Tarn Crag (Easedale)": { town: "Ambleside", region: "Central Fells", book: "Book Three" },
+            "Thunacar Knott": { town: "Ambleside", region: "Central Fells", book: "Book Three" },
+            "Troutbeck Tongue": { town: "Ambleside", region: "Far Eastern Fells", book: "Book Two" },
+            "Wansfell": { town: "Ambleside", region: "Far Eastern Fells", book: "Book Two" },
+            "Yoke": { town: "Ambleside", region: "Far Eastern Fells", book: "Book Two" },
+            "Ill Crag": { town: "Ambleside", region: "Southern Fells", book: "Book Four" },
+            "Broad Crag": { town: "Ambleside", region: "Southern Fells", book: "Book Four" },
+
+            "Black Fell": { town: "Coniston", region: "Southern Fells", book: "Book Four" },
+            "Brim Fell": { town: "Coniston", region: "Southern Fells", book: "Book Four" },
+            "Coniston Old Man": { town: "Coniston", region: "Southern Fells", book: "Book Four" },
+            "Dow Crag": { town: "Coniston", region: "Southern Fells", book: "Book Four" },
+            "Great Carrs": { town: "Coniston", region: "Southern Fells", book: "Book Four" },
+            "Grey Friar": { town: "Coniston", region: "Southern Fells", book: "Book Four" },
+            "Holme Fell": { town: "Coniston", region: "Southern Fells", book: "Book Four" },
+            "Swirl How": { town: "Coniston", region: "Southern Fells", book: "Book Four" },
+            "Wetherlam": { town: "Coniston", region: "Southern Fells", book: "Book Four" },
+            "Hard Knott": { town: "Coniston", region: "Southern Fells", book: "Book Four" },
+            "Harter Fell (Eskdale)": { town: "Coniston", region: "Southern Fells", book: "Book Four" },
+            "Green Crag": { town: "Coniston", region: "Southern Fells", book: "Book Four" },
+            "Caw": { town: "Coniston", region: "Southern Fells", book: "Book Four" },
+            "Pikes": { town: "Coniston", region: "Southern Fells", book: "Book Four" },
+            "White Pike": { town: "Coniston", region: "Southern Fells", book: "Book Four" },
+            "Great Stickle": { town: "Coniston", region: "Southern Fells", book: "Book Four" },
+            "Stickle Pike": { town: "Coniston", region: "Southern Fells", book: "Book Four" },
+            "Top o'Selside": { town: "Coniston", region: "Southern Fells", book: "Book Four" },
+            "Walna Scar": { town: "Coniston", region: "Southern Fells", book: "Book Four" },
+            "Beacon Fell": { town: "Coniston", region: "Southern Fells", book: "Book Four" },
+
+            "Blake Fell": { town: "Buttermere", region: "Western Fells", book: "Book Seven" },
+            "Burnbank Fell": { town: "Buttermere", region: "Western Fells", book: "Book Seven" },
+            "Fellbarrow": { town: "Buttermere", region: "Western Fells", book: "Book Seven" },
+            "Gavel Fell": { town: "Buttermere", region: "Western Fells", book: "Book Seven" },
+            "Fleetwith Pike": { town: "Buttermere", region: "Western Fells", book: "Book Seven" },
+            "Graystones": { town: "Buttermere", region: "North-Western Fells", book: "Book Six" },
+            "Great Borne": { town: "Buttermere", region: "Western Fells", book: "Book Seven" },
+            "Haystacks": { town: "Buttermere", region: "Western Fells", book: "Book Seven" },
+            "Hen Comb": { town: "Buttermere", region: "Western Fells", book: "Book Seven" },
+            "High Crag": { town: "Buttermere", region: "Western Fells", book: "Book Seven" },
+            "High Stile": { town: "Buttermere", region: "Western Fells", book: "Book Seven" },
+            "Low Fell": { town: "Buttermere", region: "Western Fells", book: "Book Seven" },
+            "Mellbreak": { town: "Buttermere", region: "Western Fells", book: "Book Seven" },
+            "Rannerdale Knotts": { town: "Buttermere", region: "North-Western Fells", book: "Book Six" },
+            "Red Pike (Buttermere)": { town: "Buttermere", region: "Western Fells", book: "Book Seven" },
+            "Starling Dodd": { town: "Buttermere", region: "Western Fells", book: "Book Seven" },
+            "Whin Rigg": { town: "Buttermere", region: "Western Fells", book: "Book Seven" },
+            "Brandreth": { town: "Buttermere", region: "Western Fells", book: "Book Seven" },
+            "Grey Knotts": { town: "Buttermere", region: "Western Fells", book: "Book Seven" },
+            "Green Gable": { town: "Buttermere", region: "Western Fells", book: "Book Seven" },
+            "Base Brown": { town: "Buttermere", region: "Western Fells", book: "Book Seven" },
+            "Whiteless Pike": { town: "Buttermere", region: "North-Western Fells", book: "Book Six" },
+
+            "Buckbarrow": { town: "Wasdale Head", region: "Western Fells", book: "Book Seven" },
+            "Caw Fell": { town: "Wasdale Head", region: "Western Fells", book: "Book Seven" },
+            "Crag Fell": { town: "Wasdale Head", region: "Western Fells", book: "Book Seven" },
+            "Great End": { town: "Wasdale Head", region: "Southern Fells", book: "Book Four" },
+            "Great Gable": { town: "Wasdale Head", region: "Western Fells", book: "Book Seven" },
+            "Grike": { town: "Wasdale Head", region: "Western Fells", book: "Book Seven" },
+            "Haycock": { town: "Wasdale Head", region: "Western Fells", book: "Book Seven" },
+            "Illgill Head": { town: "Wasdale Head", region: "Southern Fells", book: "Book Four" },
+            "Kirk Fell": { town: "Wasdale Head", region: "Western Fells", book: "Book Seven" },
+            "Lank Rigg": { town: "Wasdale Head", region: "Western Fells", book: "Book Seven" },
+            "Lingmell": { town: "Wasdale Head", region: "Southern Fells", book: "Book Four" },
+            "Middle Fell": { town: "Wasdale Head", region: "Western Fells", book: "Book Seven" },
+            "Pillar": { town: "Wasdale Head", region: "Western Fells", book: "Book Seven" },
+            "Red Pike (Wasdale)": { town: "Wasdale Head", region: "Western Fells", book: "Book Seven" },
+            "Scafell": { town: "Wasdale Head", region: "Southern Fells", book: "Book Four" },
+            "Scafell Pike": { town: "Wasdale Head", region: "Southern Fells", book: "Book Four" },
+            "Scoat Fell": { town: "Wasdale Head", region: "Western Fells", book: "Book Seven" },
+            "Seatallan": { town: "Wasdale Head", region: "Western Fells", book: "Book Seven" },
+            "Seathwaite Fell": { town: "Wasdale Head", region: "Southern Fells", book: "Book Four" },
+            "Slight Side": { town: "Wasdale Head", region: "Southern Fells", book: "Book Four" },
+            "Steeple": { town: "Wasdale Head", region: "Western Fells", book: "Book Seven" },
+
+            "Branstree": { town: "Shap", region: "Far Eastern Fells", book: "Book Two" },
+            "Gray Crag": { town: "Shap", region: "Far Eastern Fells", book: "Book Two" },
+            "Grey Crag": { town: "Shap", region: "Far Eastern Fells", book: "Book Two" },
+            "Harter Fell (Mardale)": { town: "Shap", region: "Far Eastern Fells", book: "Book Two" },
+            "High Raise (Mardale)": { town: "Shap", region: "Far Eastern Fells", book: "Book Two" },
+            "Kidsty Pike": { town: "Shap", region: "Far Eastern Fells", book: "Book Two" },
+            "Loadpot Hill": { town: "Shap", region: "Far Eastern Fells", book: "Book Two" },
+            "Mardale Ill Bell": { town: "Shap", region: "Far Eastern Fells", book: "Book Two" },
+            "Rampsgill Head": { town: "Shap", region: "Far Eastern Fells", book: "Book Two" },
+            "Selside Pike": { town: "Shap", region: "Far Eastern Fells", book: "Book Two" },
+            "Tarn Crag (Sleddale)": { town: "Shap", region: "Far Eastern Fells", book: "Book Two" },
+            "The Knott": { town: "Shap", region: "Far Eastern Fells", book: "Book Two" },
+            "Wether Hill": { town: "Shap", region: "Far Eastern Fells", book: "Book Two" },
+            "Black Combe": { town: "Coniston", region: "Southern Fells", book: "Book Four" },
+            "Soper": { town: "Wasdale Head", region: "Western Fells", book: "Book Seven" }
+        };
 
         const wainwrights = [
             { name: "Scafell Pike", elevation: 978, lat: 54.4543, lng: -3.2117, region: "Southern" },
@@ -311,7 +545,7 @@
         function registerServiceWorker() {
             if ('serviceWorker' in navigator) {
                 const swCode = `
-                    const CACHE = 'wainwright-cache-v1.1.3';
+                    const CACHE = 'wainwright-cache-v1.1.4';
                     self.addEventListener('install', e => { self.skipWaiting(); });
                     self.addEventListener('activate', e => { self.clients.claim(); });
                     self.addEventListener('fetch', e => {
@@ -320,7 +554,7 @@
                 `;
                 const blob = new Blob([swCode], { type: 'application/javascript' });
                 navigator.serviceWorker.register(URL.createObjectURL(blob))
-                    .then(r => console.log('PWA Service Worker Live v1.1.3!'))
+                    .then(r => console.log('PWA Service Worker Live v1.1.4!'))
                     .catch(e => console.log('SW Note:', e));
             }
         }
@@ -342,16 +576,15 @@
                 center: [54.5, -3.1],
                 zoom: 10,
                 layers: [openTopo, baggedLayerGroup, nearMissLayerGroup, unvisitedLayerGroup, tracksLayerGroup],
-                zoomControl: false // We custom position zoom control to pair horizontally with the legend
+                zoomControl: false
             });
 
-            // Custom Zoom Control & Legend Container to lock them horizontally in the top-left slot
+            // Top-Left Bar (Zoom buttons + Route Legend)
             const TopLeftBar = L.Control.extend({
                 options: { position: 'topleft' },
                 onAdd: function (map) {
                     const container = L.DomUtil.create('div', 'flex items-center gap-1.5');
                     
-                    // Zoom controls
                     const zoomDiv = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
                     zoomDiv.innerHTML = `
                         <a class="leaflet-control-zoom-in bg-slate-800 text-slate-200 hover:bg-slate-700 flex items-center justify-center w-7 h-7 text-sm font-bold border-b border-slate-700" href="#" title="Zoom in" role="button" aria-label="Zoom in">+</a>
@@ -360,7 +593,6 @@
                     zoomDiv.children[0].onclick = (e) => { e.preventDefault(); map.zoomIn(); };
                     zoomDiv.children[1].onclick = (e) => { e.preventDefault(); map.zoomOut(); };
 
-                    // Legend Box
                     const legendDiv = L.DomUtil.create('div', 'leaflet-control-custom-panel px-2.5 py-1.5 text-xs shadow-md flex items-center gap-3');
                     legendDiv.innerHTML = `
                         <div class="flex items-center gap-1.5">
@@ -481,7 +713,7 @@
                 sidebar.classList.add('hidden');
                 mapContainer.classList.remove('hidden');
                 navMap.classList.add('text-emerald-400', 'bg-slate-800/50');
-                navMap.classList.remove('text-slate-400');
+                navMap.classList.remove('text-emerald-400', 'bg-slate-800/50');
                 navDash.classList.remove('text-emerald-400', 'bg-slate-800/50');
                 navDash.classList.add('text-slate-400');
                 setTimeout(() => map.invalidateSize(), 200);
@@ -500,6 +732,7 @@
             const showLabels = currentZoom >= 13;
 
             wainwrights.forEach(fell => {
+                const hubData = wainwrightGatewayTowns[fell.name] || { town: "Lake District Hub", region: fell.region, book: "Wainwright Guide" };
                 const isBagged = baggedNames.has(fell.name);
                 const isNear = !isBagged && nearNames.has(fell.name);
 
@@ -538,13 +771,24 @@
                     ? `${fell.elevation} m` 
                     : `${Math.round(fell.elevation * 3.28084)} ft`;
 
+                const accomQuery = encodeURIComponent(`${hubData.town} Lake District accommodation hotels guesthouses`);
+                const accomUrl = `https://www.google.com/search?q=${accomQuery}`;
+
                 const marker = L.marker([fell.lat, fell.lng], { icon: icon })
                     .bindPopup(`
                         <div class="text-slate-900 p-1">
-                            <h4 class="font-bold text-sm">${fell.name}</h4>
-                            <p class="text-xs text-slate-600">Elevation: <strong>${elevFormatted}</strong></p>
-                            <p class="text-xs text-slate-600">Region: <strong>${fell.region}</strong></p>
-                            <div class="mt-2 text-xs font-semibold px-2 py-0.5 rounded text-white inline-block ${isBagged ? 'bg-emerald-600' : (isNear ? 'bg-amber-600' : 'bg-slate-600')}">
+                            <h4 class="font-bold text-sm leading-tight">${fell.name}</h4>
+                            <p class="text-xs text-slate-600 mt-0.5">Elevation: <strong>${elevFormatted}</strong></p>
+                            <p class="text-xs text-slate-600">Region: <strong>${hubData.region || fell.region}</strong> (${hubData.book || 'Wainwright'})</p>
+                            
+                            <div class="mt-2 pt-2 border-t border-slate-200">
+                                <p class="text-xs text-slate-700"><strong>Staging Hub:</strong> ${hubData.town}${hubData.altTown ? ` / ${hubData.altTown}` : ''}</p>
+                                <a href="${accomUrl}" target="_blank" rel="noopener" class="mt-1.5 inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 hover:text-emerald-800 underline">
+                                    <i class="fa-solid fa-hotel"></i> Find Accommodation
+                                </a>
+                            </div>
+
+                            <div class="mt-2.5 text-xs font-semibold px-2 py-0.5 rounded text-white inline-block ${isBagged ? 'bg-emerald-600' : (isNear ? 'bg-amber-600' : 'bg-slate-600')}">
                                 ${isBagged ? 'Bagged!' : (isNear ? 'Near Miss' : 'Unvisited')}
                             </div>
                         </div>
@@ -956,7 +1200,13 @@
             const baggedSet = getGlobalBaggedFellNames();
             const nearSet = getGlobalNearMissFellNames();
 
-            let list = wainwrights.filter(f => f.name.toLowerCase().includes(search));
+            let list = wainwrights.filter(f => {
+                const hub = wainwrightGatewayTowns[f.name] || {};
+                const matchName = f.name.toLowerCase().includes(search);
+                const matchTown = hub.town ? hub.town.toLowerCase().includes(search) : false;
+                const matchAlt = hub.altTown ? hub.altTown.toLowerCase().includes(search) : false;
+                return matchName || matchTown || matchAlt;
+            });
 
             if (currentTab === 'bagged') {
                 list = list.filter(f => baggedSet.has(f.name));
@@ -970,6 +1220,7 @@
             }
 
             container.innerHTML = list.map(f => {
+                const hub = wainwrightGatewayTowns[f.name] || {};
                 const isBagged = baggedSet.has(f.name);
                 const isNear = !isBagged && nearSet.has(f.name);
 
@@ -988,7 +1239,7 @@
                     <div onclick="centerMapOnFell('${f.name}')" class="bg-slate-900/80 hover:bg-slate-800/80 border border-slate-800/80 rounded-lg p-2 flex items-center justify-between cursor-pointer transition text-xs">
                         <div>
                             <p class="font-semibold text-slate-200">${f.name}</p>
-                            <p class="text-[10px] text-slate-400">${f.region} • ${elev}</p>
+                            <p class="text-[10px] text-slate-400">${hub.town || f.region} • ${elev}</p>
                         </div>
                         ${statusBadge}
                     </div>
