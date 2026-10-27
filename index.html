@@ -83,7 +83,7 @@
                 <div>
                     <h1 class="font-bold text-base text-slate-100 leading-tight">Wainwright Analyzer</h1>
                     <p class="text-xs text-slate-400">Lake District Fell & GPX Tracker</p>
-                    <p class="text-[10px] text-slate-500 font-mono tracking-wide mt-0.5">v1.1.6</p>
+                    <p class="text-[10px] text-slate-500 font-mono tracking-wide mt-0.5">v1.1.7</p>
                 </div>
             </div>
             <button id="unit-toggle" onclick="toggleUnits()" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
@@ -171,6 +171,7 @@
             <div class="pt-2 border-t border-slate-800 space-y-3">
                 <div class="relative">
                     <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-slate-500"></i>
+                    <!-- Smart Town Search Placeholder Enabled -->
                     <input type="text" id="fell-search" oninput="renderFellList()" placeholder="Search fell or gateway town (e.g. Keswick)..." class="w-full bg-slate-900 border border-slate-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500" />
                 </div>
 
@@ -534,7 +535,7 @@
         function registerServiceWorker() {
             if ('serviceWorker' in navigator) {
                 const swCode = `
-                    const CACHE = 'wainwright-cache-v1.1.6';
+                    const CACHE = 'wainwright-cache-v1.1.7';
                     self.addEventListener('install', e => { self.skipWaiting(); });
                     self.addEventListener('activate', e => { self.clients.claim(); });
                     self.addEventListener('fetch', e => {
@@ -543,7 +544,7 @@
                 `;
                 const blob = new Blob([swCode], { type: 'application/javascript' });
                 navigator.serviceWorker.register(URL.createObjectURL(blob))
-                    .then(r => console.log('PWA Service Worker Live v1.1.6!'))
+                    .then(r => console.log('PWA Service Worker Live v1.1.7!'))
                     .catch(e => console.log('SW Note:', e));
             }
         }
