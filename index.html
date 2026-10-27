@@ -83,7 +83,7 @@
                 <div>
                     <h1 class="font-bold text-base text-slate-100 leading-tight">Wainwright Analyzer</h1>
                     <p class="text-xs text-slate-400">Lake District Fell & GPX Tracker</p>
-                    <p class="text-[10px] text-slate-500 font-mono tracking-wide mt-0.5">v1.1.8</p>
+                    <p class="text-[10px] text-slate-500 font-mono tracking-wide mt-0.5">v1.1.9</p>
                 </div>
             </div>
             <button id="unit-toggle" onclick="toggleUnits()" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
@@ -123,6 +123,57 @@
                     </div>
                     <p class="text-xs font-semibold text-indigo-300">+ Planned Route</p>
                     <p class="text-[10px] text-slate-500 mt-0.5">Previews on map</p>
+                </div>
+            </div>
+
+            <!-- PLAN ROUTE BUILDER CARD -->
+            <div class="bg-indigo-950/20 border border-indigo-800/40 rounded-xl p-3.5 space-y-3">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xs font-bold text-indigo-300 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-route"></i> Plan Custom Route
+                    </h3>
+                    <span class="text-[10px] text-indigo-400 font-mono">Town &rarr; Fells</span>
+                </div>
+                
+                <div class="space-y-2">
+                    <div>
+                        <label class="block text-[11px] text-slate-400 mb-1">1. Select Gateway Town:</label>
+                        <select id="planner-town" onchange="updatePlannerFellList()" class="w-full bg-slate-900 text-slate-200 border border-slate-700 rounded p-1.5 text-xs focus:outline-none focus:border-indigo-500">
+                            <option value="Keswick">Keswick</option>
+                            <option value="Ambleside">Ambleside</option>
+                            <option value="Glenridding">Glenridding</option>
+                            <option value="Coniston">Coniston</option>
+                            <option value="Wasdale Head">Wasdale Head</option>
+                            <option value="Shap">Shap</option>
+                            <option value="Buttermere">Buttermere</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] text-slate-400 mb-1">2. Select Fells to Hike (multi-select):</label>
+                        <div id="planner-fells-container" class="max-h-32 overflow-y-auto bg-slate-900 border border-slate-700 rounded p-2 space-y-1 text-xs">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <button onclick="generateCustomRoute()" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg text-xs transition shadow-sm flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-calculator"></i> Calculate Route & Stats
+                    </button>
+                </div>
+
+                <div id="planner-result" class="hidden pt-2 border-t border-indigo-900/50 space-y-2 text-xs">
+                    <div class="flex justify-between text-slate-300">
+                        <span>Est. Distance: <strong id="plan-dist" class="text-indigo-300">0 km</strong></span>
+                        <span>Est. Elevation: <strong id="plan-elev" class="text-indigo-300">0 m</strong></span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="downloadPlannedRouteGPX()" class="py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded font-medium text-center transition border border-slate-700">
+                            <i class="fa-solid fa-download mr-1"></i> Download GPX
+                        </button>
+                        <button onclick="markPlannedRouteCompleted()" class="py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-medium text-center transition">
+                            <i class="fa-solid fa-check mr-1"></i> Mark Completed
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -215,6 +266,19 @@
         let nearMissLayerGroup = L.layerGroup();
         let unvisitedLayerGroup = L.layerGroup();
         let tracksLayerGroup = L.layerGroup();
+
+        let lastGeneratedPlannedRoute = null;
+
+        // Gateway Town Coordinates Dictionary
+        const gatewayTownCoordinates = {
+            "Keswick": { lat: 54.6009, lng: -3.1342 },
+            "Ambleside": { lat: 54.4346, lng: -2.9631 },
+            "Glenridding": { lat: 54.5583, lng: -2.9372 },
+            "Coniston": { lat: 54.3683, lng: -3.0782 },
+            "Wasdale Head": { lat: 54.4592, lng: -3.2751 },
+            "Shap": { lat: 54.5312, lng: -2.6712 },
+            "Buttermere": { lat: 54.5312, lng: -3.2082 }
+        };
 
         // 214 Wainwright Gateway Town & Specific Access Statement Dictionary
         const wainwrightGatewayTowns = {
@@ -529,13 +593,14 @@
             renderFellList();
             updateOverallProgress();
             setupUploadInputs();
+            updatePlannerFellList();
             registerServiceWorker();
         };
 
         function registerServiceWorker() {
             if ('serviceWorker' in navigator) {
                 const swCode = `
-                    const CACHE = 'wainwright-cache-v1.1.8';
+                    const CACHE = 'wainwright-cache-v1.1.9';
                     self.addEventListener('install', e => { self.skipWaiting(); });
                     self.addEventListener('activate', e => { self.clients.claim(); });
                     self.addEventListener('fetch', e => {
@@ -544,7 +609,7 @@
                 `;
                 const blob = new Blob([swCode], { type: 'application/javascript' });
                 navigator.serviceWorker.register(URL.createObjectURL(blob))
-                    .then(r => console.log('PWA Service Worker Live v1.1.8!'))
+                    .then(r => console.log('PWA Service Worker Live v1.1.9!'))
                     .catch(e => console.log('SW Note:', e));
             }
         }
@@ -709,10 +774,138 @@
             }
         }
 
+        function updatePlannerFellList() {
+            const town = document.getElementById('planner-town').value.toLowerCase();
+            const container = document.getElementById('planner-fells-container');
+
+            const matchingFells = wainwrights.filter(f => {
+                const hub = wainwrightGatewayTowns[f.name] || {};
+                return (hub.town && hub.town.toLowerCase() === town) || (hub.altTown && hub.altTown.toLowerCase() === town) || f.region.toLowerCase().includes(town);
+            });
+
+            // If few matches, fall back to all fells so user can pick freely
+            const listToDisplay = matchingFells.length > 0 ? matchingFells : wainwrights;
+
+            container.innerHTML = listToDisplay.map(f => `
+                <label class="flex items-center gap-2 cursor-pointer hover:bg-slate-800/50 p-1 rounded">
+                    <input type="checkbox" name="planner-fell-chk" value="${f.name}" class="rounded bg-slate-900 border-slate-700 text-indigo-500">
+                    <span class="text-slate-200">${f.name} <span class="text-[10px] text-slate-500">(${f.elevation}m)</span></span>
+                </label>
+            `).join('');
+        }
+
+        function generateCustomRoute() {
+            const townName = document.getElementById('planner-town').value;
+            const townCoord = gatewayTownCoordinates[townName] || { lat: 54.5, lng: -3.1 };
+            
+            const checkedFells = Array.from(document.querySelectorAll('input[name="planner-fell-chk"]:checked')).map(el => el.value);
+
+            if (checkedFells.length === 0) {
+                alert("Please select at least one fell for your route.");
+                return;
+            }
+
+            // Build coordinate path: Town -> Fell 1 -> Fell 2 ... -> Town
+            let points = [[townCoord.lat, townCoord.lng, 100]]; // Start town elevation approx 100m
+            let totalDistMeters = 0;
+            let totalElevationGain = 0;
+            let lastLat = townCoord.lat;
+            let lastLng = townCoord.lng;
+            let lastEle = 100;
+
+            const baggedFells = [];
+
+            checkedFells.forEach(fellName => {
+                const fell = wainwrights.find(f => f.name === fellName);
+                if (fell) {
+                    baggedFells.push(fell.name);
+                    points.push([fell.lat, fell.lng, fell.elevation]);
+                    
+                    const d = getDistanceMeters(lastLat, lastLng, fell.lat, fell.lng);
+                    totalDistMeters += d;
+                    if (fell.elevation > lastEle) {
+                        totalElevationGain += (fell.elevation - lastEle);
+                    }
+                    lastLat = fell.lat;
+                    lastLng = fell.lng;
+                    lastEle = fell.elevation;
+                }
+            });
+
+            // Return leg back to town
+            const returnDist = getDistanceMeters(lastLat, lastLng, townCoord.lat, townCoord.lng);
+            totalDistMeters += returnDist;
+            points.push([townCoord.lat, townCoord.lng, 100]);
+
+            // Apply a terrain winding factor (~1.3x for mountain paths)
+            totalDistMeters *= 1.3;
+
+            lastGeneratedPlannedRoute = {
+                id: 'plan_' + Date.now(),
+                name: `${townName} to ${checkedFells.join(', ')}`,
+                date: new Date().toISOString().split('T')[0],
+                type: 'planned',
+                distanceMeters: totalDistMeters,
+                elevationGainMeters: Math.round(totalElevationGain),
+                trackPoints: points,
+                bagged: baggedFells,
+                nearMisses: []
+            };
+
+            const distStr = unitSystem === 'metric' 
+                ? `${(totalDistMeters / 1000).toFixed(1)} km` 
+                : `${(totalDistMeters / 1609.34).toFixed(1)} mi`;
+            const eleStr = unitSystem === 'metric' 
+                ? `${Math.round(totalElevationGain)} m` 
+                : `${Math.round(totalElevationGain * 3.28084)} ft`;
+
+            document.getElementById('plan-dist').textContent = distStr;
+            document.getElementById('plan-elev').textContent = eleStr;
+            document.getElementById('planner-result').classList.remove('hidden');
+
+            // Preview route on map as planned
+            renderRouteOnMap(lastGeneratedPlannedRoute);
+            if (window.innerWidth < 768) switchMobileTab('map');
+        }
+
+        function downloadPlannedRouteGPX() {
+            if (!lastGeneratedPlannedRoute) return;
+            let gpx = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+            gpx += `<gpx version="1.1" creator="Wainwright GPX Analyzer">\n`;
+            gpx += `<trk><name>${escapeHtml(lastGeneratedPlannedRoute.name)}</name><trkseg>\n`;
+            lastGeneratedPlannedRoute.trackPoints.forEach(pt => {
+                gpx += `<trkpt lat="${pt[0]}" lon="${pt[1]}"><ele>${pt[2] || 0}</ele></trkpt>\n`;
+            });
+            gpx += `</trkseg></trk>\n</gpx>`;
+
+            const blob = new Blob([gpx], { type: 'application/gpx+xml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${lastGeneratedPlannedRoute.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.gpx`;
+            a.click();
+        }
+
+        function markPlannedRouteCompleted() {
+            if (!lastGeneratedPlannedRoute) return;
+            lastGeneratedPlannedRoute.type = 'completed';
+            savedRoutes.unshift(lastGeneratedPlannedRoute);
+            saveHistoryToStorage();
+
+            renderSavedRoutesList();
+            updateOverallProgress();
+            plotAllFellsOnMap();
+            renderFellList();
+            updateCumulativeStatsSummary();
+
+            alert(`Successfully marked route "${lastGeneratedPlannedRoute.name}" as completed! Fells bagged.`);
+            document.getElementById('planner-result').classList.add('hidden');
+            lastGeneratedPlannedRoute = null;
+        }
+
         function getGlobalBaggedFellsWithDates() {
             const baggedMap = new Map(); // Fell Name -> Completion Date (YYYY-MM-DD)
 
-            // 1. Process dates from completed GPX tracks
             savedRoutes.forEach(r => {
                 if (r.type !== 'planned') {
                     r.bagged.forEach(fellName => {
@@ -723,7 +916,6 @@
                 }
             });
 
-            // 2. Process manually logged fells from local storage
             const manualBagged = JSON.parse(localStorage.getItem('wainwright_manual_bagged') || '{}');
             Object.keys(manualBagged).forEach(fellName => {
                 baggedMap.set(fellName, manualBagged[fellName]);
@@ -915,7 +1107,6 @@
                 );
             }
 
-            // Extract route date from GPX <time> tag
             let routeDate = null;
             const timeNodes = xmlDoc.getElementsByTagName("time");
             if (timeNodes.length > 0 && timeNodes[0].textContent) {
