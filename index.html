@@ -93,7 +93,7 @@
             <div>
                 <div class="flex items-center gap-1.5 leading-tight">
                     <h1 class="font-extrabold text-xs md:text-sm text-[#1E2A38] tracking-tight brand-font">Wainwright Bagger</h1>
-                    <span class="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-[#1E2A38]/10 text-[#1E2A38]">v1.6.0</span>
+                    <span class="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-[#1E2A38]/10 text-[#1E2A38]">v1.7.0</span>
                 </div>
                 <p id="header-progress-txt" class="text-[10px] text-[#5B7B7A] font-bold">0 / 214 Bagged (0%)</p>
             </div>
@@ -242,7 +242,6 @@
         let currentRouteTab = 'completed';
         let savedRoutes = [];
         let fellMarkers = {};
-        let routePolylines = {};
         let isDrawerOpen = false;
         let celebrationTimeout = null;
 
@@ -559,8 +558,9 @@
                 else if (minDistance <= 300) nearMisses.push({ name: fell.name });
             });
 
+            // Coerce ID strictly to a String
             const routeObj = {
-                id: Date.now(),
+                id: String(Date.now()),
                 name: fileName.replace('.gpx', ''),
                 date: walkDate,
                 type: type,
@@ -573,7 +573,7 @@
 
             savedRoutes.unshift(routeObj);
             saveHistoryToStorage();
-            renderRouteOnMap(routeObj);
+            renderAllMapRoutes();
             renderSavedRoutesLists();
             updateOverallProgress();
             plotAllFellsOnMap();
@@ -588,6 +588,11 @@
             }
         }
 
+        function renderAllMapRoutes() {
+            tracksLayerGroup.clearLayers();
+            savedRoutes.forEach(r => renderRouteOnMap(r));
+        }
+
         function renderRouteOnMap(route) {
             const isPlanned = route.type === 'planned';
             const visibleLine = L.polyline(route.trackPoints, {
@@ -596,8 +601,6 @@
                 opacity: 0.9
             });
             tracksLayerGroup.addLayer(visibleLine);
-            routePolylines[route.id] = visibleLine;
-            map.fitBounds(visibleLine.getBounds(), { padding: [30, 30] });
         }
 
         function getDistanceMeters(lat1, lon1, lat2, lon2) {
@@ -613,7 +616,7 @@
             if (data) {
                 savedRoutes = JSON.parse(data);
                 renderSavedRoutesLists();
-                savedRoutes.forEach(r => renderRouteOnMap(r));
+                renderAllMapRoutes();
                 updateCumulativeStatsSummary();
             }
         }
@@ -703,7 +706,9 @@
                                 <p class="font-bold text-[#1E2A38] brand-font">${r.name}</p>
                                 <p class="text-[10px] text-[#1E2A38]/70">${r.date} • ${dStr} • ${r.bagged.length} bagged</p>
                             </div>
-                            <button onclick="deleteRoute(${r.id})" class="text-red-600 hover:text-red-800 p-2 cursor-pointer transition"><i class="fa-solid fa-trash-can text-sm"></i></button>
+                            <button onclick="event.stopPropagation(); event.preventDefault(); deleteRoute('${r.id}')" class="text-red-600 hover:text-red-800 p-2 cursor-pointer transition flex items-center justify-center">
+                                <i class="fa-solid fa-trash-can text-sm pointer-events-none"></i>
+                            </button>
                         </div>
                     `;
                 }).join('');
@@ -720,7 +725,9 @@
                                 <p class="font-bold text-[#9333ea] brand-font">${r.name}</p>
                                 <p class="text-[10px] text-[#1E2A38]/70">${dStr} • ${r.bagged.length} fells mapped</p>
                             </div>
-                            <button onclick="deleteRoute(${r.id})" class="text-red-600 hover:text-red-800 p-2 cursor-pointer transition"><i class="fa-solid fa-trash-can text-sm"></i></button>
+                            <button onclick="event.stopPropagation(); event.preventDefault(); deleteRoute('${r.id}')" class="text-red-600 hover:text-red-800 p-2 cursor-pointer transition flex items-center justify-center">
+                                <i class="fa-solid fa-trash-can text-sm pointer-events-none"></i>
+                            </button>
                         </div>
                     `;
                 }).join('');
@@ -728,17 +735,14 @@
         }
 
         function deleteRoute(id) {
-            // Remove polyline layer from Leaflet map
-            if (routePolylines[id]) {
-                tracksLayerGroup.removeLayer(routePolylines[id]);
-                delete routePolylines[id];
-            }
+            const targetId = String(id);
 
-            // Filter out route from internal saved list
-            savedRoutes = savedRoutes.filter(r => r.id !== id);
+            // Filter out targeted route from saved list
+            savedRoutes = savedRoutes.filter(r => String(r.id) !== targetId);
             saveHistoryToStorage();
 
-            // Refresh UI components
+            // Full re-render of map tracks, lists, and stats
+            renderAllMapRoutes();
             renderSavedRoutesLists();
             updateOverallProgress();
             plotAllFellsOnMap();
@@ -751,7 +755,6 @@
                 savedRoutes = [];
                 localStorage.removeItem('wainwright_saved_routes');
                 tracksLayerGroup.clearLayers();
-                routePolylines = {};
                 renderSavedRoutesLists();
                 updateOverallProgress();
                 plotAllFellsOnMap();
