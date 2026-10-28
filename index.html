@@ -78,7 +78,7 @@
     <!-- SIDEBAR PANEL -->
     <aside id="sidebar" class="w-full md:w-96 bg-[#FFFBF7] border-r-2 border-[#1E2A38]/20 flex flex-col h-full z-10 shadow-xl flex-shrink-0">
         
-        <!-- Header with Vintage Badge Branding -->
+        <!-- Header with Vintage Badge Branding & Version Number -->
         <div class="p-4 border-b-2 border-[#1E2A38]/10 flex flex-col items-center justify-center bg-[#FAF7F2] text-center relative">
             <div class="absolute right-4 top-4">
                 <button id="unit-toggle" onclick="toggleUnits()" class="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-lg bg-[#1E2A38] text-[#F4EFEB] hover:bg-[#374151] transition shadow-sm">
@@ -97,12 +97,13 @@
                 <!-- Mountain Icon Center -->
                 <div class="z-10 flex flex-col items-center text-[#1E2A38] mt-2">
                     <i class="fa-solid fa-mountain text-xl text-[#D49B53]"></i>
-                    <span class="text-[7px] font-ext500 uppercase tracking-widest mt-0.5 brand-font">Fell Tracker</span>
+                    <span class="text-[7px] uppercase tracking-widest mt-0.5 brand-font font-bold">Fell Tracker</span>
                 </div>
             </div>
 
             <h1 class="font-extrabold text-lg text-[#1E2A38] tracking-tight brand-font leading-tight">Wainwright Bagger</h1>
             <p class="text-xs text-[#1E2A38]/70 font-medium">Your Lake District Fell Tracker</p>
+            <span class="mt-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-[#1E2A38]/10 text-[#1E2A38]">v1.4.0</span>
         </div>
 
         <!-- Scrollable Content -->
@@ -119,7 +120,7 @@
                 </div>
             </div>
 
-            <!-- Dual Upload Buttons (Matches UI Inspiration) -->
+            <!-- Dual Upload Buttons -->
             <div class="grid grid-cols-2 gap-2.5">
                 <div id="drop-zone-completed" class="border-2 border-[#1E2A38] bg-[#1E2A38] hover:bg-[#374151] rounded-xl p-3 text-center transition cursor-pointer group relative shadow-md">
                     <input type="file" id="gpx-completed-input" accept=".gpx" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" multiple />
@@ -548,7 +549,7 @@
         function registerServiceWorker() {
             if ('serviceWorker' in navigator) {
                 const swCode = `
-                    const CACHE = 'wainwright-cache-v1.3.0';
+                    const CACHE = 'wainwright-cache-v1.4.0';
                     self.addEventListener('install', e => { self.skipWaiting(); });
                     self.addEventListener('activate', e => { self.clients.claim(); });
                     self.addEventListener('fetch', e => {
