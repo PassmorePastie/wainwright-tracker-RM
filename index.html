@@ -518,15 +518,31 @@
             const xmlDoc = parser.parseFromString(gpxXmlString, "text/xml");
             const trkpts = xmlDoc.getElementsByTagName("trkpt");
             let trackPoints = [], totalElevationGain = 0, lastEle = null;
+            let extractedDate = null;
 
             for (let i = 0; i < trkpts.length; i++) {
                 const lat = parseFloat(trkpts[i].getAttribute("lat"));
                 const lon = parseFloat(trkpts[i].getAttribute("lon"));
                 const ele = trkpts[i].getElementsByTagName("ele")[0] ? parseFloat(trkpts[i].getElementsByTagName("ele")[0].textContent) : 0;
+                
+                // Extract timestamp from GPX point if available
+                if (!extractedDate) {
+                    const timeEl = trkpts[i].getElementsByTagName("time")[0];
+                    if (timeEl && timeEl.textContent) {
+                        const parsedDate = new Date(timeEl.textContent);
+                        if (!isNaN(parsedDate.getTime())) {
+                            extractedDate = parsedDate.toISOString().split('T')[0];
+                        }
+                    }
+                }
+
                 if (lastEle !== null && ele > lastEle) totalElevationGain += (ele - lastEle);
                 lastEle = ele;
                 trackPoints.push([lat, lon]);
             }
+
+            // Fallback to today's date if GPX has no timestamp tags
+            const walkDate = extractedDate || new Date().toISOString().split('T')[0];
 
             let totalDistMeters = 0;
             for (let i = 0; i < trackPoints.length - 1; i++) {
@@ -547,7 +563,7 @@
             const routeObj = {
                 id: Date.now(),
                 name: fileName.replace('.gpx', ''),
-                date: new Date().toISOString().split('T')[0],
+                date: walkDate,
                 type: type,
                 distanceMeters: totalDistMeters,
                 elevationGainMeters: Math.round(totalElevationGain),
@@ -685,7 +701,7 @@
                         <div class="bg-[#FAF7F2] border-2 border-[#1E2A38]/15 rounded-xl p-2.5 flex items-center justify-between shadow-sm">
                             <div>
                                 <p class="font-bold text-[#1E2A38] brand-font">${r.name}</p>
-                                <p class="text-[10px] text-[#1E2A38]/70">${dStr} • ${r.bagged.length} bagged</p>
+                                <p class="text-[10px] text-[#1E2A38]/70">${r.date} • ${dStr} • ${r.bagged.length} bagged</p>
                             </div>
                             <button onclick="deleteRoute(${r.id})" class="text-red-600 p-1"><i class="fa-solid fa-trash-can text-xs"></i></button>
                         </div>
