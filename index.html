@@ -103,7 +103,7 @@
 
             <h1 class="font-extrabold text-lg text-[#1E2A38] tracking-tight brand-font leading-tight">Wainwright Bagger</h1>
             <p class="text-xs text-[#1E2A38]/70 font-medium">Your Lake District Fell Tracker</p>
-            <span class="mt-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-[#1E2A38]/10 text-[#1E2A38]">v1.4.0</span>
+            <span class="mt-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-[#1E2A38]/10 text-[#1E2A38]">v1.4.1</span>
         </div>
 
         <!-- Scrollable Content -->
@@ -122,22 +122,22 @@
 
             <!-- Dual Upload Buttons -->
             <div class="grid grid-cols-2 gap-2.5">
-                <div id="drop-zone-completed" class="border-2 border-[#1E2A38] bg-[#1E2A38] hover:bg-[#374151] rounded-xl p-3 text-center transition cursor-pointer group relative shadow-md">
+                <div id="drop-zone-completed" class="border-2 border-[#1E2A38] bg-[#1E2A38] hover:bg-[#374151] rounded-xl p-3 text-center transition cursor-pointer group relative shadow-md flex flex-col items-center justify-center min-h-[110px]">
                     <input type="file" id="gpx-completed-input" accept=".gpx" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" multiple />
                     <div class="w-7 h-7 rounded-full bg-[#FAF7F2]/20 text-[#F4EFEB] flex items-center justify-center mx-auto mb-1 transition">
                         <i class="fa-solid fa-check text-xs"></i>
                     </div>
-                    <p class="text-xs font-bold text-[#F4EFEB] brand-font uppercase tracking-wide">View Completed</p>
-                    <p class="text-[9px] text-[#F4EFEB]/70 mt-0.5">Upload & Bag fells</p>
+                    <p class="text-xs font-bold text-[#F4EFEB] brand-font uppercase tracking-wide leading-tight">+ Add Completed Walk</p>
+                    <p class="text-[9px] text-[#F4EFEB]/80 mt-1 leading-tight font-medium">Upload GPX file, see your completed stats and bag some fells.</p>
                 </div>
 
-                <div id="drop-zone-planned" class="border-2 border-[#D49B53] bg-[#D49B53] hover:bg-[#c28842] rounded-xl p-3 text-center transition cursor-pointer group relative shadow-md">
+                <div id="drop-zone-planned" class="border-2 border-[#D49B53] bg-[#D49B53] hover:bg-[#c28842] rounded-xl p-3 text-center transition cursor-pointer group relative shadow-md flex flex-col items-center justify-center min-h-[110px]">
                     <input type="file" id="gpx-planned-input" accept=".gpx" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" multiple />
                     <div class="w-7 h-7 rounded-full bg-[#1E2A38]/20 text-[#1E2A38] flex items-center justify-center mx-auto mb-1 transition">
                         <i class="fa-solid fa-map text-xs"></i>
                     </div>
-                    <p class="text-xs font-bold text-[#1E2A38] brand-font uppercase tracking-wide">Plan a Walk</p>
-                    <p class="text-[9px] text-[#1E2A38]/80 mt-0.5">Preview on map</p>
+                    <p class="text-xs font-bold text-[#1E2A38] brand-font uppercase tracking-wide leading-tight">+ Add Planned Walk</p>
+                    <p class="text-[9px] text-[#1E2A38]/90 mt-1 leading-tight font-medium">Add planned GPX fell to confirm route and get fell info.</p>
                 </div>
             </div>
 
@@ -549,7 +549,7 @@
         function registerServiceWorker() {
             if ('serviceWorker' in navigator) {
                 const swCode = `
-                    const CACHE = 'wainwright-cache-v1.4.0';
+                    const CACHE = 'wainwright-cache-v1.4.1';
                     self.addEventListener('install', e => { self.skipWaiting(); });
                     self.addEventListener('activate', e => { self.clients.claim(); });
                     self.addEventListener('fetch', e => {
