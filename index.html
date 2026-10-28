@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Wainwright GPX Analyzer</title>
+    <title>Wainwright Bagger — Your Fell Tracker</title>
     
     <!-- PWA Web App Manifest -->
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#090d16">
+    <meta name="theme-color" content="#F4EFEB">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Wainwrights">
 
     <!-- Tailwind CSS -->
@@ -20,14 +20,16 @@
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #F4EFEB; color: #1E2A38; }
+        h1, h2, h3, h4, .brand-font { font-family: 'Montserrat', sans-serif; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #0f172a; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        ::-webkit-scrollbar-track { background: #EAE3DC; }
+        ::-webkit-scrollbar-thumb { background: #1E2A38; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #374151; }
+
         .custom-pin {
             display: flex;
             align-items: center;
@@ -35,121 +37,133 @@
             border-radius: 50%;
             color: white;
             font-weight: bold;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.5);
-            border: 2px solid white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            border: 2px solid #FFFBF7;
         }
-        .pin-bagged { background-color: #10b981; }
-        .pin-near { background-color: #f59e0b; }
-        .pin-planned { background-color: #a855f7; }
-        .pin-unvisited { background-color: #64748b; opacity: 0.7; }
+        .pin-bagged { background-color: #5B7B7A; }
+        .pin-near { background-color: #D49B53; }
+        .pin-planned { background-color: #9333ea; }
+        .pin-unvisited { background-color: #94a3b8; opacity: 0.8; }
 
         .fell-label {
-            background: rgba(15, 23, 42, 0.85);
-            border: 1px solid rgba(51, 65, 85, 0.8);
-            color: #f8fafc;
+            background: rgba(30, 42, 56, 0.9);
+            border: 1px solid #1E2A38;
+            color: #F4EFEB;
             font-weight: 600;
             font-size: 10px;
-            padding: 1px 5px;
+            padding: 1px 6px;
             border-radius: 4px;
             white-space: nowrap;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
             pointer-events: none;
         }
 
         .leaflet-control-custom-panel {
-            background-color: #1e293b;
-            color: #f8fafc;
-            border: 1px solid #334155;
-            border-radius: 0.5rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+            background-color: #FFFBF7;
+            color: #1E2A38;
+            border: 2px solid #1E2A38;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(30, 42, 56, 0.15);
             overflow: hidden;
         }
         .leaflet-control-custom-panel select, .leaflet-control-custom-panel label {
             font-size: 0.8rem;
-            color: #cbd5e1;
+            color: #1E2A38;
+            font-weight: 600;
         }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 h-screen overflow-hidden flex flex-col md:flex-row pb-12 md:pb-0">
+<body class="h-screen overflow-hidden flex flex-col md:flex-row pb-12 md:pb-0">
 
     <!-- SIDEBAR PANEL -->
-    <aside id="sidebar" class="w-full md:w-96 bg-slate-900 border-r border-slate-800 flex flex-col h-full z-10 shadow-2xl flex-shrink-0">
+    <aside id="sidebar" class="w-full md:w-96 bg-[#FFFBF7] border-r-2 border-[#1E2A38]/20 flex flex-col h-full z-10 shadow-xl flex-shrink-0">
         
-        <!-- Header -->
-        <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/80 backdrop-blur">
-            <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
-                    <i class="fa-solid fa-mountain text-lg"></i>
-                </div>
-                <div>
-                    <h1 class="font-bold text-base text-slate-100 leading-tight">Wainwright Analyzer</h1>
-                    <p class="text-xs text-slate-400">Lake District Fell & GPX Tracker</p>
+        <!-- Header with Vintage Badge Branding -->
+        <div class="p-4 border-b-2 border-[#1E2A38]/10 flex flex-col items-center justify-center bg-[#FAF7F2] text-center relative">
+            <div class="absolute right-4 top-4">
+                <button id="unit-toggle" onclick="toggleUnits()" class="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-lg bg-[#1E2A38] text-[#F4EFEB] hover:bg-[#374151] transition shadow-sm">
+                    Metric
+                </button>
+            </div>
+
+            <!-- Custom Retro Outdoor Badge -->
+            <div class="w-20 h-20 rounded-full border-[3px] border-[#1E2A38] bg-[#F4EFEB] flex flex-col items-center justify-center shadow-md relative overflow-hidden mb-2 mt-1">
+                <svg viewBox="0 0 100 100" class="w-full h-full absolute inset-0">
+                    <path id="curve" fill="transparent" d="M 15, 50 A 35,35 0 1,1 85,50" />
+                    <text font-size="9" font-weight="bold" fill="#1E2A38" letter-spacing="1.5">
+                        <textPath href="#curve" startOffset="50%" text-anchor="middle">WAINWRIGHT BAGGER</textPath>
+                    </text>
+                </svg>
+                <!-- Mountain Icon Center -->
+                <div class="z-10 flex flex-col items-center text-[#1E2A38] mt-2">
+                    <i class="fa-solid fa-mountain text-xl text-[#D49B53]"></i>
+                    <span class="text-[7px] font-ext500 uppercase tracking-widest mt-0.5 brand-font">Fell Tracker</span>
                 </div>
             </div>
-            <button id="unit-toggle" onclick="toggleUnits()" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
-                Metric (km/m)
-            </button>
+
+            <h1 class="font-extrabold text-lg text-[#1E2A38] tracking-tight brand-font leading-tight">Wainwright Bagger</h1>
+            <p class="text-xs text-[#1E2A38]/70 font-medium">Your Lake District Fell Tracker</p>
         </div>
 
         <!-- Scrollable Content -->
         <div class="flex-1 overflow-y-auto p-4 space-y-4 pb-16 md:pb-4">
 
             <!-- Overall Progress Summary -->
-            <div class="bg-slate-800/60 border border-slate-700/60 rounded-xl p-3.5 space-y-2">
+            <div class="bg-[#FAF7F2] border-2 border-[#1E2A38]/15 rounded-xl p-3.5 space-y-2 shadow-sm">
                 <div class="flex justify-between items-center text-xs">
-                    <span class="text-slate-400 font-medium">Overall Wainwright Progress</span>
-                    <span id="overall-bagged-count" class="font-bold text-emerald-400">0 / 214 (0%)</span>
+                    <span class="text-[#1E2A38]/80 font-bold brand-font">Overall Progress</span>
+                    <span id="overall-bagged-count" class="font-extrabold text-[#5B7B7A]">0 / 214 (0%)</span>
                 </div>
-                <div class="w-full bg-slate-700 rounded-full h-2.5 overflow-hidden">
-                    <div id="overall-progress-bar" class="bg-emerald-500 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+                <div class="w-full bg-[#EAE3DC] rounded-full h-3 overflow-hidden border border-[#1E2A38]/20">
+                    <div id="overall-progress-bar" class="bg-[#5B7B7A] h-full rounded-full transition-all duration-500" style="width: 0%"></div>
                 </div>
             </div>
 
-            <!-- Dual Upload Zones: Completed vs Planned -->
-            <div class="grid grid-cols-2 gap-2">
-                <div id="drop-zone-completed" class="border-2 border-dashed border-emerald-600/60 hover:border-emerald-500 bg-emerald-950/10 hover:bg-emerald-500/10 rounded-xl p-3 text-center transition cursor-pointer group relative">
+            <!-- Dual Upload Buttons (Matches UI Inspiration) -->
+            <div class="grid grid-cols-2 gap-2.5">
+                <div id="drop-zone-completed" class="border-2 border-[#1E2A38] bg-[#1E2A38] hover:bg-[#374151] rounded-xl p-3 text-center transition cursor-pointer group relative shadow-md">
                     <input type="file" id="gpx-completed-input" accept=".gpx" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" multiple />
-                    <div class="w-8 h-8 rounded-full bg-emerald-900/40 group-hover:bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto mb-1 transition">
-                        <i class="fa-solid fa-check text-sm"></i>
+                    <div class="w-7 h-7 rounded-full bg-[#FAF7F2]/20 text-[#F4EFEB] flex items-center justify-center mx-auto mb-1 transition">
+                        <i class="fa-solid fa-check text-xs"></i>
                     </div>
-                    <p class="text-xs font-semibold text-emerald-300">+ Completed Hike</p>
-                    <p class="text-[10px] text-slate-500 mt-0.5">Adds to stats & bags</p>
+                    <p class="text-xs font-bold text-[#F4EFEB] brand-font uppercase tracking-wide">View Completed</p>
+                    <p class="text-[9px] text-[#F4EFEB]/70 mt-0.5">Upload & Bag fells</p>
                 </div>
 
-                <div id="drop-zone-planned" class="border-2 border-dashed border-purple-600/60 hover:border-purple-500 bg-purple-950/10 hover:bg-purple-500/10 rounded-xl p-3 text-center transition cursor-pointer group relative">
+                <div id="drop-zone-planned" class="border-2 border-[#D49B53] bg-[#D49B53] hover:bg-[#c28842] rounded-xl p-3 text-center transition cursor-pointer group relative shadow-md">
                     <input type="file" id="gpx-planned-input" accept=".gpx" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" multiple />
-                    <div class="w-8 h-8 rounded-full bg-purple-900/40 group-hover:bg-purple-500/20 text-purple-400 flex items-center justify-center mx-auto mb-1 transition">
-                        <i class="fa-solid fa-map text-sm"></i>
+                    <div class="w-7 h-7 rounded-full bg-[#1E2A38]/20 text-[#1E2A38] flex items-center justify-center mx-auto mb-1 transition">
+                        <i class="fa-solid fa-map text-xs"></i>
                     </div>
-                    <p class="text-xs font-semibold text-purple-300">+ Planned Route</p>
-                    <p class="text-[10px] text-slate-500 mt-0.5">Previews on map</p>
+                    <p class="text-xs font-bold text-[#1E2A38] brand-font uppercase tracking-wide">Plan a Walk</p>
+                    <p class="text-[9px] text-[#1E2A38]/80 mt-0.5">Preview on map</p>
                 </div>
             </div>
 
             <!-- Current Track Stats -->
             <div class="grid grid-cols-2 gap-2">
-                <div class="bg-slate-800/40 border border-slate-800 rounded-lg p-2.5">
-                    <span class="text-[11px] font-medium text-slate-400 uppercase tracking-wider block mb-0.5">Total Distance</span>
-                    <span id="stat-distance" class="text-base font-bold text-slate-100">0.0 <span class="text-xs text-slate-400 font-normal">km</span></span>
+                <div class="bg-[#FAF7F2] border-2 border-[#1E2A38]/15 rounded-xl p-2.5 shadow-sm">
+                    <span class="text-[10px] font-bold text-[#1E2A38]/70 uppercase tracking-wider block mb-0.5 brand-font">Total Distance</span>
+                    <span id="stat-distance" class="text-base font-extrabold text-[#1E2A38]">0.0 <span class="text-xs text-[#1E2A38]/60 font-normal">km</span></span>
                 </div>
-                <div class="bg-slate-800/40 border border-slate-800 rounded-lg p-2.5">
-                    <span class="text-[11px] font-medium text-slate-400 uppercase tracking-wider block mb-0.5">Elevation Gain</span>
-                    <span id="stat-elevation" class="text-base font-bold text-slate-100">0 <span class="text-xs text-slate-400 font-normal">m</span></span>
+                <div class="bg-[#FAF7F2] border-2 border-[#1E2A38]/15 rounded-xl p-2.5 shadow-sm">
+                    <span class="text-[10px] font-bold text-[#1E2A38]/70 uppercase tracking-wider block mb-0.5 brand-font">Elevation Gain</span>
+                    <span id="stat-elevation" class="text-base font-extrabold text-[#1E2A38]">0 <span class="text-xs text-[#1E2A38]/60 font-normal">m</span></span>
                 </div>
-                <div class="bg-emerald-950/20 border border-emerald-800/30 rounded-lg p-2.5">
-                    <span class="text-[11px] font-medium text-emerald-400 uppercase tracking-wider block mb-0.5"><i class="fa-solid fa-circle-check mr-1"></i>Bagged</span>
-                    <span id="stat-bagged" class="text-base font-bold text-emerald-300">0</span>
+                <div class="bg-[#5B7B7A]/10 border-2 border-[#5B7B7A]/40 rounded-xl p-2.5 shadow-sm">
+                    <span class="text-[10px] font-bold text-[#5B7B7A] uppercase tracking-wider block mb-0.5 brand-font"><i class="fa-solid fa-circle-check mr-1"></i>Bagged</span>
+                    <span id="stat-bagged" class="text-base font-extrabold text-[#5B7B7A]">0</span>
                 </div>
-                <div class="bg-amber-950/20 border border-amber-800/30 rounded-lg p-2.5">
-                    <span class="text-[11px] font-medium text-amber-400 uppercase tracking-wider block mb-0.5"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Near Misses</span>
-                    <span id="stat-near" class="text-base font-bold text-amber-300">0</span>
+                <div class="bg-[#D49B53]/15 border-2 border-[#D49B53]/50 rounded-xl p-2.5 shadow-sm">
+                    <span class="text-[10px] font-bold text-[#D49B53] uppercase tracking-wider block mb-0.5 brand-font"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Near Misses</span>
+                    <span id="stat-near" class="text-base font-extrabold text-[#D49B53]">0</span>
                 </div>
             </div>
 
             <!-- Settings / Radius Threshold -->
-            <div class="flex items-center justify-between text-xs bg-slate-800/40 border border-slate-800 rounded-lg p-2.5">
-                <span class="text-slate-400 font-medium">Bagging Radius Threshold:</span>
-                <select id="radius-select" onchange="updateBaggingRadius()" class="bg-slate-900 text-slate-200 border border-slate-700 rounded px-2 py-1 focus:outline-none focus:border-emerald-500">
+            <div class="flex items-center justify-between text-xs bg-[#FAF7F2] border-2 border-[#1E2A38]/15 rounded-xl p-2.5 shadow-sm">
+                <span class="text-[#1E2A38]/80 font-bold brand-font">Bagging Radius:</span>
+                <select id="radius-select" onchange="updateBaggingRadius()" class="bg-[#F4EFEB] text-[#1E2A38] border-2 border-[#1E2A38]/30 rounded-lg px-2 py-1 font-semibold focus:outline-none focus:border-[#1E2A38]">
                     <option value="50">50m (Strict)</option>
                     <option value="100" selected>100m (Standard)</option>
                     <option value="200">200m (Generous)</option>
@@ -159,25 +173,25 @@
             <!-- Saved Routes History -->
             <div class="space-y-2">
                 <div class="flex justify-between items-center">
-                    <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Saved Routes (<span id="routes-count">0</span>)</h3>
-                    <button onclick="clearAllHistory()" class="text-[11px] text-red-400 hover:text-red-300 transition hover:underline">Clear History</button>
+                    <h3 class="text-xs font-bold text-[#1E2A38] uppercase tracking-wider brand-font">Saved Routes (<span id="routes-count">0</span>)</h3>
+                    <button onclick="clearAllHistory()" class="text-[11px] text-red-600 hover:text-red-700 font-bold transition hover:underline">Clear History</button>
                 </div>
-                <div id="saved-routes-list" class="space-y-1.5 max-h-48 overflow-y-auto pr-1 text-xs">
-                    <p class="text-slate-500 italic text-center py-2">No saved routes yet. Upload a GPX to start logging.</p>
+                <div id="saved-routes-list" class="space-y-2 max-h-48 overflow-y-auto pr-1 text-xs">
+                    <p class="text-[#1E2A38]/60 italic text-center py-2">No saved routes yet. Upload a GPX to start logging.</p>
                 </div>
             </div>
 
             <!-- Wainwright List / Tabs -->
-            <div class="pt-2 border-t border-slate-800 space-y-3">
+            <div class="pt-2 border-t-2 border-[#1E2A38]/15 space-y-3">
                 <div class="relative">
-                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-slate-500"></i>
-                    <input type="text" id="fell-search" oninput="renderFellList()" placeholder="Search fell or gateway town (e.g. Keswick)..." class="w-full bg-slate-900 border border-slate-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500" />
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-[#1E2A38]/50"></i>
+                    <input type="text" id="fell-search" oninput="renderFellList()" placeholder="Search fell or gateway town..." class="w-full bg-[#FAF7F2] border-2 border-[#1E2A38]/20 rounded-xl pl-8 pr-3 py-2 text-xs text-[#1E2A38] placeholder-[#1E2A38]/50 focus:outline-none focus:border-[#1E2A38] font-medium" />
                 </div>
 
-                <div class="flex rounded-lg bg-slate-900 p-1 border border-slate-800 text-xs">
-                    <button id="tab-bagged" onclick="switchTab('bagged')" class="flex-1 py-1 rounded font-medium text-slate-400 transition">Bagged (<span id="count-tab-bagged">0</span>)</button>
-                    <button id="tab-near" onclick="switchTab('near')" class="flex-1 py-1 rounded font-medium text-slate-400 transition">Near Miss (<span id="count-tab-near">0</span>)</button>
-                    <button id="tab-all" onclick="switchTab('all')" class="flex-1 py-1 bg-slate-800 text-slate-100 rounded font-medium transition">All 214</button>
+                <div class="flex rounded-xl bg-[#FAF7F2] p-1 border-2 border-[#1E2A38]/20 text-xs">
+                    <button id="tab-bagged" onclick="switchTab('bagged')" class="flex-1 py-1 rounded-lg font-bold text-[#1E2A38]/70 transition">Bagged (<span id="count-tab-bagged">0</span>)</button>
+                    <button id="tab-near" onclick="switchTab('near')" class="flex-1 py-1 rounded-lg font-bold text-[#1E2A38]/70 transition">Near Miss (<span id="count-tab-near">0</span>)</button>
+                    <button id="tab-all" onclick="switchTab('all')" class="flex-1 py-1 bg-[#1E2A38] text-[#F4EFEB] rounded-lg font-bold transition shadow-sm">All 214</button>
                 </div>
 
                 <div id="fell-list" class="space-y-1.5 min-h-[200px] max-h-64 overflow-y-auto pr-1 pb-12">
@@ -188,16 +202,16 @@
     </aside>
 
     <!-- MAP CONTAINER -->
-    <main id="map-container" class="flex-1 relative h-full bg-slate-950 hidden md:block">
+    <main id="map-container" class="flex-1 relative h-full bg-[#F4EFEB] hidden md:block">
         <div id="map" class="w-full h-full z-0"></div>
     </main>
 
     <!-- MOBILE NAVIGATION BOTTOM BAR -->
-    <nav class="md:hidden fixed bottom-0 left-0 right-0 h-12 bg-slate-900 border-t border-slate-800 z-50 flex">
-        <button id="nav-btn-dash" onclick="switchMobileTab('dash')" class="flex-1 flex items-center justify-center gap-2 text-xs font-semibold text-emerald-400 bg-slate-800/50">
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 h-12 bg-[#FFFBF7] border-t-2 border-[#1E2A38]/20 z-50 flex">
+        <button id="nav-btn-dash" onclick="switchMobileTab('dash')" class="flex-1 flex items-center justify-center gap-2 text-xs font-bold text-[#5B7B7A] bg-[#FAF7F2]">
             <i class="fa-solid fa-chart-line"></i> Dashboard
         </button>
-        <button id="nav-btn-map" onclick="switchMobileTab('map')" class="flex-1 flex items-center justify-center gap-2 text-xs font-semibold text-slate-400">
+        <button id="nav-btn-map" onclick="switchMobileTab('map')" class="flex-1 flex items-center justify-center gap-2 text-xs font-bold text-[#1E2A38]/70">
             <i class="fa-solid fa-map-location-dot"></i> View Map
         </button>
     </nav>
@@ -534,7 +548,7 @@
         function registerServiceWorker() {
             if ('serviceWorker' in navigator) {
                 const swCode = `
-                    const CACHE = 'wainwright-cache-v1.2.1';
+                    const CACHE = 'wainwright-cache-v1.3.0';
                     self.addEventListener('install', e => { self.skipWaiting(); });
                     self.addEventListener('activate', e => { self.clients.claim(); });
                     self.addEventListener('fetch', e => {
@@ -576,21 +590,21 @@
                     
                     const zoomDiv = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
                     zoomDiv.innerHTML = `
-                        <a class="leaflet-control-zoom-in bg-slate-800 text-slate-200 hover:bg-slate-700 flex items-center justify-center w-7 h-7 text-sm font-bold border-b border-slate-700" href="#" title="Zoom in" role="button" aria-label="Zoom in">+</a>
-                        <a class="leaflet-control-zoom-out bg-slate-800 text-slate-200 hover:bg-slate-700 flex items-center justify-center w-7 h-7 text-sm font-bold" href="#" title="Zoom out" role="button" aria-label="Zoom out">-</a>
+                        <a class="leaflet-control-zoom-in bg-[#FFFBF7] text-[#1E2A38] hover:bg-[#FAF7F2] flex items-center justify-center w-7 h-7 text-sm font-bold border-b border-[#1E2A38]/20" href="#" title="Zoom in">+</a>
+                        <a class="leaflet-control-zoom-out bg-[#FFFBF7] text-[#1E2A38] hover:bg-[#FAF7F2] flex items-center justify-center w-7 h-7 text-sm font-bold" href="#" title="Zoom out">-</a>
                     `;
                     zoomDiv.children[0].onclick = (e) => { e.preventDefault(); map.zoomIn(); };
                     zoomDiv.children[1].onclick = (e) => { e.preventDefault(); map.zoomOut(); };
 
-                    const legendDiv = L.DomUtil.create('div', 'leaflet-control-custom-panel px-2.5 py-1.5 text-xs shadow-md flex items-center gap-3');
+                    const legendDiv = L.DomUtil.create('div', 'leaflet-control-custom-panel px-3 py-1.5 text-xs shadow-md flex items-center gap-3');
                     legendDiv.innerHTML = `
                         <div class="flex items-center gap-1.5">
-                            <span class="w-4 h-1 bg-emerald-500 rounded-full inline-block"></span>
-                            <span class="text-slate-300 font-medium">Completed Hike</span>
+                            <span class="w-4 h-1.5 bg-[#5B7B7A] rounded-full inline-block"></span>
+                            <span class="text-[#1E2A38] font-bold">Completed</span>
                         </div>
                         <div class="flex items-center gap-1.5">
-                            <span class="w-4 h-1 bg-purple-500 rounded-full inline-block"></span>
-                            <span class="text-slate-300 font-medium">Planned Route</span>
+                            <span class="w-4 h-1.5 bg-purple-600 rounded-full inline-block"></span>
+                            <span class="text-[#1E2A38] font-bold">Planned</span>
                         </div>
                     `;
 
@@ -604,9 +618,7 @@
             });
             map.addControl(new TopLeftBar());
 
-            setTimeout(() => {
-                map.invalidateSize();
-            }, 100);
+            setTimeout(() => { map.invalidateSize(); }, 100);
 
             window.baseLayers = { topo: esriTopo, opentopo: openTopo, satellite: esriSatellite };
             window.currentBaseLayer = openTopo;
@@ -617,24 +629,24 @@
                 onAdd: function (map) {
                     const container = L.DomUtil.create('div', 'leaflet-control-custom-panel');
                     container.innerHTML = `
-                        <button id="filter-toggle-btn" class="p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center w-9 h-9 rounded-lg transition" title="Toggle Map Filters">
+                        <button id="filter-toggle-btn" class="p-2.5 bg-[#FFFBF7] hover:bg-[#FAF7F2] text-[#1E2A38] flex items-center justify-center w-9 h-9 transition" title="Toggle Map Filters">
                             <i class="fa-solid fa-filter text-sm"></i>
                         </button>
-                        <div id="filter-dropdown-content" class="p-3 hidden bg-slate-900 border-t border-slate-700 space-y-3 w-52">
+                        <div id="filter-dropdown-content" class="p-3 hidden bg-[#FFFBF7] border-t-2 border-[#1E2A38]/20 space-y-3 w-52">
                             <div>
-                                <label class="block font-semibold mb-1 text-slate-400">Map Style</label>
-                                <select id="basemap-select" onchange="changeBaseMap(this.value)" class="w-full bg-slate-800 text-slate-200 border border-slate-700 rounded p-1 focus:outline-none focus:border-emerald-500">
+                                <label class="block font-bold mb-1 text-[#1E2A38]">Map Style</label>
+                                <select id="basemap-select" onchange="changeBaseMap(this.value)" class="w-full bg-[#FAF7F2] text-[#1E2A38] border-2 border-[#1E2A38]/20 rounded-lg p-1 focus:outline-none">
                                     <option value="topo">Esri Topo</option>
                                     <option value="opentopo" selected>OpenTopoMap</option>
                                     <option value="satellite">Satellite</option>
                                 </select>
                             </div>
-                            <div class="space-y-1.5 pt-1 border-t border-slate-800">
-                                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked onchange="toggleLayer('bagged', this.checked)" class="rounded bg-slate-800 border-slate-700 text-emerald-500"> Bagged Peaks</label>
-                                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked onchange="toggleLayer('near', this.checked)" class="rounded bg-slate-800 border-slate-700 text-amber-500"> Near Misses</label>
-                                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked onchange="toggleLayer('planned', this.checked)" class="rounded bg-slate-800 border-slate-700 text-purple-500"> Planned Fells</label>
-                                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked onchange="toggleLayer('unvisited', this.checked)" class="rounded bg-slate-800 border-slate-700 text-slate-500"> Unvisited Fells</label>
-                                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked onchange="toggleLayer('tracks', this.checked)" class="rounded bg-slate-800 border-slate-700 text-purple-500"> GPX Track Lines</label>
+                            <div class="space-y-1.5 pt-1 border-t border-[#1E2A38]/20">
+                                <label class="flex items-center gap-2 cursor-pointer font-semibold"><input type="checkbox" checked onchange="toggleLayer('bagged', this.checked)" class="rounded bg-[#FAF7F2] border-[#1E2A38] text-[#5B7B7A]"> Bagged Peaks</label>
+                                <label class="flex items-center gap-2 cursor-pointer font-semibold"><input type="checkbox" checked onchange="toggleLayer('near', this.checked)" class="rounded bg-[#FAF7F2] border-[#1E2A38] text-[#D49B53]"> Near Misses</label>
+                                <label class="flex items-center gap-2 cursor-pointer font-semibold"><input type="checkbox" checked onchange="toggleLayer('planned', this.checked)" class="rounded bg-[#FAF7F2] border-[#1E2A38] text-purple-600"> Planned Fells</label>
+                                <label class="flex items-center gap-2 cursor-pointer font-semibold"><input type="checkbox" checked onchange="toggleLayer('unvisited', this.checked)" class="rounded bg-[#FAF7F2] border-[#1E2A38] text-slate-500"> Unvisited Fells</label>
+                                <label class="flex items-center gap-2 cursor-pointer font-semibold"><input type="checkbox" checked onchange="toggleLayer('tracks', this.checked)" class="rounded bg-[#FAF7F2] border-[#1E2A38] text-purple-600"> GPX Track Lines</label>
                             </div>
                         </div>
                     `;
@@ -648,16 +660,9 @@
             setTimeout(() => {
                 const btn = document.getElementById('filter-toggle-btn');
                 const dropdown = document.getElementById('filter-dropdown-content');
-                btn.onclick = (e) => {
-                    e.stopPropagation();
-                    dropdown.classList.toggle('hidden');
-                };
-                document.addEventListener('click', () => {
-                    dropdown.classList.add('hidden');
-                });
-                dropdown.onclick = (e) => {
-                    e.stopPropagation();
-                };
+                btn.onclick = (e) => { e.stopPropagation(); dropdown.classList.toggle('hidden'); };
+                document.addEventListener('click', () => { dropdown.classList.add('hidden'); });
+                dropdown.onclick = (e) => { e.stopPropagation(); };
             }, 100);
 
             map.on('zoomend', () => { plotAllFellsOnMap(); });
@@ -679,11 +684,8 @@
             else if (type === 'tracks') targetGroup = tracksLayerGroup;
 
             if (targetGroup) {
-                if (show) {
-                    if (!map.hasLayer(targetGroup)) map.addLayer(targetGroup);
-                } else {
-                    if (map.hasLayer(targetGroup)) map.removeLayer(targetGroup);
-                }
+                if (show) { if (!map.hasLayer(targetGroup)) map.addLayer(targetGroup); }
+                else { if (map.hasLayer(targetGroup)) map.removeLayer(targetGroup); }
             }
         }
 
@@ -696,23 +698,22 @@
             if (tab === 'dash') {
                 sidebar.classList.remove('hidden');
                 mapContainer.classList.add('hidden', 'md:block');
-                navDash.classList.add('text-emerald-400', 'bg-slate-800/50');
-                navDash.classList.remove('text-slate-400');
-                navMap.classList.remove('text-emerald-400', 'bg-slate-800/50');
-                navMap.classList.add('text-slate-400');
+                navDash.classList.add('text-[#5B7B7A]', 'bg-[#FAF7F2]');
+                navDash.classList.remove('text-[#1E2A38]/70');
+                navMap.classList.remove('text-[#5B7B7A]', 'bg-[#FAF7F2]');
+                navMap.classList.add('text-[#1E2A38]/70');
             } else {
                 sidebar.classList.add('hidden');
                 mapContainer.classList.remove('hidden');
-                navMap.classList.add('text-emerald-400', 'bg-slate-800/50');
-                navDash.classList.remove('text-emerald-400', 'bg-slate-800/50');
-                navDash.classList.add('text-slate-400');
+                navMap.classList.add('text-[#5B7B7A]', 'bg-[#FAF7F2]');
+                navDash.classList.remove('text-[#5B7B7A]', 'bg-[#FAF7F2]');
+                navDash.classList.add('text-[#1E2A38]/70');
                 setTimeout(() => map.invalidateSize(), 200);
             }
         }
 
         function getGlobalBaggedFellsWithDates() {
             const baggedMap = new Map();
-
             savedRoutes.forEach(r => {
                 if (r.type !== 'planned') {
                     r.bagged.forEach(fellName => {
@@ -722,12 +723,8 @@
                     });
                 }
             });
-
             const manualBagged = JSON.parse(localStorage.getItem('wainwright_manual_bagged') || '{}');
-            Object.keys(manualBagged).forEach(fellName => {
-                baggedMap.set(fellName, manualBagged[fellName]);
-            });
-
+            Object.keys(manualBagged).forEach(fellName => { baggedMap.set(fellName, manualBagged[fellName]); });
             return baggedMap;
         }
 
@@ -736,9 +733,7 @@
             const bagged = getGlobalBaggedFellNames();
             savedRoutes.forEach(r => {
                 if (r.type === 'planned') {
-                    r.bagged.forEach(f => {
-                        if (!bagged.has(f)) planned.add(f);
-                    });
+                    r.bagged.forEach(f => { if (!bagged.has(f)) planned.add(f); });
                 }
             });
             return planned;
@@ -746,7 +741,6 @@
 
         function toggleManualBagged(fellName) {
             const manualBagged = JSON.parse(localStorage.getItem('wainwright_manual_bagged') || '{}');
-
             if (manualBagged[fellName]) {
                 if (confirm(`Remove manual completion record for ${fellName}?`)) {
                     delete manualBagged[fellName];
@@ -760,7 +754,6 @@
                     localStorage.setItem('wainwright_manual_bagged', JSON.stringify(manualBagged));
                 }
             }
-
             updateOverallProgress();
             plotAllFellsOnMap();
             renderFellList();
@@ -843,10 +836,7 @@
                     });
                 }
 
-                const elevFormatted = unitSystem === 'metric' 
-                    ? `${fell.elevation} m` 
-                    : `${Math.round(fell.elevation * 3.28084)} ft`;
-
+                const elevFormatted = unitSystem === 'metric' ? `${fell.elevation} m` : `${Math.round(fell.elevation * 3.28084)} ft`;
                 const accomQuery = encodeURIComponent(`${hubData.town} Lake District accommodation hotels guesthouses`);
                 const accomUrl = `https://www.google.com/search?q=${accomQuery}`;
 
@@ -854,22 +844,22 @@
                 if (isBagged) {
                     const formattedDate = new Date(completionDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
                     statusBadgeHTML = `
-                        <div class="mt-2.5 flex items-center justify-between bg-emerald-950/40 p-1.5 rounded border border-emerald-800/40">
-                            <span class="text-xs font-semibold px-2 py-0.5 rounded text-white bg-emerald-600 inline-block">
+                        <div class="mt-2.5 flex items-center justify-between bg-[#5B7B7A]/10 p-1.5 rounded-lg border border-[#5B7B7A]/30">
+                            <span class="text-xs font-bold px-2 py-0.5 rounded text-white bg-[#5B7B7A] inline-block">
                                 <i class="fa-solid fa-check mr-1"></i>Bagged
                             </span>
-                            <span class="text-[11px] font-medium text-emerald-300"><i class="fa-solid fa-calendar-day mr-1"></i>${formattedDate}</span>
+                            <span class="text-[11px] font-bold text-[#5B7B7A]"><i class="fa-solid fa-calendar-day mr-1"></i>${formattedDate}</span>
                         </div>
-                        <button onclick="toggleManualBagged('${fell.name}')" class="mt-1.5 text-[10px] text-slate-500 hover:text-red-400 underline block">Edit/Remove Completion Date</button>`;
+                        <button onclick="toggleManualBagged('${fell.name}')" class="mt-1.5 text-[10px] text-red-600 hover:underline block font-semibold">Edit/Remove Completion Date</button>`;
                 } else {
-                    let badgeColor = isPlanned ? 'bg-purple-600' : (isNear ? 'bg-amber-600' : 'bg-slate-600');
+                    let badgeBg = isPlanned ? 'bg-purple-600' : (isNear ? 'bg-[#D49B53]' : 'bg-slate-500');
                     let badgeText = isPlanned ? 'Planned' : (isNear ? 'Near Miss' : 'Unvisited');
                     statusBadgeHTML = `
                         <div class="mt-2.5 flex items-center justify-between">
-                            <span class="text-xs font-semibold px-2 py-0.5 rounded text-white ${badgeColor} inline-block">
+                            <span class="text-xs font-bold px-2 py-0.5 rounded text-white ${badgeBg} inline-block">
                                 ${badgeText}
                             </span>
-                            <button onclick="toggleManualBagged('${fell.name}')" class="text-[11px] text-emerald-700 hover:text-emerald-800 font-semibold underline">
+                            <button onclick="toggleManualBagged('${fell.name}')" class="text-[11px] text-[#5B7B7A] hover:underline font-bold">
                                 + Log Date Manually
                             </button>
                         </div>`;
@@ -877,15 +867,15 @@
 
                 const marker = L.marker([fell.lat, fell.lng], { icon: icon })
                     .bindPopup(`
-                        <div class="text-slate-900 p-1.5 max-w-xs">
-                            <h4 class="font-bold text-sm leading-tight">${fell.name}</h4>
-                            <p class="text-xs text-slate-600 mt-0.5">Elevation: <strong>${elevFormatted}</strong></p>
-                            <p class="text-xs text-slate-600">Region: <strong>${hubData.region || fell.region}</strong></p>
+                        <div class="text-[#1E2A38] p-1.5 max-w-xs font-sans">
+                            <h4 class="font-extrabold text-sm leading-tight brand-font">${fell.name}</h4>
+                            <p class="text-xs text-[#1E2A38]/70 mt-0.5">Elevation: <strong>${elevFormatted}</strong></p>
+                            <p class="text-xs text-[#1E2A38]/70">Region: <strong>${hubData.region || fell.region}</strong></p>
                             
-                            <div class="mt-2 pt-2 border-t border-slate-200 space-y-1">
-                                <p class="text-xs text-slate-800"><strong>Recommended Start Town:</strong> <span class="text-emerald-700 font-semibold">${hubData.town}${hubData.altTown ? ` (or ${hubData.altTown})` : ''}</span></p>
-                                <p class="text-[11px] text-slate-600 leading-snug">${hubData.desc || 'Accessed via local trailheads.'}</p>
-                                <a href="${accomUrl}" target="_blank" rel="noopener" class="mt-1.5 inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 hover:text-emerald-800 underline">
+                            <div class="mt-2 pt-2 border-t border-[#1E2A38]/15 space-y-1">
+                                <p class="text-xs text-[#1E2A38]"><strong>Start Town:</strong> <span class="text-[#5B7B7A] font-bold">${hubData.town}</span></p>
+                                <p class="text-[11px] text-[#1E2A38]/80 leading-snug">${hubData.desc || 'Accessed via local trailheads.'}</p>
+                                <a href="${accomUrl}" target="_blank" rel="noopener" class="mt-1.5 inline-flex items-center gap-1.5 text-xs font-bold text-[#5B7B7A] hover:underline">
                                     <i class="fa-solid fa-hotel"></i> Find Accommodation
                                 </a>
                             </div>
@@ -900,13 +890,10 @@
         }
 
         function setupUploadInputs() {
-            const completedInput = document.getElementById('gpx-completed-input');
-            completedInput.addEventListener('change', (e) => {
+            document.getElementById('gpx-completed-input').addEventListener('change', (e) => {
                 if (e.target.files.length > 0) handleFiles(e.target.files, 'completed');
             });
-
-            const plannedInput = document.getElementById('gpx-planned-input');
-            plannedInput.addEventListener('change', (e) => {
+            document.getElementById('gpx-planned-input').addEventListener('change', (e) => {
                 if (e.target.files.length > 0) handleFiles(e.target.files, 'planned');
             });
         }
@@ -926,7 +913,6 @@
             
             const trackPoints = [];
             const trkpts = xmlDoc.getElementsByTagName("trkpt");
-            
             let totalElevationGain = 0;
             let lastEle = null;
 
@@ -936,38 +922,25 @@
                 const eleNode = trkpts[i].getElementsByTagName("ele")[0];
                 const ele = eleNode ? parseFloat(eleNode.textContent) : 0;
 
-                if (lastEle !== null && ele > lastEle) {
-                    totalElevationGain += (ele - lastEle);
-                }
+                if (lastEle !== null && ele > lastEle) { totalElevationGain += (ele - lastEle); }
                 lastEle = ele;
-
                 trackPoints.push([lat, lon]);
             }
 
-            if (trackPoints.length === 0) {
-                alert("No valid track points found in " + fileName);
-                return;
-            }
+            if (trackPoints.length === 0) { alert("No valid track points found in " + fileName); return; }
 
             let totalDistMeters = 0;
             for (let i = 0; i < trackPoints.length - 1; i++) {
-                totalDistMeters += getDistanceMeters(
-                    trackPoints[i][0], trackPoints[i][1],
-                    trackPoints[i+1][0], trackPoints[i+1][1]
-                );
+                totalDistMeters += getDistanceMeters(trackPoints[i][0], trackPoints[i][1], trackPoints[i+1][0], trackPoints[i+1][1]);
             }
 
             let routeDate = null;
             const timeNodes = xmlDoc.getElementsByTagName("time");
             if (timeNodes.length > 0 && timeNodes[0].textContent) {
                 const parsedDate = new Date(timeNodes[0].textContent);
-                if (!isNaN(parsedDate.getTime())) {
-                    routeDate = parsedDate.toISOString().split('T')[0];
-                }
+                if (!isNaN(parsedDate.getTime())) { routeDate = parsedDate.toISOString().split('T')[0]; }
             }
-            if (!routeDate) {
-                routeDate = new Date().toISOString().split('T')[0];
-            }
+            if (!routeDate) { routeDate = new Date().toISOString().split('T')[0]; }
 
             const bagged = [];
             const nearMisses = [];
@@ -978,12 +951,8 @@
                     const d = getDistanceMeters(pt[0], pt[1], fell.lat, fell.lng);
                     if (d < minDistance) minDistance = d;
                 }
-
-                if (minDistance <= baggingRadius) {
-                    bagged.push(fell.name);
-                } else if (minDistance <= 300) {
-                    nearMisses.push({ name: fell.name, dist: Math.round(minDistance) });
-                }
+                if (minDistance <= baggingRadius) { bagged.push(fell.name); }
+                else if (minDistance <= 300) { nearMisses.push({ name: fell.name, dist: Math.round(minDistance) }); }
             });
 
             const routeObj = {
@@ -1011,38 +980,28 @@
 
         function renderRouteOnMap(route) {
             const isPlanned = route.type === 'planned';
-            const distStr = unitSystem === 'metric' 
-                ? `${(route.distanceMeters / 1000).toFixed(1)} km` 
-                : `${(route.distanceMeters / 1609.34).toFixed(1)} mi`;
-            const eleStr = unitSystem === 'metric' 
-                ? `${route.elevationGainMeters} m` 
-                : `${Math.round(route.elevationGainMeters * 3.28084)} ft`;
+            const distStr = unitSystem === 'metric' ? `${(route.distanceMeters / 1000).toFixed(1)} km` : `${(route.distanceMeters / 1609.34).toFixed(1)} mi`;
+            const eleStr = unitSystem === 'metric' ? `${route.elevationGainMeters} m` : `${Math.round(route.elevationGainMeters * 3.28084)} ft`;
 
             const popupContent = `
-                <div class="text-slate-900 p-1">
+                <div class="text-[#1E2A38] p-1 font-sans">
                     <div class="flex items-center gap-1.5 mb-1">
-                        <span class="text-[10px] font-bold px-2 py-0.5 rounded text-white ${isPlanned ? 'bg-purple-600' : 'bg-emerald-600'}">
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded text-white ${isPlanned ? 'bg-purple-600' : 'bg-[#5B7B7A]'}">
                             ${isPlanned ? 'Planned Route' : 'Completed Hike'} (${route.date})
                         </span>
                     </div>
-                    <h4 class="font-bold text-sm">${escapeHtml(route.name)}</h4>
-                    <p class="text-xs text-slate-600 mt-1"><i class="fa-solid fa-route mr-1"></i>Distance: <strong>${distStr}</strong></p>
-                    <p class="text-xs text-slate-600"><i class="fa-solid fa-arrow-trend-up mr-1"></i>Elevation Gain: <strong>${eleStr}</strong></p>
-                    <p class="text-xs text-slate-600"><i class="fa-solid fa-mountain mr-1"></i>Fells Bagged: <strong>${route.bagged.length}</strong></p>
+                    <h4 class="font-bold text-sm brand-font">${escapeHtml(route.name)}</h4>
+                    <p class="text-xs text-[#1E2A38]/70 mt-1">Distance: <strong>${distStr}</strong></p>
+                    <p class="text-xs text-[#1E2A38]/70">Elevation Gain: <strong>${eleStr}</strong></p>
+                    <p class="text-xs text-[#1E2A38]/70">Fells Bagged: <strong>${route.bagged.length}</strong></p>
                 </div>
             `;
 
-            const bufferLine = L.polyline(route.trackPoints, {
-                color: 'transparent',
-                weight: 16,
-                opacity: 0,
-                smoothFactor: 0
-            }).bindPopup(popupContent);
-
+            const bufferLine = L.polyline(route.trackPoints, { color: 'transparent', weight: 16, opacity: 0 }).bindPopup(popupContent);
             const visibleLine = L.polyline(route.trackPoints, {
-                color: isPlanned ? '#a855f7' : '#10b981',
-                weight: 4,
-                opacity: 0.85,
+                color: isPlanned ? '#9333ea' : '#5B7B7A',
+                weight: 4.5,
+                opacity: 0.9,
                 smoothFactor: 0
             }).bindPopup(popupContent);
 
@@ -1053,22 +1012,13 @@
 
         function getDistanceMeters(lat1, lon1, lat2, lon2) {
             const R = 6371e3;
-            const φ1 = lat1 * Math.PI/180;
-            const φ2 = lat2 * Math.PI/180;
-            const Δφ = (lat2-lat1) * Math.PI/180;
-            const Δλ = (lon2-lon1) * Math.PI/180;
-
-            const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-                      Math.cos(φ1) * Math.cos(φ2) *
-                      Math.sin(Δλ/2) * Math.sin(Δλ/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-
-            return R * c;
+            const φ1 = lat1 * Math.PI/180, φ2 = lat2 * Math.PI/180;
+            const Δφ = (lat2-lat1) * Math.PI/180, Δλ = (lon2-lon1) * Math.PI/180;
+            const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2) * Math.sin(Δλ/2);
+            return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
         }
 
-        function saveHistoryToStorage() {
-            localStorage.setItem('wainwright_saved_routes', JSON.stringify(savedRoutes));
-        }
+        function saveHistoryToStorage() { localStorage.setItem('wainwright_saved_routes', JSON.stringify(savedRoutes)); }
 
         function loadHistoryFromStorage() {
             const data = localStorage.getItem('wainwright_saved_routes');
@@ -1079,46 +1029,34 @@
                     tracksLayerGroup.clearLayers();
                     savedRoutes.forEach(r => renderRouteOnMapLoad(r));
                     updateCumulativeStatsSummary();
-                } catch(e) {
-                    console.error("Error reading saved routes", e);
-                }
+                } catch(e) { console.error(e); }
             }
         }
 
         function renderRouteOnMapLoad(route) {
             const isPlanned = route.type === 'planned';
-            const distStr = unitSystem === 'metric' 
-                ? `${(route.distanceMeters / 1000).toFixed(1)} km` 
-                : `${(route.distanceMeters / 1609.34).toFixed(1)} mi`;
-            const eleStr = unitSystem === 'metric' 
-                ? `${route.elevationGainMeters} m` 
-                : `${Math.round(route.elevationGainMeters * 3.28084)} ft`;
+            const distStr = unitSystem === 'metric' ? `${(route.distanceMeters / 1000).toFixed(1)} km` : `${(route.distanceMeters / 1609.34).toFixed(1)} mi`;
+            const eleStr = unitSystem === 'metric' ? `${route.elevationGainMeters} m` : `${Math.round(route.elevationGainMeters * 3.28084)} ft`;
 
             const popupContent = `
-                <div class="text-slate-900 p-1">
+                <div class="text-[#1E2A38] p-1 font-sans">
                     <div class="flex items-center gap-1.5 mb-1">
-                        <span class="text-[10px] font-bold px-2 py-0.5 rounded text-white ${isPlanned ? 'bg-purple-600' : 'bg-emerald-600'}">
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded text-white ${isPlanned ? 'bg-purple-600' : 'bg-[#5B7B7A]'}">
                             ${isPlanned ? 'Planned Route' : 'Completed Hike'} (${route.date})
                         </span>
                     </div>
-                    <h4 class="font-bold text-sm">${escapeHtml(route.name)}</h4>
-                    <p class="text-xs text-slate-600 mt-1"><i class="fa-solid fa-route mr-1"></i>Distance: <strong>${distStr}</strong></p>
-                    <p class="text-xs text-slate-600"><i class="fa-solid fa-arrow-trend-up mr-1"></i>Elevation Gain: <strong>${eleStr}</strong></p>
-                    <p class="text-xs text-slate-600"><i class="fa-solid fa-mountain mr-1"></i>Fells Bagged: <strong>${route.bagged.length}</strong></p>
+                    <h4 class="font-bold text-sm brand-font">${escapeHtml(route.name)}</h4>
+                    <p class="text-xs text-[#1E2A38]/70 mt-1">Distance: <strong>${distStr}</strong></p>
+                    <p class="text-xs text-[#1E2A38]/70">Elevation Gain: <strong>${eleStr}</strong></p>
+                    <p class="text-xs text-[#1E2A38]/70">Fells Bagged: <strong>${route.bagged.length}</strong></p>
                 </div>
             `;
 
-            const bufferLine = L.polyline(route.trackPoints, {
-                color: 'transparent',
-                weight: 16,
-                opacity: 0,
-                smoothFactor: 0
-            }).bindPopup(popupContent);
-
+            const bufferLine = L.polyline(route.trackPoints, { color: 'transparent', weight: 16, opacity: 0 }).bindPopup(popupContent);
             const visibleLine = L.polyline(route.trackPoints, {
-                color: isPlanned ? '#a855f7' : '#10b981',
-                weight: 4,
-                opacity: 0.85,
+                color: isPlanned ? '#9333ea' : '#5B7B7A',
+                weight: 4.5,
+                opacity: 0.9,
                 smoothFactor: 0
             }).bindPopup(popupContent);
 
@@ -1142,10 +1080,8 @@
         function deleteRoute(id) {
             savedRoutes = savedRoutes.filter(r => r.id !== id);
             saveHistoryToStorage();
-            
             tracksLayerGroup.clearLayers();
             savedRoutes.forEach(r => renderRouteOnMapLoad(r));
-            
             renderSavedRoutesList();
             updateOverallProgress();
             plotAllFellsOnMap();
@@ -1156,7 +1092,6 @@
         function renameRoute(id) {
             const route = savedRoutes.find(r => r.id === id);
             if (!route) return;
-
             const newName = prompt("Enter custom name for this route:", route.name);
             if (newName && newName.trim() !== "") {
                 route.name = newName.trim();
@@ -1169,11 +1104,7 @@
 
         function getGlobalBaggedFellNames() {
             const bagged = new Set();
-            savedRoutes.forEach(r => {
-                if (r.type !== 'planned') {
-                    r.bagged.forEach(f => bagged.add(f));
-                }
-            });
+            savedRoutes.forEach(r => { if (r.type !== 'planned') { r.bagged.forEach(f => bagged.add(f)); } });
             const manualBagged = JSON.parse(localStorage.getItem('wainwright_manual_bagged') || '{}');
             Object.keys(manualBagged).forEach(f => bagged.add(f));
             return bagged;
@@ -1182,11 +1113,7 @@
         function getGlobalNearMissFellNames() {
             const near = new Set();
             const bagged = getGlobalBaggedFellNames();
-            savedRoutes.forEach(r => {
-                r.nearMisses.forEach(nm => {
-                    if (!bagged.has(nm.name)) near.add(nm.name);
-                });
-            });
+            savedRoutes.forEach(r => { r.nearMisses.forEach(nm => { if (!bagged.has(nm.name)) near.add(nm.name); }); });
             return near;
         }
 
@@ -1195,51 +1122,40 @@
             document.getElementById('routes-count').textContent = savedRoutes.length;
 
             if (savedRoutes.length === 0) {
-                container.innerHTML = `<p class="text-slate-500 italic text-center py-2">No saved routes yet. Upload a GPX to start logging.</p>`;
+                container.innerHTML = `<p class="text-[#1E2A38]/60 italic text-center py-2">No saved routes yet. Upload a GPX to start logging.</p>`;
                 return;
             }
 
             container.innerHTML = savedRoutes.map(r => {
                 const isPlanned = r.type === 'planned';
-                const distStr = unitSystem === 'metric' 
-                    ? `${(r.distanceMeters / 1000).toFixed(1)} km` 
-                    : `${(r.distanceMeters / 1609.34).toFixed(1)} mi`;
-                    
-                const eleStr = unitSystem === 'metric' 
-                    ? `${r.elevationGainMeters} m` 
-                    : `${Math.round(r.elevationGainMeters * 3.28084)} ft`;
+                const distStr = unitSystem === 'metric' ? `${(r.distanceMeters / 1000).toFixed(1)} km` : `${(r.distanceMeters / 1609.34).toFixed(1)} mi`;
+                const eleStr = unitSystem === 'metric' ? `${r.elevationGainMeters} m` : `${Math.round(r.elevationGainMeters * 3.28084)} ft`;
 
                 const typeBadge = isPlanned 
-                    ? `<span class="text-[9px] font-semibold bg-purple-950 text-purple-400 border border-purple-800/60 px-1.5 py-0.5 rounded ml-1">Planned</span>`
-                    : `<span class="text-[9px] font-semibold bg-emerald-950 text-emerald-400 border border-emerald-800/60 px-1.5 py-0.5 rounded ml-1">Completed (${r.date})</span>`;
+                    ? `<span class="text-[9px] font-bold bg-purple-100 text-purple-700 border border-purple-300 px-1.5 py-0.5 rounded ml-1">Planned</span>`
+                    : `<span class="text-[9px] font-bold bg-teal-100 text-[#5B7B7A] border border-[#5B7B7A]/30 px-1.5 py-0.5 rounded ml-1">Completed (${r.date})</span>`;
 
                 const markCompletedBtn = isPlanned
-                    ? `<button onclick="event.stopPropagation(); markRouteCompleted('${r.id}')" class="text-xs text-purple-400 hover:text-emerald-400 p-1 transition" title="Mark as Completed">
-                        <i class="fa-solid fa-circle-check"></i>
-                       </button>`
+                    ? `<button onclick="event.stopPropagation(); markRouteCompleted('${r.id}')" class="text-xs text-purple-600 hover:text-[#5B7B7A] p-1 transition" title="Mark as Completed"><i class="fa-solid fa-circle-check"></i></button>`
                     : '';
 
                 return `
-                    <div class="bg-slate-800/60 border border-slate-700/50 rounded-lg p-2.5 flex items-center justify-between hover:border-slate-600 transition group">
+                    <div class="bg-[#FAF7F2] border-2 border-[#1E2A38]/15 rounded-xl p-2.5 flex items-center justify-between hover:border-[#1E2A38]/40 transition group shadow-sm">
                         <div class="cursor-pointer flex-1 overflow-hidden mr-2" onclick="focusRoute('${r.id}')">
                             <div class="flex items-center">
-                                <p class="font-semibold text-slate-200 truncate group-hover:text-emerald-400 transition">${escapeHtml(r.name)}</p>
+                                <p class="font-bold text-[#1E2A38] truncate group-hover:text-[#5B7B7A] transition brand-font">${escapeHtml(r.name)}</p>
                                 ${typeBadge}
                             </div>
-                            <p class="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
-                                <span><i class="fa-solid fa-route text-slate-500 mr-1"></i>${distStr}</span>
-                                <span><i class="fa-solid fa-arrow-trend-up text-slate-500 mr-1"></i>${eleStr}</span>
-                                <span class="text-emerald-400 font-medium"><i class="fa-solid fa-check text-emerald-400 mr-0.5"></i>${r.bagged.length}</span>
+                            <p class="text-[11px] text-[#1E2A38]/70 flex items-center gap-2 mt-0.5 font-medium">
+                                <span><i class="fa-solid fa-route text-[#1E2A38]/50 mr-1"></i>${distStr}</span>
+                                <span><i class="fa-solid fa-arrow-trend-up text-[#1E2A38]/50 mr-1"></i>${eleStr}</span>
+                                <span class="text-[#5B7B7A] font-bold"><i class="fa-solid fa-check mr-0.5"></i>${r.bagged.length}</span>
                             </p>
                         </div>
                         <div class="flex items-center gap-1">
                             ${markCompletedBtn}
-                            <button onclick="renameRoute('${r.id}')" class="text-slate-500 hover:text-emerald-400 p-1 transition" title="Rename Route">
-                                <i class="fa-solid fa-pen text-xs"></i>
-                            </button>
-                            <button onclick="deleteRoute('${r.id}')" class="text-slate-500 hover:text-red-400 p-1 transition" title="Delete Route">
-                                <i class="fa-solid fa-trash-can text-xs"></i>
-                            </button>
+                            <button onclick="renameRoute('${r.id}')" class="text-[#1E2A38]/60 hover:text-[#5B7B7A] p-1 transition" title="Rename"><i class="fa-solid fa-pen text-xs"></i></button>
+                            <button onclick="deleteRoute('${r.id}')" class="text-[#1E2A38]/60 hover:text-red-600 p-1 transition" title="Delete"><i class="fa-solid fa-trash-can text-xs"></i></button>
                         </div>
                     </div>
                 `;
@@ -1249,26 +1165,21 @@
         function focusRoute(id) {
             const route = savedRoutes.find(r => r.id === id);
             if (!route) return;
-            const bounds = L.latLngBounds(route.trackPoints);
-            map.fitBounds(bounds, { padding: [30, 30] });
+            map.fitBounds(L.latLngBounds(route.trackPoints), { padding: [30, 30] });
             if (window.innerWidth < 768) switchMobileTab('map');
         }
 
         function updateOverallProgress() {
             const uniqueBagged = getGlobalBaggedFellNames().size;
             const percent = Math.round((uniqueBagged / 214) * 100);
-
             document.getElementById('overall-bagged-count').textContent = `${uniqueBagged} / 214 (${percent}%)`;
             document.getElementById('overall-progress-bar').style.width = `${percent}%`;
-
             document.getElementById('count-tab-bagged').textContent = uniqueBagged;
             document.getElementById('count-tab-near').textContent = getGlobalNearMissFellNames().size;
         }
 
         function updateCumulativeStatsSummary() {
-            let totalDistMeters = 0;
-            let totalElevationMeters = 0;
-
+            let totalDistMeters = 0, totalElevationMeters = 0;
             savedRoutes.forEach(r => {
                 if (r.type !== 'planned') {
                     totalDistMeters += r.distanceMeters;
@@ -1276,26 +1187,18 @@
                 }
             });
 
-            const dist = unitSystem === 'metric' 
-                ? (totalDistMeters / 1000).toFixed(1) + ' km'
-                : (totalDistMeters / 1609.34).toFixed(1) + ' mi';
-
-            const ele = unitSystem === 'metric'
-                ? totalElevationMeters + ' m'
-                : Math.round(totalElevationMeters * 3.28084) + ' ft';
-
-            const uniqueBagged = getGlobalBaggedFellNames().size;
-            const uniqueNear = getGlobalNearMissFellNames().size;
+            const dist = unitSystem === 'metric' ? (totalDistMeters / 1000).toFixed(1) + ' km' : (totalDistMeters / 1609.34).toFixed(1) + ' mi';
+            const ele = unitSystem === 'metric' ? totalElevationMeters + ' m' : Math.round(totalElevationMeters * 3.28084) + ' ft';
 
             document.getElementById('stat-distance').innerHTML = dist;
             document.getElementById('stat-elevation').innerHTML = ele;
-            document.getElementById('stat-bagged').textContent = uniqueBagged;
-            document.getElementById('stat-near').textContent = uniqueNear;
+            document.getElementById('stat-bagged').textContent = getGlobalBaggedFellNames().size;
+            document.getElementById('stat-near').textContent = getGlobalNearMissFellNames().size;
         }
 
         function resetStatsSummary() {
-            document.getElementById('stat-distance').innerHTML = `0.0 <span class="text-xs text-slate-400 font-normal">km</span>`;
-            document.getElementById('stat-elevation').innerHTML = `0 <span class="text-xs text-slate-400 font-normal">m</span>`;
+            document.getElementById('stat-distance').innerHTML = `0.0 <span class="text-xs text-[#1E2A38]/60 font-normal">km</span>`;
+            document.getElementById('stat-elevation').innerHTML = `0 <span class="text-xs text-[#1E2A38]/60 font-normal">m</span>`;
             document.getElementById('stat-bagged').textContent = '0';
             document.getElementById('stat-near').textContent = '0';
         }
@@ -1305,9 +1208,9 @@
             ['bagged', 'near', 'all'].forEach(t => {
                 const btn = document.getElementById(`tab-${t}`);
                 if (t === tab) {
-                    btn.className = "flex-1 py-1 bg-slate-800 text-slate-100 rounded font-medium transition shadow-sm";
+                    btn.className = "flex-1 py-1 bg-[#1E2A38] text-[#F4EFEB] rounded-lg font-bold transition shadow-sm";
                 } else {
-                    btn.className = "flex-1 py-1 text-slate-400 hover:text-slate-200 rounded font-medium transition";
+                    btn.className = "flex-1 py-1 text-[#1E2A38]/70 hover:text-[#1E2A38] rounded-lg font-bold transition";
                 }
             });
             renderFellList();
@@ -1321,20 +1224,14 @@
 
             let list = wainwrights.filter(f => {
                 const hub = wainwrightGatewayTowns[f.name] || {};
-                const matchName = f.name.toLowerCase().includes(search);
-                const matchTown = hub.town ? hub.town.toLowerCase().includes(search) : false;
-                const matchAlt = hub.altTown ? hub.altTown.toLowerCase().includes(search) : false;
-                return matchName || matchTown || matchAlt;
+                return f.name.toLowerCase().includes(search) || (hub.town && hub.town.toLowerCase().includes(search));
             });
 
-            if (currentTab === 'bagged') {
-                list = list.filter(f => baggedMap.has(f.name));
-            } else if (currentTab === 'near') {
-                list = list.filter(f => nearSet.has(f.name));
-            }
+            if (currentTab === 'bagged') { list = list.filter(f => baggedMap.has(f.name)); }
+            else if (currentTab === 'near') { list = list.filter(f => nearSet.has(f.name)); }
 
             if (list.length === 0) {
-                container.innerHTML = `<p class="text-slate-500 italic text-xs text-center py-4">No matching fells found.</p>`;
+                container.innerHTML = `<p class="text-[#1E2A38]/60 italic text-xs text-center py-4">No matching fells found.</p>`;
                 return;
             }
 
@@ -1343,28 +1240,25 @@
                 const isBagged = baggedMap.has(f.name);
                 const completionDate = baggedMap.get(f.name);
                 const isNear = !isBagged && nearSet.has(f.name);
+                const elev = unitSystem === 'metric' ? `${f.elevation}m` : `${Math.round(f.elevation * 3.28084)}ft`;
 
-                const elev = unitSystem === 'metric' 
-                    ? `${f.elevation}m` 
-                    : `${Math.round(f.elevation * 3.28084)}ft`;
-
-                let statusBadge = `<button onclick="event.stopPropagation(); toggleManualBagged('${f.name}')" class="text-[10px] text-slate-400 bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded transition border border-slate-700">+ Mark Completed</button>`;
+                let statusBadge = `<button onclick="event.stopPropagation(); toggleManualBagged('${f.name}')" class="text-[10px] font-bold text-[#1E2A38] bg-[#FAF7F2] hover:bg-[#EAE3DC] px-2.5 py-1 rounded-lg transition border border-[#1E2A38]/30">+ Mark Completed</button>`;
                 
                 if (isBagged) {
                     const formattedDate = new Date(completionDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-                    statusBadge = `<div class="text-right cursor-pointer" onclick="event.stopPropagation(); toggleManualBagged('${f.name}')" title="Click to edit/remove date">
-                        <span class="text-[10px] font-semibold text-emerald-400 bg-emerald-950/80 border border-emerald-800/60 px-1.5 py-0.5 rounded inline-block"><i class="fa-solid fa-check mr-1"></i>Bagged</span>
-                        <p class="text-[9px] text-emerald-300/80 mt-0.5 font-mono">${formattedDate}</p>
+                    statusBadge = `<div class="text-right cursor-pointer" onclick="event.stopPropagation(); toggleManualBagged('${f.name}')" title="Click to edit date">
+                        <span class="text-[10px] font-extrabold text-white bg-[#5B7B7A] px-2 py-0.5 rounded inline-block"><i class="fa-solid fa-check mr-1"></i>Bagged</span>
+                        <p class="text-[9px] text-[#5B7B7A] mt-0.5 font-bold font-mono">${formattedDate}</p>
                     </div>`;
                 } else if (isNear) {
-                    statusBadge = `<button onclick="event.stopPropagation(); toggleManualBagged('${f.name}')" class="text-[10px] text-amber-400 bg-amber-950/60 border border-amber-800/50 hover:bg-amber-900/50 px-1.5 py-0.5 rounded transition">Near Miss (+ Log)</button>`;
+                    statusBadge = `<button onclick="event.stopPropagation(); toggleManualBagged('${f.name}')" class="text-[10px] font-bold text-white bg-[#D49B53] px-2 py-1 rounded-lg transition">Near Miss (+)</button>`;
                 }
 
                 return `
-                    <div onclick="centerMapOnFell('${f.name}')" class="bg-slate-900/80 hover:bg-slate-800/80 border border-slate-800/80 rounded-lg p-2.5 flex items-center justify-between cursor-pointer transition text-xs">
+                    <div onclick="centerMapOnFell('${f.name}')" class="bg-[#FAF7F2] hover:bg-[#EAE3DC]/50 border-2 border-[#1E2A38]/15 rounded-xl p-2.5 flex items-center justify-between cursor-pointer transition text-xs shadow-sm">
                         <div>
-                            <p class="font-semibold text-slate-200">${f.name}</p>
-                            <p class="text-[10px] text-slate-400">${hub.town || f.region} • ${elev}</p>
+                            <p class="font-bold text-[#1E2A38] brand-font">${f.name}</p>
+                            <p class="text-[10px] text-[#1E2A38]/60 font-medium">${hub.town || f.region} • ${elev}</p>
                         </div>
                         ${statusBadge}
                     </div>
@@ -1376,16 +1270,14 @@
             const fell = wainwrights.find(f => f.name === name);
             if (fell) {
                 map.setView([fell.lat, fell.lng], 14);
-                if (fellMarkers[name]) {
-                    fellMarkers[name].openPopup();
-                }
+                if (fellMarkers[name]) fellMarkers[name].openPopup();
                 if (window.innerWidth < 768) switchMobileTab('map');
             }
         }
 
         function toggleUnits() {
             unitSystem = unitSystem === 'metric' ? 'imperial' : 'metric';
-            document.getElementById('unit-toggle').textContent = unitSystem === 'metric' ? 'Metric (km/m)' : 'Imperial (mi/ft)';
+            document.getElementById('unit-toggle').textContent = unitSystem === 'metric' ? 'Metric' : 'Imperial';
             renderSavedRoutesList();
             renderFellList();
             plotAllFellsOnMap();
@@ -1397,19 +1289,15 @@
         function updateBaggingRadius() {
             baggingRadius = parseInt(document.getElementById('radius-select').value);
             savedRoutes.forEach(r => {
-                const bagged = [];
-                const nearMisses = [];
+                const bagged = [], nearMisses = [];
                 wainwrights.forEach(fell => {
                     let minDistance = Infinity;
                     for (let pt of r.trackPoints) {
                         const d = getDistanceMeters(pt[0], pt[1], fell.lat, fell.lng);
                         if (d < minDistance) minDistance = d;
                     }
-                    if (minDistance <= baggingRadius) {
-                        bagged.push(fell.name);
-                    } else if (minDistance <= 300) {
-                        nearMisses.push({ name: fell.name, dist: Math.round(minDistance) });
-                    }
+                    if (minDistance <= baggingRadius) { bagged.push(fell.name); }
+                    else if (minDistance <= 300) { nearMisses.push({ name: fell.name, dist: Math.round(minDistance) }); }
                 });
                 r.bagged = bagged;
                 r.nearMisses = nearMisses;
