@@ -70,7 +70,7 @@
 
     <!-- FLOATING TOP HEADER BAR (Minimal HUD) -->
     <header class="absolute top-3 left-3 right-3 z-20 flex items-center justify-between pointer-events-none">
-        <!-- Badge & Title Pill -->
+        <!-- Badge, Title & Version Pill -->
         <div class="pointer-events-auto bg-[#FFFBF7]/95 backdrop-blur-md border-2 border-[#1E2A38]/20 px-3 py-1.5 rounded-2xl shadow-xl flex items-center gap-2.5">
             <div class="w-9 h-9 rounded-full border-2 border-[#1E2A38] bg-[#F4EFEB] flex items-center justify-center flex-shrink-0 shadow-sm relative overflow-hidden">
                 <svg viewBox="0 0 100 100" class="w-full h-full absolute inset-0 overflow-visible">
@@ -82,7 +82,10 @@
                 <i class="fa-solid fa-mountain text-xs text-[#D49B53] z-10 mt-1"></i>
             </div>
             <div>
-                <h1 class="font-extrabold text-xs md:text-sm text-[#1E2A38] tracking-tight brand-font leading-tight">Wainwright Bagger</h1>
+                <div class="flex items-center gap-1.5 leading-tight">
+                    <h1 class="font-extrabold text-xs md:text-sm text-[#1E2A38] tracking-tight brand-font">Wainwright Bagger</h1>
+                    <span class="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-[#1E2A38]/10 text-[#1E2A38]">v1.5.0</span>
+                </div>
                 <p id="header-progress-txt" class="text-[10px] text-[#5B7B7A] font-bold">0 / 214 Bagged (0%)</p>
             </div>
         </div>
@@ -129,22 +132,24 @@
                 </div>
             </div>
 
-            <!-- Dual Upload Buttons -->
-            <div class="grid grid-cols-2 gap-2">
-                <div class="border-2 border-[#1E2A38] bg-[#1E2A38] hover:bg-[#374151] rounded-2xl p-2.5 text-center transition cursor-pointer group relative shadow-md flex flex-col items-center justify-center min-h-[90px]">
+            <!-- Dual Upload Buttons with Subtitles Restored -->
+            <div class="grid grid-cols-2 gap-2.5">
+                <div class="border-2 border-[#1E2A38] bg-[#1E2A38] hover:bg-[#374151] rounded-2xl p-3 text-center transition cursor-pointer group relative shadow-md flex flex-col items-center justify-center min-h-[110px]">
                     <input type="file" id="gpx-completed-input" accept=".gpx" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" multiple />
-                    <div class="w-6 h-6 rounded-full bg-[#FAF7F2]/20 text-[#F4EFEB] flex items-center justify-center mx-auto mb-1">
+                    <div class="w-7 h-7 rounded-full bg-[#FAF7F2]/20 text-[#F4EFEB] flex items-center justify-center mx-auto mb-1">
                         <i class="fa-solid fa-check text-xs"></i>
                     </div>
-                    <p class="text-[11px] font-bold text-[#F4EFEB] brand-font uppercase tracking-wide leading-tight">+ Add Completed Walk</p>
+                    <p class="text-xs font-bold text-[#F4EFEB] brand-font uppercase tracking-wide leading-tight">+ Add Completed Walk</p>
+                    <p class="text-[9px] text-[#F4EFEB]/80 mt-1 leading-tight font-medium">Upload GPX file, see your completed stats and bag some fells.</p>
                 </div>
 
-                <div class="border-2 border-[#D49B53] bg-[#D49B53] hover:bg-[#c28842] rounded-2xl p-2.5 text-center transition cursor-pointer group relative shadow-md flex flex-col items-center justify-center min-h-[90px]">
+                <div class="border-2 border-[#D49B53] bg-[#D49B53] hover:bg-[#c28842] rounded-2xl p-3 text-center transition cursor-pointer group relative shadow-md flex flex-col items-center justify-center min-h-[110px]">
                     <input type="file" id="gpx-planned-input" accept=".gpx" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" multiple />
-                    <div class="w-6 h-6 rounded-full bg-[#1E2A38]/20 text-[#1E2A38] flex items-center justify-center mx-auto mb-1">
+                    <div class="w-7 h-7 rounded-full bg-[#1E2A38]/20 text-[#1E2A38] flex items-center justify-center mx-auto mb-1">
                         <i class="fa-solid fa-map text-xs"></i>
                     </div>
-                    <p class="text-[11px] font-bold text-[#1E2A38] brand-font uppercase tracking-wide leading-tight">+ Add Planned Walk</p>
+                    <p class="text-xs font-bold text-[#1E2A38] brand-font uppercase tracking-wide leading-tight">+ Add Planned Walk</p>
+                    <p class="text-[9px] text-[#1E2A38]/90 mt-1 leading-tight font-medium">Add planned GPX fell to confirm route and get fell info.</p>
                 </div>
             </div>
 
@@ -202,7 +207,7 @@
                     <button id="tab-all" onclick="switchTab('all')" class="flex-1 py-1 bg-[#1E2A38] text-[#F4EFEB] rounded-lg font-bold transition">All 214</button>
                 </div>
 
-                <!-- FIXED FELL LIST WRAPPER & ROW LAYOUT -->
+                <!-- FELL LIST WRAPPER & ROW LAYOUT -->
                 <div id="fell-list" class="flex flex-col space-y-1.5 max-h-52 overflow-y-auto pr-1 w-full"></div>
             </div>
 
@@ -305,7 +310,6 @@
         function initMap() {
             const openTopo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { maxZoom: 17 });
             
-            // CENTERED DIRECTLY ON THE LAKE DISTRICT NATIONAL PARK CENTER
             map = L.map('map', {
                 center: [54.48, -3.10],
                 zoom: 10.5,
@@ -313,7 +317,6 @@
                 zoomControl: false
             });
 
-            // Re-render map tiles smoothly behind drawer HUD
             setTimeout(() => { map.invalidateSize(); }, 250);
         }
 
