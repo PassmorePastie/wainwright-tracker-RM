@@ -56,7 +56,6 @@
             pointer-events: none;
         }
 
-        /* Bottom Sheet Slide Drawer Transition */
         #explore-drawer {
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
@@ -99,8 +98,8 @@
         </div>
     </header>
 
-    <!-- FLOATING BOTTOM SHEET / EXPLORER DRAWER (Option 1 Concept) -->
-    <aside id="explore-drawer" class="absolute bottom-0 left-0 right-0 md:left-4 md:right-auto md:w-[420px] md:bottom-4 md:top-20 bg-[#FFFBF7] border-2 border-[#1E2A38]/20 rounded-t-3xl md:rounded-3xl shadow-2xl z-30 flex flex-col overflow-hidden transform translate-y-[calc(100%-64px)] md:translate-y-0">
+    <!-- FLOATING BOTTOM SHEET / EXPLORER DRAWER -->
+    <aside id="explore-drawer" class="absolute bottom-0 left-0 right-0 md:left-4 md:right-auto md:w-[420px] md:bottom-4 md:top-20 bg-[#FFFBF7] border-2 border-[#1E2A38]/20 rounded-t-3xl md:rounded-3xl shadow-2xl z-30 flex flex-col max-h-[82vh] md:max-h-none overflow-hidden transform translate-y-[calc(100%-64px)] md:translate-y-0">
         
         <!-- Drawer Drag Handle & Toggle Header -->
         <div onclick="toggleDrawer()" class="p-3 bg-[#FAF7F2] border-b-2 border-[#1E2A38]/10 flex flex-col items-center justify-center cursor-pointer flex-shrink-0 select-none">
@@ -223,13 +222,6 @@
         let plannedLayerGroup = L.layerGroup();
         let unvisitedLayerGroup = L.layerGroup();
         let tracksLayerGroup = L.layerGroup();
-
-        const wainwrightGatewayTowns = {
-            "Catbells": { town: "Keswick", desc: "Iconic Derwentwater ridge walk." },
-            "Helvellyn": { town: "Glenridding", desc: "Famous for Striding Edge." },
-            "Scafell Pike": { town: "Wasdale Head", desc: "England's highest peak." },
-            "Skiddaw": { town: "Keswick", desc: "Landmark northern mountain." }
-        };
 
         const wainwrights = [
             { name: "Scafell Pike", elevation: 978, lat: 54.4543, lng: -3.2117, region: "Southern" },
@@ -511,7 +503,7 @@
                         <p class="font-bold text-[#1E2A38] brand-font">${f.name}</p>
                         <p class="text-[10px] text-[#1E2A38]/60">${f.region} • ${f.elevation}m</p>
                     </div>
-                    <span class="text-[10px] font-bold px-2 py-0.5 rounded ${baggedMap.has(f.name) ? 'bg-[#5B7B7A] text-white' : 'bg-[#1E2A38]/10 text-[#1E2A38]'}>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded ${baggedMap.has(f.name) ? 'bg-[#5B7B7A] text-white' : 'bg-[#1E2A38]/10 text-[#1E2A38]'}">
                         ${baggedMap.has(f.name) ? 'Bagged' : 'Unvisited'}
                     </span>
                 </div>
