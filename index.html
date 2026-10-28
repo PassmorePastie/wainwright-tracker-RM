@@ -242,6 +242,7 @@
         let currentRouteTab = 'completed';
         let savedRoutes = [];
         let fellMarkers = {};
+        let routePolylines = {};
         let isDrawerOpen = false;
         let celebrationTimeout = null;
 
@@ -525,7 +526,6 @@
                 const lon = parseFloat(trkpts[i].getAttribute("lon"));
                 const ele = trkpts[i].getElementsByTagName("ele")[0] ? parseFloat(trkpts[i].getElementsByTagName("ele")[0].textContent) : 0;
                 
-                // Extract timestamp from GPX point if available
                 if (!extractedDate) {
                     const timeEl = trkpts[i].getElementsByTagName("time")[0];
                     if (timeEl && timeEl.textContent) {
@@ -541,7 +541,6 @@
                 trackPoints.push([lat, lon]);
             }
 
-            // Fallback to today's date if GPX has no timestamp tags
             const walkDate = extractedDate || new Date().toISOString().split('T')[0];
 
             let totalDistMeters = 0;
@@ -597,6 +596,7 @@
                 opacity: 0.9
             });
             tracksLayerGroup.addLayer(visibleLine);
+            routePolylines[route.id] = visibleLine;
             map.fitBounds(visibleLine.getBounds(), { padding: [30, 30] });
         }
 
@@ -703,7 +703,7 @@
                                 <p class="font-bold text-[#1E2A38] brand-font">${r.name}</p>
                                 <p class="text-[10px] text-[#1E2A38]/70">${r.date} • ${dStr} • ${r.bagged.length} bagged</p>
                             </div>
-                            <button onclick="deleteRoute(${r.id})" class="text-red-600 p-1"><i class="fa-solid fa-trash-can text-xs"></i></button>
+                            <button onclick="event.stopPropagation(); deleteRoute(${r.id})" class="text-red-600 hover:text-red-800 p-2 cursor-pointer"><i class="fa-solid fa-trash-can text-sm"></i></button>
                         </div>
                     `;
                 }).join('');
@@ -720,7 +720,7 @@
                                 <p class="font-bold text-[#9333ea] brand-font">${r.name}</p>
                                 <p class="text-[10px] text-[#1E2A38]/70">${dStr} • ${r.bagged.length} fells mapped</p>
                             </div>
-                            <button onclick="deleteRoute(${r.id})" class="text-red-600 p-1"><i class="fa-solid fa-trash-can text-xs"></i></button>
+                            <button onclick="event.stopPropagation(); deleteRoute(${r.id})" class="text-red-600 hover:text-red-800 p-2 cursor-pointer"><i class="fa-solid fa-trash-can text-sm"></i></button>
                         </div>
                     `;
                 }).join('');
@@ -731,6 +731,7 @@
             savedRoutes = savedRoutes.filter(r => r.id !== id);
             saveHistoryToStorage();
             tracksLayerGroup.clearLayers();
+            routePolylines = {};
             savedRoutes.forEach(r => renderRouteOnMap(r));
             renderSavedRoutesLists();
             updateOverallProgress();
@@ -744,6 +745,7 @@
                 savedRoutes = [];
                 localStorage.removeItem('wainwright_saved_routes');
                 tracksLayerGroup.clearLayers();
+                routePolylines = {};
                 renderSavedRoutesLists();
                 updateOverallProgress();
                 plotAllFellsOnMap();
