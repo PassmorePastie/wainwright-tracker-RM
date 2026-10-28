@@ -144,11 +144,11 @@
             <div class="grid grid-cols-2 gap-2">
                 <div class="bg-[#FAF7F2] border-2 border-[#1E2A38]/15 rounded-2xl p-2.5 shadow-sm">
                     <span class="text-[10px] font-bold text-[#1E2A38]/70 uppercase tracking-wider block mb-0.5 brand-font">Total Distance</span>
-                    <span id="stat-distance" class="text-sm font-extrabold text-[#1E2A38]">0.0 <span id="unit-dist-lbl" class="text-[10px] text-[#1E2A38]/60 font-normal">km</span></span>
+                    <span id="stat-distance" class="text-sm font-extrabold text-[#1E2A38]">0.0 <span class="text-[10px] text-[#1E2A38]/60 font-normal">km</span></span>
                 </div>
                 <div class="bg-[#FAF7F2] border-2 border-[#1E2A38]/15 rounded-2xl p-2.5 shadow-sm">
                     <span class="text-[10px] font-bold text-[#1E2A38]/70 uppercase tracking-wider block mb-0.5 brand-font">Elevation Gain</span>
-                    <span id="stat-elevation" class="text-sm font-extrabold text-[#1E2A38]">0 <span id="unit-ele-lbl" class="text-[10px] text-[#1E2A38]/60 font-normal">m</span></span>
+                    <span id="stat-elevation" class="text-sm font-extrabold text-[#1E2A38]">0 <span class="text-[10px] text-[#1E2A38]/60 font-normal">m</span></span>
                 </div>
                 <div class="bg-[#5B7B7A]/10 border-2 border-[#5B7B7A]/40 rounded-2xl p-2 shadow-sm">
                     <span class="text-[10px] font-bold text-[#5B7B7A] uppercase tracking-wider block mb-0.5 brand-font"><i class="fa-solid fa-circle-check mr-1"></i>Bagged</span>
@@ -170,14 +170,25 @@
                 </select>
             </div>
 
-            <!-- Saved Routes -->
-            <div class="space-y-1.5">
+            <!-- SEPARATED SAVED ROUTES SECTION -->
+            <div class="space-y-2.5 pt-2 border-t-2 border-[#1E2A38]/15">
                 <div class="flex justify-between items-center">
-                    <h3 class="text-xs font-bold text-[#1E2A38] uppercase tracking-wider brand-font">Saved Routes (<span id="routes-count">0</span>)</h3>
-                    <button onclick="clearAllHistory()" class="text-[11px] text-red-600 hover:underline font-bold">Clear History</button>
+                    <h3 class="text-xs font-bold text-[#1E2A38] uppercase tracking-wider brand-font">Saved Routes</h3>
+                    <button onclick="clearAllHistory()" class="text-[11px] text-red-600 hover:underline font-bold">Clear All</button>
                 </div>
-                <div id="saved-routes-list" class="space-y-2 max-h-36 overflow-y-auto pr-1 text-xs">
-                    <p class="text-[#1E2A38]/60 italic text-center py-2">No saved routes yet.</p>
+
+                <!-- Sub-tabs for Completed vs Planned Routes -->
+                <div class="flex rounded-xl bg-[#FAF7F2] p-1 border-2 border-[#1E2A38]/20 text-xs">
+                    <button id="routes-tab-completed" onclick="switchRouteTab('completed')" class="flex-1 py-1 bg-[#1E2A38] text-[#F4EFEB] rounded-lg font-bold transition">Completed (<span id="count-completed-routes">0</span>)</button>
+                    <button id="routes-tab-planned" onclick="switchRouteTab('planned')" class="flex-1 py-1 rounded-lg font-bold text-[#1E2A38]/70 transition">Planned (<span id="count-planned-routes">0</span>)</button>
+                </div>
+
+                <!-- Route Lists Container -->
+                <div id="completed-routes-list" class="space-y-2 max-h-40 overflow-y-auto pr-1 text-xs">
+                    <p class="text-[#1E2A38]/60 italic text-center py-2">No completed routes saved.</p>
+                </div>
+                <div id="planned-routes-list" class="space-y-2 max-h-40 overflow-y-auto pr-1 text-xs hidden">
+                    <p class="text-[#1E2A38]/60 italic text-center py-2">No planned routes saved.</p>
                 </div>
             </div>
 
@@ -203,9 +214,10 @@
 
     <script>
         let map;
-        let unitSystem = 'metric'; // 'metric' or 'imperial'
+        let unitSystem = 'metric';
         let baggingRadius = 100;
         let currentTab = 'all';
+        let currentRouteTab = 'completed';
         let savedRoutes = [];
         let fellMarkers = {};
         let isDrawerOpen = false;
@@ -319,13 +331,6 @@
                 return `${Math.round(meters * 3.28084)} ft`;
             }
             return `${meters} m`;
-        }
-
-        function formatDistance(meters) {
-            if (unitSystem === 'imperial') {
-                return `${(meters / 1609.34).toFixed(1)} mi`;
-            }
-            return `${(meters / 1000).toFixed(1)} km`;
         }
 
         function plotAllFellsOnMap() {
@@ -448,7 +453,7 @@
             savedRoutes.unshift(routeObj);
             saveHistoryToStorage();
             renderRouteOnMap(routeObj);
-            renderSavedRoutesList();
+            renderSavedRoutesLists();
             updateOverallProgress();
             plotAllFellsOnMap();
             renderFellList();
@@ -478,7 +483,7 @@
             const data = localStorage.getItem('wainwright_saved_routes');
             if (data) {
                 savedRoutes = JSON.parse(data);
-                renderSavedRoutesList();
+                renderSavedRoutesLists();
                 savedRoutes.forEach(r => renderRouteOnMap(r));
                 updateCumulativeStatsSummary();
             }
@@ -528,22 +533,69 @@
             document.getElementById('stat-near').textContent = getGlobalNearMissFellNames().size;
         }
 
-        function renderSavedRoutesList() {
-            const container = document.getElementById('saved-routes-list');
-            document.getElementById('routes-count').textContent = savedRoutes.length;
-            if (savedRoutes.length === 0) { container.innerHTML = `<p class="text-[#1E2A38]/60 italic text-center py-2">No saved routes yet.</p>`; return; }
-            container.innerHTML = savedRoutes.map(r => {
-                const dStr = unitSystem === 'imperial' ? `${(r.distanceMeters / 1609.34).toFixed(1)} mi` : `${(r.distanceMeters / 1000).toFixed(1)} km`;
-                return `
-                    <div class="bg-[#FAF7F2] border-2 border-[#1E2A38]/15 rounded-xl p-2.5 flex items-center justify-between shadow-sm">
-                        <div>
-                            <p class="font-bold text-[#1E2A38] brand-font">${r.name}</p>
-                            <p class="text-[10px] text-[#1E2A38]/70">${dStr} • ${r.bagged.length} bagged</p>
+        function switchRouteTab(tab) {
+            currentRouteTab = tab;
+            const compBtn = document.getElementById('routes-tab-completed');
+            const planBtn = document.getElementById('routes-tab-planned');
+            const compList = document.getElementById('completed-routes-list');
+            const planList = document.getElementById('planned-routes-list');
+
+            if (tab === 'completed') {
+                compBtn.className = "flex-1 py-1 bg-[#1E2A38] text-[#F4EFEB] rounded-lg font-bold transition";
+                planBtn.className = "flex-1 py-1 text-[#1E2A38]/70 font-bold transition";
+                compList.classList.remove('hidden');
+                planList.classList.add('hidden');
+            } else {
+                planBtn.className = "flex-1 py-1 bg-[#1E2A38] text-[#F4EFEB] rounded-lg font-bold transition";
+                compBtn.className = "flex-1 py-1 text-[#1E2A38]/70 font-bold transition";
+                planList.classList.remove('hidden');
+                compList.classList.add('hidden');
+            }
+        }
+
+        function renderSavedRoutesLists() {
+            const completedContainer = document.getElementById('completed-routes-list');
+            const plannedContainer = document.getElementById('planned-routes-list');
+
+            const completedRoutes = savedRoutes.filter(r => r.type !== 'planned');
+            const plannedRoutes = savedRoutes.filter(r => r.type === 'planned');
+
+            document.getElementById('count-completed-routes').textContent = completedRoutes.length;
+            document.getElementById('count-planned-routes').textContent = plannedRoutes.length;
+
+            if (completedRoutes.length === 0) {
+                completedContainer.innerHTML = `<p class="text-[#1E2A38]/60 italic text-center py-2">No completed routes saved.</p>`;
+            } else {
+                completedContainer.innerHTML = completedRoutes.map(r => {
+                    const dStr = unitSystem === 'imperial' ? `${(r.distanceMeters / 1609.34).toFixed(1)} mi` : `${(r.distanceMeters / 1000).toFixed(1)} km`;
+                    return `
+                        <div class="bg-[#FAF7F2] border-2 border-[#1E2A38]/15 rounded-xl p-2.5 flex items-center justify-between shadow-sm">
+                            <div>
+                                <p class="font-bold text-[#1E2A38] brand-font">${r.name}</p>
+                                <p class="text-[10px] text-[#1E2A38]/70">${dStr} • ${r.bagged.length} bagged</p>
+                            </div>
+                            <button onclick="deleteRoute(${r.id})" class="text-red-600 p-1"><i class="fa-solid fa-trash-can text-xs"></i></button>
                         </div>
-                        <button onclick="deleteRoute(${r.id})" class="text-red-600 p-1"><i class="fa-solid fa-trash-can text-xs"></i></button>
-                    </div>
-                `;
-            }).join('');
+                    `;
+                }).join('');
+            }
+
+            if (plannedRoutes.length === 0) {
+                plannedContainer.innerHTML = `<p class="text-[#1E2A38]/60 italic text-center py-2">No planned routes saved.</p>`;
+            } else {
+                plannedContainer.innerHTML = plannedRoutes.map(r => {
+                    const dStr = unitSystem === 'imperial' ? `${(r.distanceMeters / 1609.34).toFixed(1)} mi` : `${(r.distanceMeters / 1000).toFixed(1)} km`;
+                    return `
+                        <div class="bg-[#FAF7F2] border-2 border-[#9333ea]/30 rounded-xl p-2.5 flex items-center justify-between shadow-sm">
+                            <div>
+                                <p class="font-bold text-[#9333ea] brand-font">${r.name}</p>
+                                <p class="text-[10px] text-[#1E2A38]/70">${dStr} • ${r.bagged.length} fells mapped</p>
+                            </div>
+                            <button onclick="deleteRoute(${r.id})" class="text-red-600 p-1"><i class="fa-solid fa-trash-can text-xs"></i></button>
+                        </div>
+                    `;
+                }).join('');
+            }
         }
 
         function deleteRoute(id) {
@@ -551,7 +603,7 @@
             saveHistoryToStorage();
             tracksLayerGroup.clearLayers();
             savedRoutes.forEach(r => renderRouteOnMap(r));
-            renderSavedRoutesList();
+            renderSavedRoutesLists();
             updateOverallProgress();
             plotAllFellsOnMap();
             renderFellList();
@@ -563,7 +615,7 @@
                 savedRoutes = [];
                 localStorage.removeItem('wainwright_saved_routes');
                 tracksLayerGroup.clearLayers();
-                renderSavedRoutesList();
+                renderSavedRoutesLists();
                 updateOverallProgress();
                 plotAllFellsOnMap();
                 renderFellList();
@@ -623,9 +675,8 @@
             unitSystem = unitSystem === 'metric' ? 'imperial' : 'metric';
             document.getElementById('unit-toggle').textContent = unitSystem === 'metric' ? 'Metric' : 'Imperial';
             
-            // Re-render components with updated units
             updateCumulativeStatsSummary();
-            renderSavedRoutesList();
+            renderSavedRoutesLists();
             renderFellList();
             plotAllFellsOnMap();
         }
