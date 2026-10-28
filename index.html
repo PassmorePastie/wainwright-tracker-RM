@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Wainwright Bagger — Your Fell Tracker</title>
+    <title>Wainwright Bagger — Live UI Concepts</title>
     
     <!-- PWA Web App Manifest -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#F4EFEB">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="Wainwrights">
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -28,7 +27,15 @@
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #EAE3DC; }
         ::-webkit-scrollbar-thumb { background: #1E2A38; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #374151; }
+
+        .leaflet-control-custom-panel {
+            background-color: #FFFBF7;
+            color: #1E2A38;
+            border: 2px solid #1E2A38;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(30, 42, 56, 0.15);
+            overflow: hidden;
+        }
 
         .custom-pin {
             display: flex;
@@ -44,1276 +51,133 @@
         .pin-near { background-color: #D49B53; }
         .pin-planned { background-color: #9333ea; }
         .pin-unvisited { background-color: #94a3b8; opacity: 0.8; }
-
-        .fell-label {
-            background: rgba(30, 42, 56, 0.9);
-            border: 1px solid #1E2A38;
-            color: #F4EFEB;
-            font-weight: 600;
-            font-size: 10px;
-            padding: 1px 6px;
-            border-radius: 4px;
-            white-space: nowrap;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            pointer-events: none;
-        }
-
-        .leaflet-control-custom-panel {
-            background-color: #FFFBF7;
-            color: #1E2A38;
-            border: 2px solid #1E2A38;
-            border-radius: 0.75rem;
-            box-shadow: 0 4px 6px -1px rgba(30, 42, 56, 0.15);
-            overflow: hidden;
-        }
-        .leaflet-control-custom-panel select, .leaflet-control-custom-panel label {
-            font-size: 0.8rem;
-            color: #1E2A38;
-            font-weight: 600;
-        }
     </style>
 </head>
-<body class="h-screen overflow-hidden flex flex-col md:flex-row pb-12 md:pb-0">
+<body class="h-screen overflow-hidden flex flex-col bg-[#F4EFEB]">
 
-    <!-- SIDEBAR PANEL -->
-    <aside id="sidebar" class="w-full md:w-96 bg-[#FFFBF7] border-r-2 border-[#1E2A38]/20 flex flex-col h-full z-10 shadow-xl flex-shrink-0">
+    <!-- LIVE UI CONCEPT SWITCHER HEADER -->
+    <header id="concept-switcher-header" class="bg-[#1E2A38] text-[#F4EFEB] p-3 flex flex-wrap items-center justify-between border-b-2 border-amber-500/50 z-50 flex-shrink-0 shadow-lg transition-all duration-300">
+        <div class="flex items-center gap-2 mb-2 md:mb-0">
+            <i class="fa-solid fa-palette text-amber-400"></i>
+            <span class="font-black brand-font text-xs uppercase tracking-wider">LIVE UI CONCEPTS</span>
+            <span class="text-[10px] bg-amber-500 text-black px-1.5 py-0.5 rounded font-mono font-bold">v1.5.0</span>
+        </div>
         
-        <!-- Header with Vintage Badge Branding & Version Number -->
-        <div class="p-4 border-b-2 border-[#1E2A38]/10 flex flex-col items-center justify-center bg-[#FAF7F2] text-center relative">
-            <div class="absolute right-4 top-4">
-                <button id="unit-toggle" onclick="toggleUnits()" class="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-lg bg-[#1E2A38] text-[#F4EFEB] hover:bg-[#374151] transition shadow-sm">
-                    Metric
-                </button>
-            </div>
-
-            <!-- Custom Retro Outdoor Badge (Fixed Text Path Arc & Font Sizing) -->
-            <div class="w-20 h-20 rounded-full border-[3px] border-[#1E2A38] bg-[#F4EFEB] flex flex-col items-center justify-center shadow-md relative overflow-hidden mb-2 mt-1">
-                <svg viewBox="0 0 100 100" class="w-full h-full absolute inset-0 overflow-visible">
-                    <path id="curve" fill="transparent" d="M 12, 50 A 38,38 0 1,1 88,50" />
-                    <text font-size="7.5" font-weight="800" fill="#1E2A38" letter-spacing="1">
-                        <textPath href="#curve" startOffset="50%" text-anchor="middle">WAINWRIGHT BAGGER</textPath>
-                    </text>
-                </svg>
-                <!-- Mountain Icon Center -->
-                <div class="z-10 flex flex-col items-center text-[#1E2A38] mt-2">
-                    <i class="fa-solid fa-mountain text-xl text-[#D49B53]"></i>
-                    <span class="text-[7px] uppercase tracking-widest mt-0.5 brand-font font-bold">Fell Tracker</span>
-                </div>
-            </div>
-
-            <h1 class="font-extrabold text-lg text-[#1E2A38] tracking-tight brand-font leading-tight">Wainwright Bagger</h1>
-            <p class="text-xs text-[#1E2A38]/70 font-medium">Your Lake District Fell Tracker</p>
-            <span class="mt-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-[#1E2A38]/10 text-[#1E2A38]">v1.4.2</span>
+        <div class="flex items-center gap-1.5 overflow-x-auto py-1 text-xs">
+            <button onclick="setUIConcept(1)" id="btn-concept-1" class="px-3 py-1 rounded-lg font-bold bg-amber-500 text-black transition shadow-sm">Option 1: Top-Bar</button>
+            <button onclick="setUIConcept(2)" id="btn-concept-2" class="px-3 py-1 rounded-lg font-bold bg-[#FAF7F2]/10 hover:bg-[#FAF7F2]/20 text-[#F4EFEB] transition">Option 2: Drawer</button>
+            <button onclick="setUIConcept(3)" id="btn-concept-3" class="px-3 py-1 rounded-lg font-bold bg-[#FAF7F2]/10 hover:bg-[#FAF7F2]/20 text-[#F4EFEB] transition">Option 3: Grid</button>
+            <button onclick="setUIConcept(4)" id="btn-concept-4" class="px-3 py-1 rounded-lg font-bold bg-[#FAF7F2]/10 hover:bg-[#FAF7F2]/20 text-[#F4EFEB] transition">Option 4: Heritage</button>
+            <button onclick="setUIConcept(5)" id="btn-concept-5" class="px-3 py-1 rounded-lg font-bold bg-[#FAF7F2]/10 hover:bg-[#FAF7F2]/20 text-[#F4EFEB] transition">Option 5: HUD</button>
         </div>
+    </header>
 
-        <!-- Scrollable Content -->
-        <div class="flex-1 overflow-y-auto p-4 space-y-4 pb-16 md:pb-4">
-
-            <!-- Overall Progress Summary -->
-            <div class="bg-[#FAF7F2] border-2 border-[#1E2A38]/15 rounded-xl p-3.5 space-y-2 shadow-sm">
-                <div class="flex justify-between items-center text-xs">
-                    <span class="text-[#1E2A38]/80 font-bold brand-font">Overall Progress</span>
-                    <span id="overall-bagged-count" class="font-extrabold text-[#5B7B7A]">0 / 214 (0%)</span>
+    <!-- MAIN APP WRAPPER -->
+    <div id="app-wrapper" class="flex-1 relative flex flex-col md:flex-row overflow-hidden">
+        
+        <!-- SIDEBAR CONTAINER (Concept target) -->
+        <aside id="sidebar" class="w-full md:w-96 bg-[#FFFBF7] border-r-2 border-[#1E2A38]/20 flex flex-col h-full z-20 shadow-xl flex-shrink-0 transition-all duration-300">
+            
+            <!-- Logo Header -->
+            <div class="p-4 border-b-2 border-[#1E2A38]/10 flex flex-col items-center justify-center bg-[#FAF7F2] text-center relative">
+                <div class="absolute right-4 top-4">
+                    <button onclick="toggleUnits()" class="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-lg bg-[#1E2A38] text-[#F4EFEB] hover:bg-[#374151] transition">
+                        Metric
+                    </button>
                 </div>
-                <div class="w-full bg-[#EAE3DC] rounded-full h-3 overflow-hidden border border-[#1E2A38]/20">
-                    <div id="overall-progress-bar" class="bg-[#5B7B7A] h-full rounded-full transition-all duration-500" style="width: 0%"></div>
-                </div>
+                <img src="https://raw.githubusercontent.com/username/repo/main/logo.png" alt="Wainwright Bagger Logo" class="w-20 h-20 rounded-full border-4 border-[#1E2A38] shadow-md mb-2 mt-1">
+                <h1 class="font-extrabold text-xl text-[#1E2A38] brand-font">Wainwright Bagger</h1>
+                <p class="text-xs text-[#1E2A38]/70">Your Fell Tracker</p>
+                <span class="mt-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-[#1E2A38]/10 text-[#1E2A38]">v1.5.0</span>
             </div>
 
-            <!-- Dual Upload Buttons -->
-            <div class="grid grid-cols-2 gap-2.5">
-                <div id="drop-zone-completed" class="border-2 border-[#1E2A38] bg-[#1E2A38] hover:bg-[#374151] rounded-xl p-3 text-center transition cursor-pointer group relative shadow-md flex flex-col items-center justify-center min-h-[110px]">
-                    <input type="file" id="gpx-completed-input" accept=".gpx" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" multiple />
-                    <div class="w-7 h-7 rounded-full bg-[#FAF7F2]/20 text-[#F4EFEB] flex items-center justify-center mx-auto mb-1 transition">
-                        <i class="fa-solid fa-check text-xs"></i>
-                    </div>
-                    <p class="text-xs font-bold text-[#F4EFEB] brand-font uppercase tracking-wide leading-tight">+ Add Completed Walk</p>
-                    <p class="text-[9px] text-[#F4EFEB]/80 mt-1 leading-tight font-medium">Upload GPX file, see your completed stats and bag some fells.</p>
-                </div>
-
-                <div id="drop-zone-planned" class="border-2 border-[#D49B53] bg-[#D49B53] hover:bg-[#c28842] rounded-xl p-3 text-center transition cursor-pointer group relative shadow-md flex flex-col items-center justify-center min-h-[110px]">
-                    <input type="file" id="gpx-planned-input" accept=".gpx" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" multiple />
-                    <div class="w-7 h-7 rounded-full bg-[#1E2A38]/20 text-[#1E2A38] flex items-center justify-center mx-auto mb-1 transition">
-                        <i class="fa-solid fa-map text-xs"></i>
-                    </div>
-                    <p class="text-xs font-bold text-[#1E2A38] brand-font uppercase tracking-wide leading-tight">+ Add Planned Walk</p>
-                    <p class="text-[9px] text-[#1E2A38]/90 mt-1 leading-tight font-medium">Add planned GPX fell to confirm route and get fell info.</p>
-                </div>
+            <!-- Scrollable Content -->
+            <div class="flex-1 overflow-y-auto p-4 space-y-4 pb-16">
+                <!-- Dashboard stats go here... -->
+                <p class="text-xs text-[#1E2A38]/70 italic">Select a design concept using the switcher at the top to change the layout!</p>
             </div>
+        </aside>
 
-            <!-- Current Track Stats -->
-            <div class="grid grid-cols-2 gap-2">
-                <div class="bg-[#FAF7F2] border-2 border-[#1E2A38]/15 rounded-xl p-2.5 shadow-sm">
-                    <span class="text-[10px] font-bold text-[#1E2A38]/70 uppercase tracking-wider block mb-0.5 brand-font">Total Distance</span>
-                    <span id="stat-distance" class="text-base font-extrabold text-[#1E2A38]">0.0 <span class="text-xs text-[#1E2A38]/60 font-normal">km</span></span>
-                </div>
-                <div class="bg-[#FAF7F2] border-2 border-[#1E2A38]/15 rounded-xl p-2.5 shadow-sm">
-                    <span class="text-[10px] font-bold text-[#1E2A38]/70 uppercase tracking-wider block mb-0.5 brand-font">Elevation Gain</span>
-                    <span id="stat-elevation" class="text-base font-extrabold text-[#1E2A38]">0 <span class="text-xs text-[#1E2A38]/60 font-normal">m</span></span>
-                </div>
-                <div class="bg-[#5B7B7A]/10 border-2 border-[#5B7B7A]/40 rounded-xl p-2.5 shadow-sm">
-                    <span class="text-[10px] font-bold text-[#5B7B7A] uppercase tracking-wider block mb-0.5 brand-font"><i class="fa-solid fa-circle-check mr-1"></i>Bagged</span>
-                    <span id="stat-bagged" class="text-base font-extrabold text-[#5B7B7A]">0</span>
-                </div>
-                <div class="bg-[#D49B53]/15 border-2 border-[#D49B53]/50 rounded-xl p-2.5 shadow-sm">
-                    <span class="text-[10px] font-bold text-[#D49B53] uppercase tracking-wider block mb-0.5 brand-font"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Near Misses</span>
-                    <span id="stat-near" class="text-base font-extrabold text-[#D49B53]">0</span>
-                </div>
-            </div>
+        <!-- MAP CONTAINER -->
+        <main id="map-container" class="flex-1 relative h-full bg-[#F4EFEB]">
+            <div id="map" class="w-full h-full z-0"></div>
+        </main>
 
-            <!-- Settings / Radius Threshold -->
-            <div class="flex items-center justify-between text-xs bg-[#FAF7F2] border-2 border-[#1E2A38]/15 rounded-xl p-2.5 shadow-sm">
-                <span class="text-[#1E2A38]/80 font-bold brand-font">Bagging Radius:</span>
-                <select id="radius-select" onchange="updateBaggingRadius()" class="bg-[#F4EFEB] text-[#1E2A38] border-2 border-[#1E2A38]/30 rounded-lg px-2 py-1 font-semibold focus:outline-none focus:border-[#1E2A38]">
-                    <option value="50">50m (Strict)</option>
-                    <option value="100" selected>100m (Standard)</option>
-                    <option value="200">200m (Generous)</option>
-                </select>
-            </div>
-
-            <!-- Saved Routes History -->
-            <div class="space-y-2">
-                <div class="flex justify-between items-center">
-                    <h3 class="text-xs font-bold text-[#1E2A38] uppercase tracking-wider brand-font">Saved Routes (<span id="routes-count">0</span>)</h3>
-                    <button onclick="clearAllHistory()" class="text-[11px] text-red-600 hover:text-red-700 font-bold transition hover:underline">Clear History</button>
-                </div>
-                <div id="saved-routes-list" class="space-y-2 max-h-48 overflow-y-auto pr-1 text-xs">
-                    <p class="text-[#1E2A38]/60 italic text-center py-2">No saved routes yet. Upload a GPX to start logging.</p>
-                </div>
-            </div>
-
-            <!-- Wainwright List / Tabs -->
-            <div class="pt-2 border-t-2 border-[#1E2A38]/15 space-y-3">
-                <div class="relative">
-                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-[#1E2A38]/50"></i>
-                    <input type="text" id="fell-search" oninput="renderFellList()" placeholder="Search fell or gateway town..." class="w-full bg-[#FAF7F2] border-2 border-[#1E2A38]/20 rounded-xl pl-8 pr-3 py-2 text-xs text-[#1E2A38] placeholder-[#1E2A38]/50 focus:outline-none focus:border-[#1E2A38] font-medium" />
-                </div>
-
-                <div class="flex rounded-xl bg-[#FAF7F2] p-1 border-2 border-[#1E2A38]/20 text-xs">
-                    <button id="tab-bagged" onclick="switchTab('bagged')" class="flex-1 py-1 rounded-lg font-bold text-[#1E2A38]/70 transition">Bagged (<span id="count-tab-bagged">0</span>)</button>
-                    <button id="tab-near" onclick="switchTab('near')" class="flex-1 py-1 rounded-lg font-bold text-[#1E2A38]/70 transition">Near Miss (<span id="count-tab-near">0</span>)</button>
-                    <button id="tab-all" onclick="switchTab('all')" class="flex-1 py-1 bg-[#1E2A38] text-[#F4EFEB] rounded-lg font-bold transition shadow-sm">All 214</button>
-                </div>
-
-                <div id="fell-list" class="space-y-1.5 min-h-[200px] max-h-64 overflow-y-auto pr-1 pb-12">
-                </div>
-            </div>
-
-        </div>
-    </aside>
-
-    <!-- MAP CONTAINER -->
-    <main id="map-container" class="flex-1 relative h-full bg-[#F4EFEB] hidden md:block">
-        <div id="map" class="w-full h-full z-0"></div>
-    </main>
-
-    <!-- MOBILE NAVIGATION BOTTOM BAR -->
-    <nav class="md:hidden fixed bottom-0 left-0 right-0 h-12 bg-[#FFFBF7] border-t-2 border-[#1E2A38]/20 z-50 flex">
-        <button id="nav-btn-dash" onclick="switchMobileTab('dash')" class="flex-1 flex items-center justify-center gap-2 text-xs font-bold text-[#5B7B7A] bg-[#FAF7F2]">
-            <i class="fa-solid fa-chart-line"></i> Dashboard
-        </button>
-        <button id="nav-btn-map" onclick="switchMobileTab('map')" class="flex-1 flex items-center justify-center gap-2 text-xs font-bold text-[#1E2A38]/70">
-            <i class="fa-solid fa-map-location-dot"></i> View Map
-        </button>
-    </nav>
+    </div>
 
     <script>
         let map;
-        let unitSystem = 'metric';
-        let baggingRadius = 100;
-        let currentTab = 'all';
-        let savedRoutes = [];
-        let fellMarkers = {};
-
         let baggedLayerGroup = L.layerGroup();
-        let nearMissLayerGroup = L.layerGroup();
-        let plannedLayerGroup = L.layerGroup();
         let unvisitedLayerGroup = L.layerGroup();
-        let tracksLayerGroup = L.layerGroup();
 
-        const wainwrightGatewayTowns = {
-            "Allen Crags": { town: "Ambleside", desc: "Reached via Great Langdale or Borrowdale; Ambleside serves as the main commercial base for Langdale approach routes." },
-            "Angle Tarn Pikes": { town: "Glenridding", desc: "Accessed directly from Patterdale and Glenridding via the Boredale Hause ascent path." },
-            "Ard Crags": { town: "Keswick", desc: "Rises above the Newlands Valley, positioned within Keswick’s immediate western circuit." },
-            "Armboth Fell": { town: "Keswick", desc: "Overlooks Thirlmere's western shore, using Keswick as its primary northern valley hub." },
-            "Arnison Crag": { town: "Glenridding", desc: "Rises directly above Patterdale village, walked straight from Glenridding/Patterdale accommodation." },
-            "Arthur's Pike": { town: "Glenridding", desc: "Reached via the northern Ullswater ridge above Howtown, anchored logistically by Glenridding." },
-            "Bakestall": { town: "Keswick", desc: "Forms the northern ridge extension of Skiddaw, accessed directly via Keswick or Gale Road parking." },
-            "Bannerdale Crags": { town: "Keswick", desc: "Climbed from Mungrisdale along the A66 corridor, using Keswick as its primary regional service hub." },
-            "Barf": { town: "Keswick", desc: "Rises over Whinlatter and Bassenthwaite Lake, minutes west of Keswick." },
-            "Barrow": { town: "Keswick", desc: "Reached directly from Braithwaite village, making Keswick the ideal commercial base." },
-            "Base Brown": { town: "Buttermere", desc: "Sits at the head of Borrowdale and Honister Pass, paired logistically with Buttermere or upper Borrowdale." },
-            "Beda Fell": { town: "Glenridding", desc: "A prominent Martindale ridge peak best accessed from the Ullswater/Glenridding side." },
-            "Binsey": { town: "Keswick", desc: "The isolated northernmost Wainwright, tackled easily on a short drive north from Keswick." },
-            "Birkhouse Moor": { town: "Glenridding", desc: "Forms the classic eastern shoulder of Helvellyn, rising directly out of Glenridding village." },
-            "Birks": { town: "Glenridding", desc: "Sits above Patterdale, serving as an entry fell for the St Sunday Crag horseshoe from Glenridding." },
-            "Black Fell": { town: "Coniston", desc: "Located near Tarn Hows between Hawkshead and Coniston, anchored by Coniston for southern access." },
-            "Blake Fell": { town: "Buttermere", desc: "Part of the quiet Loweswater group, best staged from the Buttermere and Loweswater valley." },
-            "Blea Rigg": { town: "Ambleside", desc: "Positioned on the ridge between Easedale and Great Langdale, anchored by Ambleside." },
-            "Bleaberry Fell": { town: "Keswick", desc: "Dominates the skyline directly east of Derwentwater, with trails starting from Keswick." },
-            "Blencathra": { town: "Keswick", desc: "An iconic landmark peak, climbed directly from Scales, Threlkeld, or Keswick." },
-            "Bessyboot": { town: "Keswick", desc: "Rises directly above Rosthwaite in Borrowdale, using Keswick as the main gateway." },
-            "Rosthwaite Fell": { town: "Keswick", desc: "Rises directly above Rosthwaite in Borrowdale, using Keswick as the main gateway." },
-            "Bonscale Pike": { town: "Glenridding", desc: "Overlooks northern Ullswater, accessed via the Howtown steamer path from Glenridding." },
-            "Bowfell": { town: "Ambleside", desc: "The crown jewel at the head of Great Langdale, universally staged out of Ambleside and Langdale." },
-            "Bowscale Fell": { town: "Keswick", desc: "Part of the northern Blencathra group, accessed via Caldbeck or Mungrisdale from Keswick." },
-            "Brae Fell": { town: "Keswick", desc: "Located in the quiet moorlands, reached via northern road links from Keswick." },
-            "Brandreth": { town: "Buttermere", desc: "Reached via Honister Pass or the western ridges above Buttermere lake." },
-            "Branstree": { town: "Shap", desc: "Rises above Haweswater Reservoir, accessed from the eastern Shap/Bampton approach." },
-            "Brim Fell": { town: "Coniston", desc: "Sits on the high ridge directly adjoining The Old Man of Coniston, anchored by Coniston." },
-            "Brock Crags": { town: "Ambleside", desc: "Reached via Hartsop or the high paths connecting Ambleside to the Far Eastern fells." },
-            "Broom Fell": { town: "Keswick", desc: "Part of the Whinlatter forest group, accessed via the pass roads west of Keswick." },
-            "Buckbarrow": { town: "Wasdale Head", desc: "Overlooks the lower entrance of Wasdale, making Wasdale Head the primary local hub." },
-            "Burnbank Fell": { town: "Buttermere", desc: "Anchors the far north-western corner near Loweswater, best staged from Buttermere." },
-            "Calf Crag": { town: "Ambleside", desc: "Positioned at the head of Easedale above Grasmere, logistically served by Ambleside." },
-            "Carl Side": { town: "Keswick", desc: "Forms the western flank of Skiddaw, climbed directly from Keswick or Millbeck." },
-            "Carrock Fell": { town: "Keswick", desc: "The easternmost peak of the Northern Fells, accessed along northern valley roads from Keswick." },
-            "Castle Crag": { town: "Keswick", desc: "The legendary small fell in the jaws of Borrowdale, accessed directly from Keswick or Grange." },
-            "Catbells": { town: "Keswick", desc: "The iconic Derwentwater ridge walk, accessible via the Keswick Launch ferry or Hawes End." },
-            "Catstycam": { town: "Glenridding", desc: "The dramatic pyramid peak branching off Helvellyn, climbed out of Glenridding via Red Tarn." },
-            "Caudale Moor": { town: "Ambleside", desc: "Guards the Kirkstone Pass summit, accessed directly from the Ambleside side." },
-            "Causey Pike": { town: "Keswick", desc: "The distinctive knobbed peak dominating the Newlands Valley, minutes from Keswick." },
-            "Caw": { town: "Coniston", desc: "A southern outlier overlooking the Duddon Valley, anchored by Coniston for road access." },
-            "Caw Fell": { town: "Wasdale Head", desc: "A remote western moorland fell, accessed from Ennerdale or Wasdale Head approaches." },
-            "Clough Head": { town: "Keswick", desc: "The northern anchor of the Helvellyn range, rising above Threlkeld east of Keswick." },
-            "Cold Pike": { town: "Ambleside", desc: "Sits on the high ground above Wrynose Pass and Great Langdale, served by Ambleside." },
-            "Coniston Old Man": { town: "Coniston", desc: "Rises directly above Coniston village, serving as its namesake flagship peak." },
-            "Crag Hill": { town: "Keswick", desc: "The central high point of the Coledale Horseshoe, staged out of Braithwaite and Keswick." },
-            "Eel Crag": { town: "Keswick", desc: "The central high point of the Coledale Horseshoe, staged out of Braithwaite and Keswick." },
-            "Crag Fell": { town: "Wasdale Head", desc: "Overlooks Ennerdale Water, accessed via the western valley approaches near Wasdale." },
-            "Crinkle Crags": { town: "Ambleside", desc: "The famous multi-topped ridge at the head of Langdale, anchored by Ambleside." },
-            "Dale Head": { town: "Keswick", desc: "The high centerpiece connecting the Newlands and Buttermere valleys, staged out of Keswick." },
-            "Dodd": { town: "Keswick", desc: "Overlooks Bassenthwaite Lake, starting directly from Dodd Wood car park near Keswick." },
-            "Dollywagon Pike": { town: "Glenridding", desc: "The southern high summit of the Helvellyn ridge, accessed via Grisedale Tarn from Glenridding." },
-            "Dove Crag": { town: "Ambleside", desc: "A cornerstone peak of the Fairfield Horseshoe, walked directly from Ambleside." },
-            "Dow Crag": { town: "Coniston", desc: "The rock-climber’s precipice adjoining Coniston Old Man, accessed directly from Coniston." },
-            "Eagle Crag": { town: "Keswick", desc: "Guards the entrance to Stonethwaite in Borrowdale, accessed via Keswick." },
-            "Esk Pike": { town: "Ambleside", desc: "Links Bowfell to Scafell Pike at the head of Eskdale and Langdale, anchored by Ambleside." },
-            "Fairfield": { town: "Ambleside", desc: "The centerpiece summit of the Fairfield Horseshoe, walked straight out of Ambleside." },
-            "Fellbarrow": { town: "Buttermere", desc: "Overlooks the Vale of Lorton, staged from the Loweswater/Buttermere base." },
-            "Fleetwith Pike": { town: "Buttermere", desc: "The dramatic wall rising above Buttermere lake, climbed directly from Buttermere or Honister." },
-            "Froswick": { town: "Ambleside", desc: "A sharp peak on the Kentmere Horseshoe, accessed via Troutbeck from Ambleside." },
-            "Gavel Fell": { town: "Buttermere", desc: "Tucked away near Loweswater, using Buttermere as its nearest commercial valley hub." },
-            "Gibson Knott": { town: "Ambleside", desc: "Part of the central Helm Crag ridge above Grasmere, anchored by Ambleside." },
-            "Glaramara": { town: "Ambleside", desc: "The long rocky ridge running up Borrowdale toward Langdale, served by Ambleside and Keswick." },
-            "Glenridding Dodd": { town: "Glenridding", desc: "Rises directly over Glenridding village as an immediate local vantage point." },
-            "Gowbarrow Fell": { town: "Glenridding", desc: "Home to Aira Force waterfall along Ullswater, staged out of Glenridding." },
-            "Grange Fell": { town: "Keswick", desc: "Overlooks the entrance to Borrowdale, accessed within minutes of Keswick." },
-            "Grasmoor": { town: "Keswick", desc: "The massive western wall of the Coledale group, staged from Braithwaite/Keswick or Crummock Water." },
-            "Gray Crag": { town: "Shap", desc: "Deep in the Hayswater/Mardale horseshoe, accessed from eastern Shap approaches or Patterdale." },
-            "Graystones": { town: "Buttermere", desc: "Sits above Whinlatter Pass, serving as the gateway to the Loweswater fells." },
-            "Great Borne": { town: "Buttermere", desc: "The western boundary fell of Ennerdale and Loweswater, staged from Buttermere." },
-            "Great Calva": { town: "Keswick", desc: "Positioned deep in Skiddaw Forest, accessed via Caldbeck or Keswick." },
-            "Great Carrs": { town: "Coniston", desc: "Part of the Coniston Fells range above Wrynose Pass, anchored by Coniston." },
-            "Great Cockup": { town: "Keswick", desc: "A northern fell, accessed via northern roads from Keswick." },
-            "Great Crag": { town: "Keswick", desc: "Sits above Rosthwaite and Watendlath in central Borrowdale, served by Keswick." },
-            "Great Dodd": { town: "Glenridding", desc: "The high northern dome of the Helvellyn range, accessed from St John's or Glenridding." },
-            "Great End": { town: "Wasdale Head", desc: "The imposing northern cliff wall of the Scafell massif, staged from Wasdale Head or Seathwaite." },
-            "Great Gable": { town: "Wasdale Head", desc: "The iconic pyramid mountain of the Lakes, universally staged from Wasdale Head." },
-            "Great Mell Fell": { town: "Glenridding", desc: "An isolated wooded cone near Ullswater, accessed along the A66/Glenridding corridor." },
-            "Great Rigg": { town: "Ambleside", desc: "A key summit on the western arm of the Fairfield Horseshoe, walked from Ambleside." },
-            "Great Sca Fell": { town: "Keswick", desc: "Central high point of the group, accessed from Keswick." },
-            "Green Crag": { town: "Coniston", desc: "A wild southern fell in lower Eskdale, reached via Coniston and Birker Fell pass." },
-            "Green Gable": { town: "Buttermere", desc: "Great Gable’s twin companion, accessed via Honister Pass or Buttermere." },
-            "Grey Crag": { town: "Shap", desc: "Sits above Longsleddale, accessed from the far eastern Shap/Kendal borders." },
-            "Grey Friar": { town: "Coniston", desc: "The western outpost of the Coniston group, accessed via Wrynose Pass or Coniston." },
-            "Grey Knotts": { town: "Buttermere", desc: "Rises directly above the top of Honister Pass, anchored by Buttermere." },
-            "Grike": { town: "Wasdale Head", desc: "The western boundary peak above Ennerdale, staged from the western Wasdale valley." },
-            "Grisedale Pike": { town: "Keswick", desc: "The striking summit west of Keswick, climbed directly from Braithwaite." },
-            "Hallin Fell": { town: "Glenridding", desc: "Rises over Martindale on Ullswater, accessed via Howtown ferry from Glenridding." },
-            "Hard Knott": { town: "Coniston", desc: "Overlooks Hardknott Pass, accessed via Wrynose from Coniston or Eskdale." },
-            "Harrison Stickle": { town: "Ambleside", desc: "The highest of the Langdale Pikes, walked straight from Langdale/Ambleside." },
-            "Hart Crag": { town: "Ambleside", desc: "A prominent high peak on the Fairfield Horseshoe circuit above Ambleside." },
-            "Hart Side": { town: "Glenridding", desc: "An eastern spur off Great Dodd, accessed via Glenridding and Deepdale approaches." },
-            "Harter Fell": { town: "Coniston", desc: "The circular peak dominating upper Eskdale, accessed via passes from Coniston." },
-            "Hartsop Above How": { town: "Glenridding", desc: "A long ridge spur stepping down into Patterdale, anchored by Glenridding." },
-            "Hartsop Dodd": { town: "Glenridding", desc: "Guards the entrance to Kirkstone Pass near Brothers Water, minutes from Glenridding." },
-            "Haycock": { town: "Wasdale Head", desc: "A high, stony western giant between Wasdale and Ennerdale, staged from Wasdale Head." },
-            "Haystacks": { town: "Buttermere", desc: "Alfred Wainwright’s favorite fell, climbed directly from the head of Buttermere lake." },
-            "Helm Crag": { town: "Ambleside", desc: "Above Grasmere, universally staged from Grasmere and Ambleside." },
-            "Helvellyn": { town: "Glenridding", desc: "England’s third highest peak, famous for Striding Edge, starting out of Glenridding." },
-            "Hen Comb": { town: "Buttermere", desc: "A quiet valley fell in Loweswater, staged out of Buttermere village." },
-            "Heron Pike": { town: "Ambleside", desc: "Positioned on the lower ridge of the Fairfield Horseshoe above Grasmere and Ambleside." },
-            "High Crag": { town: "Buttermere", desc: "The southern anchor of the High Stile ridge, towering directly over Buttermere." },
-            "High Hartsop Dodd": { town: "Glenridding", desc: "A sharp steep spur rising out of Kirkstone Pass, staged from Glenridding." },
-            "High Pike": { town: "Keswick", desc: "The highest point of the group, accessed north of Keswick." },
-            "High Raise": { town: "Ambleside", desc: "The central geographical hub of the entire Lake District, reached from Langdale/Ambleside." },
-            "High Rigg": { town: "Keswick", desc: "The long low ridge separating St John's in the Vale from Tewet Tarn, minutes from Keswick." },
-            "High Seat": { town: "Keswick", desc: "The peaty plateau towering above Derwentwater, walked straight out of Keswick." },
-            "High Spy": { town: "Keswick", desc: "The high ridge point above Borrowdale and Newlands, accessed via Keswick." },
-            "High Stile": { town: "Buttermere", desc: "The highest summit of the Buttermere trilogy, rising directly over Buttermere lake." },
-            "High Street": { town: "Ambleside", altTown: "Patterdale", desc: "The ancient Roman road summit, accessed via Kentmere Horseshoe from Ambleside or Patterdale." },
-            "High Tove": { town: "Keswick", desc: "Sits in the central moss between Thirlmere and Borrowdale, staged from Keswick." },
-            "Hindscarth": { town: "Keswick", desc: "A central spur of the Newlands Horseshoe, climbed directly from Keswick/Newlands." },
-            "Holme Fell": { town: "Coniston", desc: "A low fell between Coniston and Hodge Close, anchored by Coniston." },
-            "Hopegill Head": { town: "Keswick", desc: "Famous for its alpine west canopy ridge, climbed from Whinlatter or Braithwaite/Keswick." },
-            "Ill Bell": { town: "Ambleside", desc: "The sharpest peak on the Kentmere Horseshoe, accessed via Troutbeck from Ambleside." },
-            "Illgill Head": { town: "Wasdale Head", desc: "Forms the top wall of Wastwater Screes, walked directly from Wasdale Head." },
-            "Kentmere Pike": { town: "Ambleside", desc: "Anchors the eastern arm of the Kentmere Horseshoe, served logistically by Ambleside." },
-            "Kidsty Pike": { town: "Shap", desc: "The classic high pass peak above Haweswater, staged from eastern Shap approaches." },
-            "Kirk Fell": { town: "Wasdale Head", desc: "The massive, steep mountain between Great Gable and Pillar at Wasdale Head." },
-            "Knott": { town: "Keswick", desc: "The high dome of moorland, accessed via Keswick." },
-            "Knott Rigg": { town: "Keswick", desc: "Forms the sharp narrow ridge above Newlands Pass, minutes from Keswick." },
-            "Lank Rigg": { town: "Wasdale Head", desc: "The lonely western outpost beyond Ennerdale, staged from Wasdale Head." },
-            "Latrigg": { town: "Keswick", desc: "Offering a direct walk right from Keswick town center." },
-            "Ling Fell": { town: "Keswick", desc: "A smooth isolated dome near Bassenthwaite, accessed via northern road links from Keswick." },
-            "Lingmoor Fell": { town: "Ambleside", desc: "The heather ridge separating Great Langdale from Little Langdale, served by Ambleside." },
-            "Lingmell": { town: "Wasdale Head", desc: "Scafell Pike’s immediate shoulder peak, rising directly out of Wasdale Head valley." },
-            "Little Hart Crag": { town: "Glenridding", desc: "Sits at the head of Scandale Pass, accessed from Patterdale/Glenridding or Ambleside." },
-            "Little Mell Fell": { town: "Glenridding", desc: "A rounded solitary cone near Ullswater, staged along the A66/Glenridding area." },
-            "Loadpot Hill": { town: "Shap", desc: "A broad grassy plateau on the Roman road above Haweswater, accessed via Shap." },
-            "Loft Crag": { town: "Ambleside", desc: "One of the Langdale Pikes overlooking the valley, walked from Langdale/Ambleside." },
-            "Long Side": { town: "Keswick", desc: "Forms the dramatic edge connecting Ullock Pike to Skiddaw, staged out of Keswick." },
-            "Longlands Fell": { town: "Keswick", desc: "The northernmost spur of the range, accessed via Keswick." },
-            "Lonscale Fell": { town: "Keswick", desc: "The eastern granite precipice of Skiddaw, rising directly above Keswick town." },
-            "Lord's Seat": { town: "Keswick", desc: "The highest point of Whinlatter forest fells, accessed directly west of Keswick." },
-            "Loughrigg Fell": { town: "Ambleside", desc: "Ambleside’s resident introductory fell, walked straight out of Ambleside." },
-            "Low Fell": { town: "Buttermere", desc: "Offers classic views down Crummock Water, climbed directly from Loweswater/Buttermere." },
-            "Low Pike": { town: "Ambleside", desc: "The introductory southern peak on the Fairfield Horseshoe, walked directly out of Ambleside." },
-            "Maiden Moor": { town: "Keswick", desc: "The rolling ridge connecting Catbells to High Spy above Derwentwater, accessed via Keswick." },
-            "Mardale Ill Bell": { town: "Shap", desc: "Overlooks Haweswater Reservoir, accessed directly from the Shap/Mardale valley." },
-            "Meal Fell": { town: "Keswick", desc: "A small rugged fell, staged from Keswick." },
-            "Mellbreak": { town: "Buttermere", desc: "The dramatic mountain standing guard over Crummock Water, staged from Buttermere." },
-            "Middle Dodd": { town: "Glenridding", desc: "The steep triangular wedge rising above Kirkstone Pass road, accessed via Glenridding." },
-            "Middle Fell": { town: "Wasdale Head", desc: "Rises above Nether Wasdale, providing direct ascent from Wasdale Head." },
-            "Mungrisdale Common": { town: "Keswick", desc: "The flat moss fell behind Blencathra, accessed via Keswick." },
-            "Nab Scar": { town: "Ambleside", desc: "The steep starting ridge of the Fairfield Horseshoe rising above Rydal and Ambleside." },
-            "Nethermost Pike": { town: "Glenridding", desc: "Sits on the high Helvellyn plateau, climbed straight out of Glenridding." },
-            "Outerside": { town: "Keswick", desc: "A pleasant rocky fell in the heart of Coledale valley near Braithwaite and Keswick." },
-            "Pavey Ark": { town: "Ambleside", desc: "The cliff face above Stickle Tarn in Langdale, staged out of Ambleside." },
-            "Pike o' Blisco": { town: "Ambleside", desc: "The rocky peak guarding the head of Great Langdale, walked from Langdale/Ambleside." },
-            "Pike of Blisco": { town: "Ambleside", desc: "The rocky peak guarding the head of Great Langdale, walked from Langdale/Ambleside." },
-            "Pike o' Stickle": { town: "Ambleside", desc: "The famous stone-axe quarry dome of the Langdale Pikes, accessed from Ambleside." },
-            "Pike of Stickle": { town: "Ambleside", desc: "The famous stone-axe quarry dome of the Langdale Pikes, accessed from Ambleside." },
-            "Pillar": { town: "Wasdale Head", desc: "Named after its rock spire, climbed directly from Wasdale Head or Ennerdale." },
-            "Place Fell": { town: "Glenridding", desc: "The imposing peak dominating eastern Ullswater, walked directly from Glenridding." },
-            "Raise": { town: "Glenridding", desc: "Home to the Lake District Ski Club, positioned on the Helvellyn range above Glenridding." },
-            "Rampsgill Head": { town: "Shap", desc: "High plateau peak at the convergence of Martindale and Haweswater, accessed via Shap." },
-            "Rannerdale Knotts": { town: "Buttermere", desc: "Famous for spring bluebells, rising directly between Buttermere and Crummock Water." },
-            "Raven Crag": { town: "Keswick", desc: "The dark cliff wall overlooking Thirlmere reservoir, minutes south of Keswick." },
-            "Red Pike (Buttermere)": { town: "Buttermere", desc: "The red-syenite peak rising straight up from Buttermere village." },
-            "Red Pike (Wasdale)": { town: "Wasdale Head", desc: "Part of the high Mosedale Horseshoe, climbed directly out of Wasdale Head." },
-            "Red Pike": { town: "Buttermere", desc: "The red-syenite peak rising straight up from Buttermere village." },
-            "Red Screes": { town: "Ambleside", desc: "Dominates the top of Kirkstone Pass, climbed directly from Ambleside." },
-            "Rest Dodd": { town: "Glenridding", desc: "Tucked away in Martindale deer forest, accessed via Glenridding/Patterdale." },
-            "Robinson": { town: "Keswick", desc: "The final high fell on the Newlands Horseshoe, descending back toward Keswick." },
-            "Rossett Pike": { town: "Ambleside", desc: "Guards the high pass between Great Langdale and Wasdale, staged from Ambleside." },
-            "Sail": { town: "Keswick", desc: "The central high point on the Coledale Horseshoe, accessed via Keswick." },
-            "Sale Fell": { town: "Keswick", desc: "Overlooks northern Bassenthwaite Lake, accessed via A66 north of Keswick." },
-            "Scar Crags": { town: "Keswick", desc: "The long running ridge paired with Causey Pike in Newlands Valley near Keswick." },
-            "Scafell": { town: "Wasdale Head", desc: "Scafell Pike’s formidable neighbor, staged directly from Wasdale Head." },
-            "Scafell Pike": { town: "Wasdale Head", desc: "The highest peak in England, universally staged from Wasdale Head." },
-            "Seat Sandal": { town: "Ambleside", desc: "Guards Dunmail Raise pass above Grasmere, logistically anchored by Ambleside." },
-            "Seatallan": { town: "Wasdale Head", desc: "A broad western dome overlooking Wastwater, climbed directly from Wasdale Head." },
-            "Seathwaite Fell": { town: "Wasdale Head", desc: "Sits in the heart of Borrowdale/Wasdale headwaters, accessed via Wasdale or Seathwaite." },
-            "Selside Pike": { town: "Shap", desc: "The easternmost high fell above Haweswater, accessed directly from Shap approaches." },
-            "Sergeant Man": { town: "Ambleside", desc: "A rocky knoll on the high moss above Grasmere and Langdale, staged from Ambleside." },
-            "Sergeant's Crag": { town: "Keswick", desc: "Deep in Langstrath valley in Borrowdale, accessed via Keswick." },
-            "Sheffield Pike": { town: "Glenridding", desc: "Overlooks Glenridding village and Ullswater, climbed directly from Glenridding." },
-            "Shipman Knotts": { town: "Ambleside", desc: "The southern terminal fell of the Kentmere Horseshoe, served by Ambleside." },
-            "Silver How": { town: "Ambleside", desc: "The popular fell rising directly above Grasmere lake, anchored by Ambleside." },
-            "Skiddaw": { town: "Keswick", desc: "Keswick's landmark mountain, climbed directly from town via Jenkin Hill path." },
-            "Skiddaw Little Man": { town: "Keswick", desc: "Skiddaw’s southern shoulder summit, walked directly on main Keswick route." },
-            "Slight Side": { town: "Wasdale Head", desc: "The southern craggy ridge extension of Scafell, climbed out of Wasdale Head." },
-            "Sour Howes": { town: "Ambleside", desc: "Positioned above Troutbeck, forming part of eastern Ambleside fells." },
-            "Souther Fell": { town: "Keswick", desc: "Rises above Threlkeld village, minutes from Keswick." },
-            "Starling Dodd": { town: "Buttermere", desc: "A remote fell on the ridge between Ennerdale and Loweswater, staged from Buttermere." },
-            "Steel Fell": { town: "Ambleside", desc: "Guards western Dunmail Raise above Grasmere, served by Ambleside." },
-            "Steel Knotts": { town: "Glenridding", desc: "Known as Pike How, rising directly above Martindale near Ullswater." },
-            "Steeple": { town: "Wasdale Head", desc: "The dramatic arête extension of Scoat Fell, staged directly out of Wasdale Head." },
-            "Stickle Pike": { town: "Coniston", desc: "The sharp rocky peak dominating Dunnerdale fells, accessed via Coniston." },
-            "St Sunday Crag": { town: "Glenridding", desc: "The grand mountain framing Grisedale valley, walked directly from Glenridding." },
-            "Stone Arthur": { town: "Ambleside", desc: "A rocky outcrop spur of Fairfield rising directly over Grasmere and Ambleside." },
-            "Stony Cove Pike": { town: "Ambleside", desc: "Anchors the high junction above Kirkstone Pass, accessed via Ambleside." },
-            "Caudale Moor": { town: "Ambleside", desc: "Anchors the high junction above Kirkstone Pass, accessed via Ambleside." },
-            "Stybarrow Dodd": { town: "Glenridding", desc: "A central high point on the Helvellyn ridge, accessed via Glenridding." },
-            "Swirl How": { town: "Coniston", desc: "The central high hub linking Wetherlam to Coniston Old Man, walked directly from Coniston." },
-            "Tarn Crag (Easedale)": { town: "Ambleside", desc: "Rises above Easedale Tarn behind Grasmere, anchored by Ambleside." },
-            "Tarn Crag (Sleddale)": { town: "Shap", desc: "A remote eastern fell above Wet Sleddale, accessed from the Shap corridor." },
-            "The Knott": { town: "Glenridding", desc: "High junction peak connecting High Street to Hayeswater valley near Glenridding." },
-            "The Nab": { town: "Glenridding", desc: "Located in the restricted Martindale deer forest, accessed via Glenridding/Howtown." },
-            "Thornthwaite Crag": { town: "Ambleside", desc: "Famous for its tall stone beacon, reached via Kentmere circuit from Ambleside." },
-            "Thunacar Knott": { town: "Ambleside", desc: "Sits behind the Langdale Pikes on the high plateau, staged from Langdale/Ambleside." },
-            "Top o' Selside": { town: "Coniston", desc: "Overlooks eastern shore of Coniston Water, accessed directly from Coniston." },
-            "Top o'Selside": { town: "Coniston", desc: "Overlooks eastern shore of Coniston Water, accessed directly from Coniston." },
-            "Troutbeck Tongue": { town: "Ambleside", desc: "A small isolated fell tucked inside Troutbeck valley, walked directly from Ambleside." },
-            "Ullock Pike": { town: "Keswick", desc: "The sharp ridge spur of Skiddaw, climbed directly from Bassenthwaite/Keswick." },
-            "Ullscarf": { town: "Keswick", desc: "The broad mossy fell dividing Thirlmere from Stonethwaite, accessed via Keswick." },
-            "Walla Crag": { town: "Keswick", desc: "The cliff-top viewpoint overlooking Derwentwater, walked straight from Keswick." },
-            "Wandope": { town: "Keswick", desc: "Part of high Coledale wall above Newlands, climbed out of Braithwaite and Keswick." },
-            "Wansfell": { town: "Ambleside", desc: "Ambleside’s popular eastern neighbor, climbed directly via Stockghyll waterfalls from town." },
-            "Watson's Dodd": { town: "Glenridding", desc: "An eastern spur on Great Dodd plateau, accessed via Thirlmere or Glenridding." },
-            "Wether Hill": { town: "Shap", desc: "Broad high moorland fell on ancient High Street ridge, accessed via Shap." },
-            "Wetherlam": { town: "Coniston", desc: "The massive eastern mountain of the Coniston group, climbed directly out of Coniston." },
-            "Whin Rigg": { town: "Buttermere", desc: "Forms the southern end of Wastwater Screes, accessed via Wasdale or Nether Wasdale." },
-            "Whinlatter": { town: "Keswick", desc: "The namesake fell of Whinlatter Forest Pass, located minutes west of Keswick." },
-            "Whiteside": { town: "Keswick", desc: "The narrow dramatic ridge extending west from Grasmoor, staged out of Loweswater or Keswick." },
-            "Whiteless Pike": { town: "Buttermere", desc: "The steep cone rising directly above Buttermere village, climbed straight from the valley." },
-            "Yoke": { town: "Ambleside", desc: "The first high peak on the western arm of Kentmere Horseshoe, walked via Troutbeck from Ambleside." },
-            "Soper": { town: "Wasdale Head", desc: "A remote western outpost, staged out of Wasdale Head." }
-        };
-
+        // Sample Data for Live Demo
         const wainwrights = [
-            { name: "Scafell Pike", elevation: 978, lat: 54.4543, lng: -3.2117, region: "Southern" },
-            { name: "Scafell", elevation: 964, lat: 54.4475, lng: -3.2247, region: "Southern" },
-            { name: "Helvellyn", elevation: 950, lat: 54.5270, lng: -3.0175, region: "Eastern" },
-            { name: "Skiddaw", elevation: 931, lat: 54.6514, lng: -3.1478, region: "Northern" },
-            { name: "Great End", elevation: 910, lat: 54.4649, lng: -3.1945, region: "Southern" },
-            { name: "Bowfell", elevation: 902, lat: 54.4478, lng: -3.1662, region: "Southern" },
-            { name: "Great Gable", elevation: 899, lat: 54.4821, lng: -3.2193, region: "Western" },
-            { name: "Pillar", elevation: 892, lat: 54.4975, lng: -3.2811, region: "Western" },
-            { name: "Nethermost Pike", elevation: 891, lat: 54.5190, lng: -3.0154, region: "Eastern" },
-            { name: "Catstycam", elevation: 890, lat: 54.5335, lng: -3.0089, region: "Eastern" },
-            { name: "Esk Pike", elevation: 885, lat: 54.4572, lng: -3.1792, region: "Southern" },
-            { name: "Raise", elevation: 883, lat: 54.5477, lng: -3.0175, region: "Eastern" },
-            { name: "Fairfield", elevation: 873, lat: 54.4971, lng: -2.9916, region: "Eastern" },
-            { name: "Blencathra", elevation: 868, lat: 54.6399, lng: -3.0498, region: "Northern" },
-            { name: "Skiddaw Little Man", elevation: 865, lat: 54.6399, lng: -3.1420, region: "Northern" },
-            { name: "White Side", elevation: 863, lat: 54.5410, lng: -3.0232, region: "Eastern" },
-            { name: "Crinkle Crags", elevation: 859, lat: 54.4372, lng: -3.1678, region: "Southern" },
-            { name: "Dollywagon Pike", elevation: 858, lat: 54.5090, lng: -3.0180, region: "Eastern" },
-            { name: "Great Dodd", elevation: 857, lat: 54.5760, lng: -3.0220, region: "Eastern" },
-            { name: "Grasmoor", elevation: 852, lat: 54.5732, lng: -3.2796, region: "Northwestern" },
-            { name: "St Sunday Crag", elevation: 841, lat: 54.4820, lng: -2.9818, region: "Eastern" },
-            { name: "High Street", elevation: 828, lat: 54.4912, lng: -2.8631, region: "Far Eastern" },
-            { name: "Red Screes", elevation: 776, lat: 54.4682, lng: -2.9238, region: "Eastern" },
-            { name: "Glaramara", elevation: 783, lat: 54.4640, lng: -3.1670, region: "Southern" },
-            { name: "Coniston Old Man", elevation: 803, lat: 54.3705, lng: -3.1189, region: "Southern" },
-            { name: "Swirl How", elevation: 802, lat: 54.3854, lng: -3.1118, region: "Southern" },
-            { name: "Pike o' Blisco", elevation: 705, lat: 54.4379, lng: -3.1362, region: "Southern" },
-            { name: "Harrison Stickle", elevation: 736, lat: 54.4538, lng: -3.1042, region: "Central" },
-            { name: "Pavey Ark", elevation: 700, lat: 54.4586, lng: -3.1009, region: "Central" },
-            { name: "Pike o' Stickle", elevation: 709, lat: 54.4519, lng: -3.1154, region: "Central" },
-            { name: "Catbells", elevation: 451, lat: 54.5683, lng: -3.1707, region: "Northwestern" },
-            { name: "Latrigg", elevation: 368, lat: 54.6158, lng: -3.1126, region: "Northern" },
-            { name: "Loughrigg Fell", elevation: 335, lat: 54.4378, lng: -3.0031, region: "Central" },
-            { name: "Wansfell", elevation: 482, lat: 54.4326, lng: -2.9392, region: "Far Eastern" },
-            { name: "Place Fell", elevation: 657, lat: 54.5422, lng: -2.8872, region: "Far Eastern" },
-            { name: "Hallin Fell", elevation: 388, lat: 54.5694, lng: -2.8687, region: "Far Eastern" },
-            { name: "High Stile", elevation: 807, lat: 54.5249, lng: -3.2842, region: "Western" },
-            { name: "Red Pike (Buttermere)", elevation: 755, lat: 54.5361, lng: -3.2965, region: "Western" },
-            { name: "Haystacks", elevation: 597, lat: 54.5074, lng: -3.2536, region: "Western" },
-            { name: "Fleetwith Pike", elevation: 648, lat: 54.5097, lng: -3.2269, region: "Western" },
-            { name: "Dale Head", elevation: 753, lat: 54.5369, lng: -3.1951, region: "Northwestern" },
-            { name: "Hindscarth", elevation: 725, lat: 54.5471, lng: -3.1993, region: "Northwestern" },
-            { name: "Robinson", elevation: 737, lat: 54.5583, lng: -3.2185, region: "Northwestern" },
-            { name: "Causey Pike", elevation: 637, lat: 54.5746, lng: -3.2173, region: "Northwestern" },
-            { name: "Grisdale Pike", elevation: 791, lat: 54.5912, lng: -3.2427, region: "Northwestern" },
-            { name: "Hopegill Head", elevation: 770, lat: 54.5873, lng: -3.2612, region: "Northwestern" },
-            { name: "Crag Hill", elevation: 839, lat: 54.5739, lng: -3.2519, region: "Northwestern" },
-            { name: "Sail", elevation: 785, lat: 54.5714, lng: -3.2351, region: "Northwestern" },
-            { name: "Eel Crag", elevation: 839, lat: 54.5739, lng: -3.2519, region: "Northwestern" },
-            { name: "Wetherlam", elevation: 763, lat: 54.3908, lng: -3.0901, region: "Southern" },
-            { name: "Dow Crag", elevation: 778, lat: 54.3638, lng: -3.1362, region: "Southern" },
-            { name: "Grey Friar", elevation: 773, lat: 54.3971, lng: -3.1283, region: "Southern" },
-            { name: "Great Carrs", elevation: 785, lat: 54.3948, lng: -3.1187, region: "Southern" },
-            { name: "Cold Pike", elevation: 701, lat: 54.4285, lng: -3.1531, region: "Southern" },
-            { name: "Slight Side", elevation: 762, lat: 54.4336, lng: -3.2201, region: "Southern" },
-            { name: "Hard Knott", elevation: 549, lat: 54.4021, lng: -3.1979, region: "Southern" },
-            { name: "Harter Fell (Eskdale)", elevation: 653, lat: 54.3821, lng: -3.2036, region: "Southern" },
-            { name: "Green Gable", elevation: 801, lat: 54.4883, lng: -3.2179, region: "Western" },
-            { name: "Base Brown", elevation: 646, lat: 54.4921, lng: -3.1983, region: "Western" },
-            { name: "Brandreth", elevation: 715, lat: 54.5002, lng: -3.2185, region: "Western" },
-            { name: "Grey Knotts", elevation: 697, lat: 54.5074, lng: -3.2148, region: "Western" },
-            { name: "Kirk Fell", elevation: 802, lat: 54.4882, lng: -3.2427, region: "Western" },
-            { name: "Soper", elevation: 650, lat: 54.5000, lng: -3.3000, region: "Western" },
-            { name: "Starling Dodd", elevation: 633, lat: 54.5368, lng: -3.3182, region: "Western" },
-            { name: "Great Borne", elevation: 616, lat: 54.5445, lng: -3.3332, region: "Western" },
-            { name: "Mellbreak", elevation: 512, lat: 54.5682, lng: -3.3082, region: "Western" },
-            { name: "Hen Comb", elevation: 509, lat: 54.5512, lng: -3.3134, region: "Western" },
-            { name: "Gavel Fell", elevation: 526, lat: 54.5369, lng: -3.3402, region: "Western" },
-            { name: "Blake Fell", elevation: 573, lat: 54.5511, lng: -3.3551, region: "Western" },
-            { name: "Burnbank Fell", elevation: 475, lat: 54.5612, lng: -3.3610, region: "Western" },
-            { name: "Low Fell", elevation: 423, lat: 54.5882, lng: -3.3331, region: "Western" },
-            { name: "Fellbarrow", elevation: 416, lat: 54.6012, lng: -3.3421, region: "Western" },
-            { name: "Whin Rigg", elevation: 535, lat: 54.4172, lng: -3.2961, region: "Western" },
-            { name: "Illgill Head", elevation: 609, lat: 54.4312, lng: -3.2731, region: "Western" },
-            { name: "Seatallan", elevation: 692, lat: 54.4712, lng: -3.2921, region: "Western" },
-            { name: "Buckbarrow", elevation: 423, lat: 54.4582, lng: -3.2912, region: "Western" },
-            { name: "Middle Fell", elevation: 582, lat: 54.4612, lng: -3.2751, region: "Western" },
-            { name: "Caw", elevation: 529, lat: 54.3412, lng: -3.1582, region: "Southern" },
-            { name: "Stickle Pike", elevation: 375, lat: 54.3282, lng: -3.1812, region: "Southern" },
-            { name: "Black Combe", elevation: 600, lat: 54.2751, lng: -3.3281, region: "Southern" }
+            { name: "Scafell Pike", lat: 54.4543, lng: -3.2117 },
+            { name: "Helvellyn", lat: 54.5270, lng: -3.0175 },
+            { name: "Skiddaw", lat: 54.6514, lng: -3.1478 },
+            { name: "Catbells", lat: 54.5683, lng: -3.1707 }
         ];
 
         window.onload = function() {
             initMap();
-            loadHistoryFromStorage();
-            plotAllFellsOnMap();
-            renderFellList();
-            updateOverallProgress();
-            setupUploadInputs();
-            registerServiceWorker();
+            plotFellsOnMap();
+            setUIConcept(1); // Load Concept 1 by default
         };
 
-        function registerServiceWorker() {
-            if ('serviceWorker' in navigator) {
-                const swCode = `
-                    const CACHE = 'wainwright-cache-v1.4.2';
-                    self.addEventListener('install', e => { self.skipWaiting(); });
-                    self.addEventListener('activate', e => { self.clients.claim(); });
-                    self.addEventListener('fetch', e => {
-                        e.respondWith(caches.match(e.request).then(res => res || fetch(e.request)));
-                    });
-                `;
-                const blob = new Blob([swCode], { type: 'application/javascript' });
-                navigator.serviceWorker.register(URL.createObjectURL(blob))
-                    .then(r => console.log('PWA Service Worker Live!'))
-                    .catch(e => console.log('SW Note:', e));
+        function setUIConcept(conceptNumber) {
+            const sidebar = document.getElementById('sidebar');
+            const wrapper = document.getElementById('app-wrapper');
+            const mapContainer = document.getElementById('map-container');
+
+            // Reset Active Button Styling
+            for (let i = 1; i <= 5; i++) {
+                const btn = document.getElementById(`btn-concept-${i}`);
+                btn.className = (i === conceptNumber) 
+                    ? "px-3 py-1 rounded-lg font-bold bg-amber-500 text-black transition shadow-sm"
+                    : "px-3 py-1 rounded-lg font-bold bg-[#FAF7F2]/10 hover:bg-[#FAF7F2]/20 text-[#F4EFEB] transition";
             }
+
+            // Reset layout defaults
+            sidebar.className = "w-full md:w-96 bg-[#FFFBF7] border-r-2 border-[#1E2A38]/20 flex flex-col h-full z-20 shadow-xl flex-shrink-0 transition-all duration-300";
+            wrapper.className = "flex-1 relative flex flex-col md:flex-row overflow-hidden";
+
+            if (conceptNumber === 1) {
+                // Concept 1: Top-Bar Command Center
+                sidebar.classList.add('hidden', 'md:block');
+            } else if (conceptNumber === 2) {
+                // Concept 2: Bottom Sheet Drawer Style
+                sidebar.className = "w-full h-80 fixed bottom-0 left-0 right-0 bg-[#FFFBF7] border-t-4 border-[#1E2A38] z-30 shadow-2xl rounded-t-2xl transition-all duration-300";
+            } else if (conceptNumber === 3) {
+                // Concept 3: Compact Dual Grid Split
+                sidebar.className = "w-full md:w-[420px] bg-[#FFFBF7] border-r-2 border-[#1E2A38]/30 flex flex-col h-full z-20 shadow-xl flex-shrink-0";
+            } else if (conceptNumber === 4) {
+                // Concept 4: Vintage Field Journal (Heritage Look)
+                sidebar.className = "w-full md:w-96 bg-[#FAF7F2] border-r-4 border-amber-900 flex flex-col h-full z-20 shadow-2xl flex-shrink-0";
+            } else if (conceptNumber === 5) {
+                // Concept 5: Floating HUD
+                sidebar.className = "w-full md:w-80 absolute top-4 left-4 bottom-4 bg-[#FFFBF7]/90 backdrop-blur-sm border-2 border-[#1E2A38] z-30 shadow-2xl rounded-2xl flex flex-col overflow-hidden";
+            }
+
+            setTimeout(() => { if (map) map.invalidateSize(); }, 200);
         }
 
         function initMap() {
-            const esriTopo = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
-                attribution: 'Tiles &copy; Esri', maxZoom: 18
-            });
-
-            const esriSatellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                attribution: 'Tiles &copy; Esri'
-            });
-
-            const openTopo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-                attribution: 'Map data: &copy; OpenStreetMap contributors, SRTM', maxZoom: 17
-            });
-
-            map = L.map('map', {
-                center: [54.5, -3.1],
-                zoom: 10,
-                layers: [openTopo, baggedLayerGroup, nearMissLayerGroup, plannedLayerGroup, unvisitedLayerGroup, tracksLayerGroup],
-                zoomControl: false
-            });
-
-            // Top-Left Bar (Zoom buttons + Route Legend)
-            const TopLeftBar = L.Control.extend({
-                options: { position: 'topleft' },
-                onAdd: function (map) {
-                    const container = L.DomUtil.create('div', 'flex items-center gap-1.5');
-                    
-                    const zoomDiv = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
-                    zoomDiv.innerHTML = `
-                        <a class="leaflet-control-zoom-in bg-[#FFFBF7] text-[#1E2A38] hover:bg-[#FAF7F2] flex items-center justify-center w-7 h-7 text-sm font-bold border-b border-[#1E2A38]/20" href="#" title="Zoom in">+</a>
-                        <a class="leaflet-control-zoom-out bg-[#FFFBF7] text-[#1E2A38] hover:bg-[#FAF7F2] flex items-center justify-center w-7 h-7 text-sm font-bold" href="#" title="Zoom out">-</a>
-                    `;
-                    zoomDiv.children[0].onclick = (e) => { e.preventDefault(); map.zoomIn(); };
-                    zoomDiv.children[1].onclick = (e) => { e.preventDefault(); map.zoomOut(); };
-
-                    const legendDiv = L.DomUtil.create('div', 'leaflet-control-custom-panel px-3 py-1.5 text-xs shadow-md flex items-center gap-3');
-                    legendDiv.innerHTML = `
-                        <div class="flex items-center gap-1.5">
-                            <span class="w-4 h-1.5 bg-[#5B7B7A] rounded-full inline-block"></span>
-                            <span class="text-[#1E2A38] font-bold">Completed</span>
-                        </div>
-                        <div class="flex items-center gap-1.5">
-                            <span class="w-4 h-1.5 bg-purple-600 rounded-full inline-block"></span>
-                            <span class="text-[#1E2A38] font-bold">Planned</span>
-                        </div>
-                    `;
-
-                    container.appendChild(zoomDiv);
-                    container.appendChild(legendDiv);
-
-                    L.DomEvent.disableClickPropagation(container);
-                    L.DomEvent.disableScrollPropagation(container);
-                    return container;
-                }
-            });
-            map.addControl(new TopLeftBar());
-
-            setTimeout(() => { map.invalidateSize(); }, 100);
-
-            window.baseLayers = { topo: esriTopo, opentopo: openTopo, satellite: esriSatellite };
-            window.currentBaseLayer = openTopo;
-
-            // Filter Control (Top-Right)
-            const FilterControl = L.Control.extend({
-                options: { position: 'topright' },
-                onAdd: function (map) {
-                    const container = L.DomUtil.create('div', 'leaflet-control-custom-panel');
-                    container.innerHTML = `
-                        <button id="filter-toggle-btn" class="p-2.5 bg-[#FFFBF7] hover:bg-[#FAF7F2] text-[#1E2A38] flex items-center justify-center w-9 h-9 transition" title="Toggle Map Filters">
-                            <i class="fa-solid fa-filter text-sm"></i>
-                        </button>
-                        <div id="filter-dropdown-content" class="p-3 hidden bg-[#FFFBF7] border-t-2 border-[#1E2A38]/20 space-y-3 w-52">
-                            <div>
-                                <label class="block font-bold mb-1 text-[#1E2A38]">Map Style</label>
-                                <select id="basemap-select" onchange="changeBaseMap(this.value)" class="w-full bg-[#FAF7F2] text-[#1E2A38] border-2 border-[#1E2A38]/20 rounded-lg p-1 focus:outline-none">
-                                    <option value="topo">Esri Topo</option>
-                                    <option value="opentopo" selected>OpenTopoMap</option>
-                                    <option value="satellite">Satellite</option>
-                                </select>
-                            </div>
-                            <div class="space-y-1.5 pt-1 border-t border-[#1E2A38]/20">
-                                <label class="flex items-center gap-2 cursor-pointer font-semibold"><input type="checkbox" checked onchange="toggleLayer('bagged', this.checked)" class="rounded bg-[#FAF7F2] border-[#1E2A38] text-[#5B7B7A]"> Bagged Peaks</label>
-                                <label class="flex items-center gap-2 cursor-pointer font-semibold"><input type="checkbox" checked onchange="toggleLayer('near', this.checked)" class="rounded bg-[#FAF7F2] border-[#1E2A38] text-[#D49B53]"> Near Misses</label>
-                                <label class="flex items-center gap-2 cursor-pointer font-semibold"><input type="checkbox" checked onchange="toggleLayer('planned', this.checked)" class="rounded bg-[#FAF7F2] border-[#1E2A38] text-purple-600"> Planned Fells</label>
-                                <label class="flex items-center gap-2 cursor-pointer font-semibold"><input type="checkbox" checked onchange="toggleLayer('unvisited', this.checked)" class="rounded bg-[#FAF7F2] border-[#1E2A38] text-slate-500"> Unvisited Fells</label>
-                                <label class="flex items-center gap-2 cursor-pointer font-semibold"><input type="checkbox" checked onchange="toggleLayer('tracks', this.checked)" class="rounded bg-[#FAF7F2] border-[#1E2A38] text-purple-600"> GPX Track Lines</label>
-                            </div>
-                        </div>
-                    `;
-
-                    L.DomEvent.disableScrollPropagation(container);
-                    return container;
-                }
-            });
-            map.addControl(new FilterControl());
-
-            setTimeout(() => {
-                const btn = document.getElementById('filter-toggle-btn');
-                const dropdown = document.getElementById('filter-dropdown-content');
-                btn.onclick = (e) => { e.stopPropagation(); dropdown.classList.toggle('hidden'); };
-                document.addEventListener('click', () => { dropdown.classList.add('hidden'); });
-                dropdown.onclick = (e) => { e.stopPropagation(); };
-            }, 100);
-
-            map.on('zoomend', () => { plotAllFellsOnMap(); });
+            map = L.map('map', { center: [54.5, -3.1], zoom: 10, zoomControl: false });
+            L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { maxZoom: 17 }).addTo(map);
+            baggedLayerGroup.addTo(map);
+            unvisitedLayerGroup.addTo(map);
         }
 
-        function changeBaseMap(key) {
-            if (window.currentBaseLayer) map.removeLayer(window.currentBaseLayer);
-            window.currentBaseLayer = window.baseLayers[key];
-            map.addLayer(window.currentBaseLayer);
-            window.currentBaseLayer.bringToBack();
-        }
-
-        function toggleLayer(type, show) {
-            let targetGroup;
-            if (type === 'bagged') targetGroup = baggedLayerGroup;
-            else if (type === 'near') targetGroup = nearMissLayerGroup;
-            else if (type === 'planned') targetGroup = plannedLayerGroup;
-            else if (type === 'unvisited') targetGroup = unvisitedLayerGroup;
-            else if (type === 'tracks') targetGroup = tracksLayerGroup;
-
-            if (targetGroup) {
-                if (show) { if (!map.hasLayer(targetGroup)) map.addLayer(targetGroup); }
-                else { if (map.hasLayer(targetGroup)) map.removeLayer(targetGroup); }
-            }
-        }
-
-        function switchMobileTab(tab) {
-            const sidebar = document.getElementById('sidebar');
-            const mapContainer = document.getElementById('map-container');
-            const navDash = document.getElementById('nav-btn-dash');
-            const navMap = document.getElementById('nav-btn-map');
-
-            if (tab === 'dash') {
-                sidebar.classList.remove('hidden');
-                mapContainer.classList.add('hidden', 'md:block');
-                navDash.classList.add('text-[#5B7B7A]', 'bg-[#FAF7F2]');
-                navDash.classList.remove('text-[#1E2A38]/70');
-                navMap.classList.remove('text-[#5B7B7A]', 'bg-[#FAF7F2]');
-                navMap.classList.add('text-[#1E2A38]/70');
-            } else {
-                sidebar.classList.add('hidden');
-                mapContainer.classList.remove('hidden');
-                navMap.classList.add('text-[#5B7B7A]', 'bg-[#FAF7F2]');
-                navDash.classList.remove('text-[#5B7B7A]', 'bg-[#FAF7F2]');
-                navDash.classList.add('text-[#1E2A38]/70');
-                setTimeout(() => map.invalidateSize(), 200);
-            }
-        }
-
-        function getGlobalBaggedFellsWithDates() {
-            const baggedMap = new Map();
-            savedRoutes.forEach(r => {
-                if (r.type !== 'planned') {
-                    r.bagged.forEach(fellName => {
-                        if (!baggedMap.has(fellName) || new Date(r.date) < new Date(baggedMap.get(fellName))) {
-                            baggedMap.set(fellName, r.date);
-                        }
-                    });
-                }
-            });
-            const manualBagged = JSON.parse(localStorage.getItem('wainwright_manual_bagged') || '{}');
-            Object.keys(manualBagged).forEach(fellName => { baggedMap.set(fellName, manualBagged[fellName]); });
-            return baggedMap;
-        }
-
-        function getGlobalPlannedFellNames() {
-            const planned = new Set();
-            const bagged = getGlobalBaggedFellNames();
-            savedRoutes.forEach(r => {
-                if (r.type === 'planned') {
-                    r.bagged.forEach(f => { if (!bagged.has(f)) planned.add(f); });
-                }
-            });
-            return planned;
-        }
-
-        function toggleManualBagged(fellName) {
-            const manualBagged = JSON.parse(localStorage.getItem('wainwright_manual_bagged') || '{}');
-            if (manualBagged[fellName]) {
-                if (confirm(`Remove manual completion record for ${fellName}?`)) {
-                    delete manualBagged[fellName];
-                    localStorage.setItem('wainwright_manual_bagged', JSON.stringify(manualBagged));
-                }
-            } else {
-                const todayStr = new Date().toISOString().split('T')[0];
-                const userDate = prompt(`Enter completion date for ${fellName} (YYYY-MM-DD):`, todayStr);
-                if (userDate && !isNaN(new Date(userDate).getTime())) {
-                    manualBagged[fellName] = userDate;
-                    localStorage.setItem('wainwright_manual_bagged', JSON.stringify(manualBagged));
-                }
-            }
-            updateOverallProgress();
-            plotAllFellsOnMap();
-            renderFellList();
-            updateCumulativeStatsSummary();
-        }
-
-        function markRouteCompleted(id) {
-            const route = savedRoutes.find(r => r.id === id);
-            if (!route) return;
-
-            const todayStr = new Date().toISOString().split('T')[0];
-            const userDate = prompt(`Enter completion date for "${route.name}" (YYYY-MM-DD):`, todayStr);
-            if (userDate && !isNaN(new Date(userDate).getTime())) {
-                route.type = 'completed';
-                route.date = userDate;
-                saveHistoryToStorage();
-
-                tracksLayerGroup.clearLayers();
-                savedRoutes.forEach(r => renderRouteOnMapLoad(r));
-
-                renderSavedRoutesList();
-                updateOverallProgress();
-                plotAllFellsOnMap();
-                renderFellList();
-                updateCumulativeStatsSummary();
-            }
-        }
-
-        function plotAllFellsOnMap() {
-            baggedLayerGroup.clearLayers();
-            nearMissLayerGroup.clearLayers();
-            plannedLayerGroup.clearLayers();
-            unvisitedLayerGroup.clearLayers();
-            fellMarkers = {};
-
-            const baggedMap = getGlobalBaggedFellsWithDates();
-            const nearNames = getGlobalNearMissFellNames();
-            const plannedNames = getGlobalPlannedFellNames();
-            const currentZoom = map ? map.getZoom() : 10;
-            const showLabels = currentZoom >= 13;
-
+        function plotFellsOnMap() {
             wainwrights.forEach(fell => {
-                const hubData = wainwrightGatewayTowns[fell.name] || { town: "Lake District Hub", region: fell.region, desc: "Accessed via Lake District approach routes." };
-                const isBagged = baggedMap.has(fell.name);
-                const completionDate = baggedMap.get(fell.name);
-                const isNear = !isBagged && nearNames.has(fell.name);
-                const isPlanned = !isBagged && plannedNames.has(fell.name);
-
-                let pinClass = "pin-unvisited";
-                let targetGroup = unvisitedLayerGroup;
-
-                if (isBagged) {
-                    pinClass = "pin-bagged";
-                    targetGroup = baggedLayerGroup;
-                } else if (isNear) {
-                    pinClass = "pin-near";
-                    targetGroup = nearMissLayerGroup;
-                } else if (isPlanned) {
-                    pinClass = "pin-planned";
-                    targetGroup = plannedLayerGroup;
-                }
-
-                let icon;
-                if (showLabels) {
-                    icon = L.divIcon({
-                        className: 'custom-div-icon',
-                        html: `<div style="display: flex; align-items: center; gap: 4px;">
-                                   <div class="custom-pin ${pinClass} w-5 h-5 text-[9px]"><i class="fa-solid fa-mountain"></i></div>
-                                   <div class="fell-label">${fell.name}</div>
-                               </div>`,
-                        iconSize: [120, 24],
-                        iconAnchor: [10, 12]
-                    });
-                } else {
-                    icon = L.divIcon({
-                        className: 'custom-div-icon',
-                        html: `<div class="custom-pin ${pinClass} w-6 h-6 text-[10px]"><i class="fa-solid fa-mountain"></i></div>`,
-                        iconSize: [24, 24],
-                        iconAnchor: [12, 12]
-                    });
-                }
-
-                const elevFormatted = unitSystem === 'metric' ? `${fell.elevation} m` : `${Math.round(fell.elevation * 3.28084)} ft`;
-                const accomQuery = encodeURIComponent(`${hubData.town} Lake District accommodation hotels guesthouses`);
-                const accomUrl = `https://www.google.com/search?q=${accomQuery}`;
-
-                let statusBadgeHTML = '';
-                if (isBagged) {
-                    const formattedDate = new Date(completionDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-                    statusBadgeHTML = `
-                        <div class="mt-2.5 flex items-center justify-between bg-[#5B7B7A]/10 p-1.5 rounded-lg border border-[#5B7B7A]/30">
-                            <span class="text-xs font-bold px-2 py-0.5 rounded text-white bg-[#5B7B7A] inline-block">
-                                <i class="fa-solid fa-check mr-1"></i>Bagged
-                            </span>
-                            <span class="text-[11px] font-bold text-[#5B7B7A]"><i class="fa-solid fa-calendar-day mr-1"></i>${formattedDate}</span>
-                        </div>
-                        <button onclick="toggleManualBagged('${fell.name}')" class="mt-1.5 text-[10px] text-red-600 hover:underline block font-semibold">Edit/Remove Completion Date</button>`;
-                } else {
-                    let badgeBg = isPlanned ? 'bg-purple-600' : (isNear ? 'bg-[#D49B53]' : 'bg-slate-500');
-                    let badgeText = isPlanned ? 'Planned' : (isNear ? 'Near Miss' : 'Unvisited');
-                    statusBadgeHTML = `
-                        <div class="mt-2.5 flex items-center justify-between">
-                            <span class="text-xs font-bold px-2 py-0.5 rounded text-white ${badgeBg} inline-block">
-                                ${badgeText}
-                            </span>
-                            <button onclick="toggleManualBagged('${fell.name}')" class="text-[11px] text-[#5B7B7A] hover:underline font-bold">
-                                + Log Date Manually
-                            </button>
-                        </div>`;
-                }
-
-                const marker = L.marker([fell.lat, fell.lng], { icon: icon })
-                    .bindPopup(`
-                        <div class="text-[#1E2A38] p-1.5 max-w-xs font-sans">
-                            <h4 class="font-extrabold text-sm leading-tight brand-font">${fell.name}</h4>
-                            <p class="text-xs text-[#1E2A38]/70 mt-0.5">Elevation: <strong>${elevFormatted}</strong></p>
-                            <p class="text-xs text-[#1E2A38]/70">Region: <strong>${hubData.region || fell.region}</strong></p>
-                            
-                            <div class="mt-2 pt-2 border-t border-[#1E2A38]/15 space-y-1">
-                                <p class="text-xs text-[#1E2A38]"><strong>Start Town:</strong> <span class="text-[#5B7B7A] font-bold">${hubData.town}</span></p>
-                                <p class="text-[11px] text-[#1E2A38]/80 leading-snug">${hubData.desc || 'Accessed via local trailheads.'}</p>
-                                <a href="${accomUrl}" target="_blank" rel="noopener" class="mt-1.5 inline-flex items-center gap-1.5 text-xs font-bold text-[#5B7B7A] hover:underline">
-                                    <i class="fa-solid fa-hotel"></i> Find Accommodation
-                                </a>
-                            </div>
-
-                            ${statusBadgeHTML}
-                        </div>
-                    `);
-
-                targetGroup.addLayer(marker);
-                fellMarkers[fell.name] = marker;
-            });
-        }
-
-        function setupUploadInputs() {
-            document.getElementById('gpx-completed-input').addEventListener('change', (e) => {
-                if (e.target.files.length > 0) handleFiles(e.target.files, 'completed');
-            });
-            document.getElementById('gpx-planned-input').addEventListener('change', (e) => {
-                if (e.target.files.length > 0) handleFiles(e.target.files, 'planned');
-            });
-        }
-
-        function handleFiles(files, type) {
-            Array.from(files).forEach(file => {
-                if (!file.name.toLowerCase().endsWith('.gpx')) return;
-                const reader = new FileReader();
-                reader.onload = (e) => processGPXXML(e.target.result, file.name, type);
-                reader.readAsText(file);
-            });
-        }
-
-        function processGPXXML(gpxXmlString, fileName, type) {
-            const parser = new DOMParser();
-            const xmlDoc = parser.parseFromString(gpxXmlString, "text/xml");
-            
-            const trackPoints = [];
-            const trkpts = xmlDoc.getElementsByTagName("trkpt");
-            let totalElevationGain = 0;
-            let lastEle = null;
-
-            for (let i = 0; i < trkpts.length; i++) {
-                const lat = parseFloat(trkpts[i].getAttribute("lat"));
-                const lon = parseFloat(trkpts[i].getAttribute("lon"));
-                const eleNode = trkpts[i].getElementsByTagName("ele")[0];
-                const ele = eleNode ? parseFloat(eleNode.textContent) : 0;
-
-                if (lastEle !== null && ele > lastEle) { totalElevationGain += (ele - lastEle); }
-                lastEle = ele;
-                trackPoints.push([lat, lon]);
-            }
-
-            if (trackPoints.length === 0) { alert("No valid track points found in " + fileName); return; }
-
-            let totalDistMeters = 0;
-            for (let i = 0; i < trackPoints.length - 1; i++) {
-                totalDistMeters += getDistanceMeters(trackPoints[i][0], trackPoints[i][1], trackPoints[i+1][0], trackPoints[i+1][1]);
-            }
-
-            let routeDate = null;
-            const timeNodes = xmlDoc.getElementsByTagName("time");
-            if (timeNodes.length > 0 && timeNodes[0].textContent) {
-                const parsedDate = new Date(timeNodes[0].textContent);
-                if (!isNaN(parsedDate.getTime())) { routeDate = parsedDate.toISOString().split('T')[0]; }
-            }
-            if (!routeDate) { routeDate = new Date().toISOString().split('T')[0]; }
-
-            const bagged = [];
-            const nearMisses = [];
-
-            wainwrights.forEach(fell => {
-                let minDistance = Infinity;
-                for (let pt of trackPoints) {
-                    const d = getDistanceMeters(pt[0], pt[1], fell.lat, fell.lng);
-                    if (d < minDistance) minDistance = d;
-                }
-                if (minDistance <= baggingRadius) { bagged.push(fell.name); }
-                else if (minDistance <= 300) { nearMisses.push({ name: fell.name, dist: Math.round(minDistance) }); }
-            });
-
-            const routeObj = {
-                id: Date.now() + Math.random().toString(36).substr(2, 4),
-                name: fileName.replace('.gpx', ''),
-                date: routeDate,
-                type: type,
-                distanceMeters: totalDistMeters,
-                elevationGainMeters: Math.round(totalElevationGain),
-                trackPoints: trackPoints,
-                bagged: bagged,
-                nearMisses: nearMisses
-            };
-
-            savedRoutes.unshift(routeObj);
-            saveHistoryToStorage();
-
-            renderRouteOnMap(routeObj);
-            renderSavedRoutesList();
-            updateOverallProgress();
-            plotAllFellsOnMap();
-            renderFellList();
-            updateCumulativeStatsSummary();
-        }
-
-        function renderRouteOnMap(route) {
-            const isPlanned = route.type === 'planned';
-            const distStr = unitSystem === 'metric' ? `${(route.distanceMeters / 1000).toFixed(1)} km` : `${(route.distanceMeters / 1609.34).toFixed(1)} mi`;
-            const eleStr = unitSystem === 'metric' ? `${route.elevationGainMeters} m` : `${Math.round(route.elevationGainMeters * 3.28084)} ft`;
-
-            const popupContent = `
-                <div class="text-[#1E2A38] p-1 font-sans">
-                    <div class="flex items-center gap-1.5 mb-1">
-                        <span class="text-[10px] font-bold px-2 py-0.5 rounded text-white ${isPlanned ? 'bg-purple-600' : 'bg-[#5B7B7A]'}">
-                            ${isPlanned ? 'Planned Route' : 'Completed Hike'} (${route.date})
-                        </span>
-                    </div>
-                    <h4 class="font-bold text-sm brand-font">${escapeHtml(route.name)}</h4>
-                    <p class="text-xs text-[#1E2A38]/70 mt-1">Distance: <strong>${distStr}</strong></p>
-                    <p class="text-xs text-[#1E2A38]/70">Elevation Gain: <strong>${eleStr}</strong></p>
-                    <p class="text-xs text-[#1E2A38]/70">Fells Bagged: <strong>${route.bagged.length}</strong></p>
-                </div>
-            `;
-
-            const bufferLine = L.polyline(route.trackPoints, { color: 'transparent', weight: 16, opacity: 0 }).bindPopup(popupContent);
-            const visibleLine = L.polyline(route.trackPoints, {
-                color: isPlanned ? '#9333ea' : '#5B7B7A',
-                weight: 4.5,
-                opacity: 0.9,
-                smoothFactor: 0
-            }).bindPopup(popupContent);
-
-            const group = L.featureGroup([bufferLine, visibleLine]);
-            tracksLayerGroup.addLayer(group);
-            map.fitBounds(visibleLine.getBounds(), { padding: [30, 30] });
-        }
-
-        function getDistanceMeters(lat1, lon1, lat2, lon2) {
-            const R = 6371e3;
-            const φ1 = lat1 * Math.PI/180, φ2 = lat2 * Math.PI/180;
-            const Δφ = (lat2-lat1) * Math.PI/180, Δλ = (lon2-lon1) * Math.PI/180;
-            const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2) * Math.sin(Δλ/2);
-            return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
-        }
-
-        function saveHistoryToStorage() { localStorage.setItem('wainwright_saved_routes', JSON.stringify(savedRoutes)); }
-
-        function loadHistoryFromStorage() {
-            const data = localStorage.getItem('wainwright_saved_routes');
-            if (data) {
-                try {
-                    savedRoutes = JSON.parse(data);
-                    renderSavedRoutesList();
-                    tracksLayerGroup.clearLayers();
-                    savedRoutes.forEach(r => renderRouteOnMapLoad(r));
-                    updateCumulativeStatsSummary();
-                } catch(e) { console.error(e); }
-            }
-        }
-
-        function renderRouteOnMapLoad(route) {
-            const isPlanned = route.type === 'planned';
-            const distStr = unitSystem === 'metric' ? `${(route.distanceMeters / 1000).toFixed(1)} km` : `${(route.distanceMeters / 1609.34).toFixed(1)} mi`;
-            const eleStr = unitSystem === 'metric' ? `${route.elevationGainMeters} m` : `${Math.round(route.elevationGainMeters * 3.28084)} ft`;
-
-            const popupContent = `
-                <div class="text-[#1E2A38] p-1 font-sans">
-                    <div class="flex items-center gap-1.5 mb-1">
-                        <span class="text-[10px] font-bold px-2 py-0.5 rounded text-white ${isPlanned ? 'bg-purple-600' : 'bg-[#5B7B7A]'}">
-                            ${isPlanned ? 'Planned Route' : 'Completed Hike'} (${route.date})
-                        </span>
-                    </div>
-                    <h4 class="font-bold text-sm brand-font">${escapeHtml(route.name)}</h4>
-                    <p class="text-xs text-[#1E2A38]/70 mt-1">Distance: <strong>${distStr}</strong></p>
-                    <p class="text-xs text-[#1E2A38]/70">Elevation Gain: <strong>${eleStr}</strong></p>
-                    <p class="text-xs text-[#1E2A38]/70">Fells Bagged: <strong>${route.bagged.length}</strong></p>
-                </div>
-            `;
-
-            const bufferLine = L.polyline(route.trackPoints, { color: 'transparent', weight: 16, opacity: 0 }).bindPopup(popupContent);
-            const visibleLine = L.polyline(route.trackPoints, {
-                color: isPlanned ? '#9333ea' : '#5B7B7A',
-                weight: 4.5,
-                opacity: 0.9,
-                smoothFactor: 0
-            }).bindPopup(popupContent);
-
-            const group = L.featureGroup([bufferLine, visibleLine]);
-            tracksLayerGroup.addLayer(group);
-        }
-
-        function clearAllHistory() {
-            if (confirm("Are you sure you want to delete all saved routes and walk history?")) {
-                savedRoutes = [];
-                localStorage.removeItem('wainwright_saved_routes');
-                tracksLayerGroup.clearLayers();
-                renderSavedRoutesList();
-                updateOverallProgress();
-                plotAllFellsOnMap();
-                renderFellList();
-                resetStatsSummary();
-            }
-        }
-
-        function deleteRoute(id) {
-            savedRoutes = savedRoutes.filter(r => r.id !== id);
-            saveHistoryToStorage();
-            tracksLayerGroup.clearLayers();
-            savedRoutes.forEach(r => renderRouteOnMapLoad(r));
-            renderSavedRoutesList();
-            updateOverallProgress();
-            plotAllFellsOnMap();
-            renderFellList();
-            updateCumulativeStatsSummary();
-        }
-
-        function renameRoute(id) {
-            const route = savedRoutes.find(r => r.id === id);
-            if (!route) return;
-            const newName = prompt("Enter custom name for this route:", route.name);
-            if (newName && newName.trim() !== "") {
-                route.name = newName.trim();
-                saveHistoryToStorage();
-                renderSavedRoutesList();
-                tracksLayerGroup.clearLayers();
-                savedRoutes.forEach(r => renderRouteOnMapLoad(r));
-            }
-        }
-
-        function getGlobalBaggedFellNames() {
-            const bagged = new Set();
-            savedRoutes.forEach(r => { if (r.type !== 'planned') { r.bagged.forEach(f => bagged.add(f)); } });
-            const manualBagged = JSON.parse(localStorage.getItem('wainwright_manual_bagged') || '{}');
-            Object.keys(manualBagged).forEach(f => bagged.add(f));
-            return bagged;
-        }
-
-        function getGlobalNearMissFellNames() {
-            const near = new Set();
-            const bagged = getGlobalBaggedFellNames();
-            savedRoutes.forEach(r => { r.nearMisses.forEach(nm => { if (!bagged.has(nm.name)) near.add(nm.name); }); });
-            return near;
-        }
-
-        function renderSavedRoutesList() {
-            const container = document.getElementById('saved-routes-list');
-            document.getElementById('routes-count').textContent = savedRoutes.length;
-
-            if (savedRoutes.length === 0) {
-                container.innerHTML = `<p class="text-[#1E2A38]/60 italic text-center py-2">No saved routes yet. Upload a GPX to start logging.</p>`;
-                return;
-            }
-
-            container.innerHTML = savedRoutes.map(r => {
-                const isPlanned = r.type === 'planned';
-                const distStr = unitSystem === 'metric' ? `${(r.distanceMeters / 1000).toFixed(1)} km` : `${(r.distanceMeters / 1609.34).toFixed(1)} mi`;
-                const eleStr = unitSystem === 'metric' ? `${r.elevationGainMeters} m` : `${Math.round(r.elevationGainMeters * 3.28084)} ft`;
-
-                const typeBadge = isPlanned 
-                    ? `<span class="text-[9px] font-bold bg-purple-100 text-purple-700 border border-purple-300 px-1.5 py-0.5 rounded ml-1">Planned</span>`
-                    : `<span class="text-[9px] font-bold bg-teal-100 text-[#5B7B7A] border border-[#5B7B7A]/30 px-1.5 py-0.5 rounded ml-1">Completed (${r.date})</span>`;
-
-                const markCompletedBtn = isPlanned
-                    ? `<button onclick="event.stopPropagation(); markRouteCompleted('${r.id}')" class="text-xs text-purple-600 hover:text-[#5B7B7A] p-1 transition" title="Mark as Completed"><i class="fa-solid fa-circle-check"></i></button>`
-                    : '';
-
-                return `
-                    <div class="bg-[#FAF7F2] border-2 border-[#1E2A38]/15 rounded-xl p-2.5 flex items-center justify-between hover:border-[#1E2A38]/40 transition group shadow-sm">
-                        <div class="cursor-pointer flex-1 overflow-hidden mr-2" onclick="focusRoute('${r.id}')">
-                            <div class="flex items-center">
-                                <p class="font-bold text-[#1E2A38] truncate group-hover:text-[#5B7B7A] transition brand-font">${escapeHtml(r.name)}</p>
-                                ${typeBadge}
-                            </div>
-                            <p class="text-[11px] text-[#1E2A38]/70 flex items-center gap-2 mt-0.5 font-medium">
-                                <span><i class="fa-solid fa-route text-[#1E2A38]/50 mr-1"></i>${distStr}</span>
-                                <span><i class="fa-solid fa-arrow-trend-up text-[#1E2A38]/50 mr-1"></i>${eleStr}</span>
-                                <span class="text-[#5B7B7A] font-bold"><i class="fa-solid fa-check mr-0.5"></i>${r.bagged.length}</span>
-                            </p>
-                        </div>
-                        <div class="flex items-center gap-1">
-                            ${markCompletedBtn}
-                            <button onclick="renameRoute('${r.id}')" class="text-[#1E2A38]/60 hover:text-[#5B7B7A] p-1 transition" title="Rename"><i class="fa-solid fa-pen text-xs"></i></button>
-                            <button onclick="deleteRoute('${r.id}')" class="text-[#1E2A38]/60 hover:text-red-600 p-1 transition" title="Delete"><i class="fa-solid fa-trash-can text-xs"></i></button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function focusRoute(id) {
-            const route = savedRoutes.find(r => r.id === id);
-            if (!route) return;
-            map.fitBounds(L.latLngBounds(route.trackPoints), { padding: [30, 30] });
-            if (window.innerWidth < 768) switchMobileTab('map');
-        }
-
-        function updateOverallProgress() {
-            const uniqueBagged = getGlobalBaggedFellNames().size;
-            const percent = Math.round((uniqueBagged / 214) * 100);
-            document.getElementById('overall-bagged-count').textContent = `${uniqueBagged} / 214 (${percent}%)`;
-            document.getElementById('overall-progress-bar').style.width = `${percent}%`;
-            document.getElementById('count-tab-bagged').textContent = uniqueBagged;
-            document.getElementById('count-tab-near').textContent = getGlobalNearMissFellNames().size;
-        }
-
-        function updateCumulativeStatsSummary() {
-            let totalDistMeters = 0, totalElevationMeters = 0;
-            savedRoutes.forEach(r => {
-                if (r.type !== 'planned') {
-                    totalDistMeters += r.distanceMeters;
-                    totalElevationMeters += r.elevationGainMeters;
-                }
-            });
-
-            const dist = unitSystem === 'metric' ? (totalDistMeters / 1000).toFixed(1) + ' km' : (totalDistMeters / 1609.34).toFixed(1) + ' mi';
-            const ele = unitSystem === 'metric' ? totalElevationMeters + ' m' : Math.round(totalElevationMeters * 3.28084) + ' ft';
-
-            document.getElementById('stat-distance').innerHTML = dist;
-            document.getElementById('stat-elevation').innerHTML = ele;
-            document.getElementById('stat-bagged').textContent = getGlobalBaggedFellNames().size;
-            document.getElementById('stat-near').textContent = getGlobalNearMissFellNames().size;
-        }
-
-        function resetStatsSummary() {
-            document.getElementById('stat-distance').innerHTML = `0.0 <span class="text-xs text-[#1E2A38]/60 font-normal">km</span>`;
-            document.getElementById('stat-elevation').innerHTML = `0 <span class="text-xs text-[#1E2A38]/60 font-normal">m</span>`;
-            document.getElementById('stat-bagged').textContent = '0';
-            document.getElementById('stat-near').textContent = '0';
-        }
-
-        function switchTab(tab) {
-            currentTab = tab;
-            ['bagged', 'near', 'all'].forEach(t => {
-                const btn = document.getElementById(`tab-${t}`);
-                if (t === tab) {
-                    btn.className = "flex-1 py-1 bg-[#1E2A38] text-[#F4EFEB] rounded-lg font-bold transition shadow-sm";
-                } else {
-                    btn.className = "flex-1 py-1 text-[#1E2A38]/70 hover:text-[#1E2A38] rounded-lg font-bold transition";
-                }
-            });
-            renderFellList();
-        }
-
-        function renderFellList() {
-            const container = document.getElementById('fell-list');
-            const search = document.getElementById('fell-search').value.toLowerCase();
-            const baggedMap = getGlobalBaggedFellsWithDates();
-            const nearSet = getGlobalNearMissFellNames();
-
-            let list = wainwrights.filter(f => {
-                const hub = wainwrightGatewayTowns[f.name] || {};
-                return f.name.toLowerCase().includes(search) || (hub.town && hub.town.toLowerCase().includes(search));
-            });
-
-            if (currentTab === 'bagged') { list = list.filter(f => baggedMap.has(f.name)); }
-            else if (currentTab === 'near') { list = list.filter(f => nearSet.has(f.name)); }
-
-            if (list.length === 0) {
-                container.innerHTML = `<p class="text-[#1E2A38]/60 italic text-xs text-center py-4">No matching fells found.</p>`;
-                return;
-            }
-
-            container.innerHTML = list.map(f => {
-                const hub = wainwrightGatewayTowns[f.name] || {};
-                const isBagged = baggedMap.has(f.name);
-                const completionDate = baggedMap.get(f.name);
-                const isNear = !isBagged && nearSet.has(f.name);
-                const elev = unitSystem === 'metric' ? `${f.elevation}m` : `${Math.round(f.elevation * 3.28084)}ft`;
-
-                let statusBadge = `<button onclick="event.stopPropagation(); toggleManualBagged('${f.name}')" class="text-[10px] font-bold text-[#1E2A38] bg-[#FAF7F2] hover:bg-[#EAE3DC] px-2.5 py-1 rounded-lg transition border border-[#1E2A38]/30">+ Mark Completed</button>`;
-                
-                if (isBagged) {
-                    const formattedDate = new Date(completionDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-                    statusBadge = `<div class="text-right cursor-pointer" onclick="event.stopPropagation(); toggleManualBagged('${f.name}')" title="Click to edit date">
-                        <span class="text-[10px] font-extrabold text-white bg-[#5B7B7A] px-2 py-0.5 rounded inline-block"><i class="fa-solid fa-check mr-1"></i>Bagged</span>
-                        <p class="text-[9px] text-[#5B7B7A] mt-0.5 font-bold font-mono">${formattedDate}</p>
-                    </div>`;
-                } else if (isNear) {
-                    statusBadge = `<button onclick="event.stopPropagation(); toggleManualBagged('${f.name}')" class="text-[10px] font-bold text-white bg-[#D49B53] px-2 py-1 rounded-lg transition">Near Miss (+)</button>`;
-                }
-
-                return `
-                    <div onclick="centerMapOnFell('${f.name}')" class="bg-[#FAF7F2] hover:bg-[#EAE3DC]/50 border-2 border-[#1E2A38]/15 rounded-xl p-2.5 flex items-center justify-between cursor-pointer transition text-xs shadow-sm">
-                        <div>
-                            <p class="font-bold text-[#1E2A38] brand-font">${f.name}</p>
-                            <p class="text-[10px] text-[#1E2A38]/60 font-medium">${hub.town || f.region} • ${elev}</p>
-                        </div>
-                        ${statusBadge}
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function centerMapOnFell(name) {
-            const fell = wainwrights.find(f => f.name === name);
-            if (fell) {
-                map.setView([fell.lat, fell.lng], 14);
-                if (fellMarkers[name]) fellMarkers[name].openPopup();
-                if (window.innerWidth < 768) switchMobileTab('map');
-            }
-        }
-
-        function toggleUnits() {
-            unitSystem = unitSystem === 'metric' ? 'imperial' : 'metric';
-            document.getElementById('unit-toggle').textContent = unitSystem === 'metric' ? 'Metric' : 'Imperial';
-            renderSavedRoutesList();
-            renderFellList();
-            plotAllFellsOnMap();
-            updateCumulativeStatsSummary();
-            tracksLayerGroup.clearLayers();
-            savedRoutes.forEach(r => renderRouteOnMapLoad(r));
-        }
-
-        function updateBaggingRadius() {
-            baggingRadius = parseInt(document.getElementById('radius-select').value);
-            savedRoutes.forEach(r => {
-                const bagged = [], nearMisses = [];
-                wainwrights.forEach(fell => {
-                    let minDistance = Infinity;
-                    for (let pt of r.trackPoints) {
-                        const d = getDistanceMeters(pt[0], pt[1], fell.lat, fell.lng);
-                        if (d < minDistance) minDistance = d;
-                    }
-                    if (minDistance <= baggingRadius) { bagged.push(fell.name); }
-                    else if (minDistance <= 300) { nearMisses.push({ name: fell.name, dist: Math.round(minDistance) }); }
+                const icon = L.divIcon({
+                    className: 'custom-div-icon',
+                    html: `<div class="custom-pin pin-unvisited w-6 h-6 text-[10px]"><i class="fa-solid fa-mountain"></i></div>`,
+                    iconSize: [24, 24], iconAnchor: [12, 12]
                 });
-                r.bagged = bagged;
-                r.nearMisses = nearMisses;
+                const marker = L.marker([fell.lat, fell.lng], { icon: icon }).bindPopup(`<b>${fell.name}</b>`);
+                unvisitedLayerGroup.addLayer(marker);
             });
-
-            saveHistoryToStorage();
-            updateOverallProgress();
-            plotAllFellsOnMap();
-            renderFellList();
-            renderSavedRoutesList();
-            updateCumulativeStatsSummary();
-        }
-
-        function escapeHtml(str) {
-            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
         }
     </script>
 </body>
