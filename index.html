@@ -43,19 +43,6 @@
         .pin-planned { background-color: #9333ea; }
         .pin-unvisited { background-color: #94a3b8; opacity: 0.8; }
 
-        .fell-label {
-            background: rgba(30, 42, 56, 0.9);
-            border: 1px solid #1E2A38;
-            color: #F4EFEB;
-            font-weight: 600;
-            font-size: 10px;
-            padding: 1px 6px;
-            border-radius: 4px;
-            white-space: nowrap;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            pointer-events: none;
-        }
-
         #explore-drawer {
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
@@ -95,7 +82,7 @@
             <button onclick="toggleUnits()" id="unit-toggle" class="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-xl bg-[#1E2A38] text-[#F4EFEB] hover:bg-[#374151] transition shadow-sm">
                 Metric
             </button>
-            <button onclick="toggleDrawer()" class="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-xl bg-[#5B7B7A] text-white hover:bg-[#4a6463] transition shadow-sm flex items-center gap-1">
+            <button onclick="toggleDrawer()" id="menu-btn" class="md:hidden px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-xl bg-[#5B7B7A] text-white hover:bg-[#4a6463] transition shadow-sm flex items-center gap-1">
                 <i class="fa-solid fa-bars-staggered text-[10px]"></i> Menu
             </button>
         </div>
@@ -157,11 +144,11 @@
             <div class="grid grid-cols-2 gap-2">
                 <div class="bg-[#FAF7F2] border-2 border-[#1E2A38]/15 rounded-2xl p-2.5 shadow-sm">
                     <span class="text-[10px] font-bold text-[#1E2A38]/70 uppercase tracking-wider block mb-0.5 brand-font">Total Distance</span>
-                    <span id="stat-distance" class="text-sm font-extrabold text-[#1E2A38]">0.0 <span class="text-[10px] text-[#1E2A38]/60 font-normal">km</span></span>
+                    <span id="stat-distance" class="text-sm font-extrabold text-[#1E2A38]">0.0 <span id="unit-dist-lbl" class="text-[10px] text-[#1E2A38]/60 font-normal">km</span></span>
                 </div>
                 <div class="bg-[#FAF7F2] border-2 border-[#1E2A38]/15 rounded-2xl p-2.5 shadow-sm">
                     <span class="text-[10px] font-bold text-[#1E2A38]/70 uppercase tracking-wider block mb-0.5 brand-font">Elevation Gain</span>
-                    <span id="stat-elevation" class="text-sm font-extrabold text-[#1E2A38]">0 <span class="text-[10px] text-[#1E2A38]/60 font-normal">m</span></span>
+                    <span id="stat-elevation" class="text-sm font-extrabold text-[#1E2A38]">0 <span id="unit-ele-lbl" class="text-[10px] text-[#1E2A38]/60 font-normal">m</span></span>
                 </div>
                 <div class="bg-[#5B7B7A]/10 border-2 border-[#5B7B7A]/40 rounded-2xl p-2 shadow-sm">
                     <span class="text-[10px] font-bold text-[#5B7B7A] uppercase tracking-wider block mb-0.5 brand-font"><i class="fa-solid fa-circle-check mr-1"></i>Bagged</span>
@@ -216,7 +203,7 @@
 
     <script>
         let map;
-        let unitSystem = 'metric';
+        let unitSystem = 'metric'; // 'metric' or 'imperial'
         let baggingRadius = 100;
         let currentTab = 'all';
         let savedRoutes = [];
@@ -230,221 +217,10 @@
         let tracksLayerGroup = L.layerGroup();
 
         const wainwrightGatewayTowns = {
-            "Allen Crags": { town: "Ambleside", desc: "Reached via Great Langdale or Borrowdale; Ambleside serves as the main commercial base for Langdale approach routes." },
-            "Angle Tarn Pikes": { town: "Glenridding", desc: "Accessed directly from Patterdale and Glenridding via the Boredale Hause ascent path." },
-            "Ard Crags": { town: "Keswick", desc: "Rises above the Newlands Valley, positioned within Keswick’s immediate western circuit." },
-            "Armboth Fell": { town: "Keswick", desc: "Overlooks Thirlmere's western shore, using Keswick as its primary northern valley hub." },
-            "Arnison Crag": { town: "Glenridding", desc: "Rises directly above Patterdale village, walked straight from Glenridding/Patterdale accommodation." },
-            "Arthur's Pike": { town: "Glenridding", desc: "Reached via the northern Ullswater ridge above Howtown, anchored logistically by Glenridding." },
-            "Bakestall": { town: "Keswick", desc: "Forms the northern ridge extension of Skiddaw, accessed directly via Keswick or Gale Road parking." },
-            "Bannerdale Crags": { town: "Keswick", desc: "Climbed from Mungrisdale along the A66 corridor, using Keswick as its primary regional service hub." },
-            "Barf": { town: "Keswick", desc: "Rises over Whinlatter and Bassenthwaite Lake, minutes west of Keswick." },
-            "Barrow": { town: "Keswick", desc: "Reached directly from Braithwaite village, making Keswick the ideal commercial base." },
-            "Base Brown": { town: "Buttermere", desc: "Sits at the head of Borrowdale and Honister Pass, paired logistically with Buttermere or upper Borrowdale." },
-            "Beda Fell": { town: "Glenridding", desc: "A prominent Martindale ridge peak best accessed from the Ullswater/Glenridding side." },
-            "Binsey": { town: "Keswick", desc: "The isolated northernmost Wainwright, tackled easily on a short drive north from Keswick." },
-            "Birkhouse Moor": { town: "Glenridding", desc: "Forms the classic eastern shoulder of Helvellyn, rising directly out of Glenridding village." },
-            "Birks": { town: "Glenridding", desc: "Sits above Patterdale, serving as an entry fell for the St Sunday Crag horseshoe from Glenridding." },
-            "Black Fell": { town: "Coniston", desc: "Located near Tarn Hows between Hawkshead and Coniston, anchored by Coniston for southern access." },
-            "Blake Fell": { town: "Buttermere", desc: "Part of the quiet Loweswater group, best staged from the Buttermere and Loweswater valley." },
-            "Blea Rigg": { town: "Ambleside", desc: "Positioned on the ridge between Easedale and Great Langdale, anchored by Ambleside." },
-            "Bleaberry Fell": { town: "Keswick", desc: "Dominates the skyline directly east of Derwentwater, with trails starting from Keswick." },
-            "Blencathra": { town: "Keswick", desc: "An iconic landmark peak, climbed directly from Scales, Threlkeld, or Keswick." },
-            "Bessyboot": { town: "Keswick", desc: "Rises directly above Rosthwaite in Borrowdale, using Keswick as the main gateway." },
-            "Rosthwaite Fell": { town: "Keswick", desc: "Rises directly above Rosthwaite in Borrowdale, using Keswick as the main gateway." },
-            "Bonscale Pike": { town: "Glenridding", desc: "Overlooks northern Ullswater, accessed via the Howtown steamer path from Glenridding." },
-            "Bowfell": { town: "Ambleside", desc: "The crown jewel at the head of Great Langdale, universally staged out of Ambleside and Langdale." },
-            "Bowscale Fell": { town: "Keswick", desc: "Part of the northern Blencathra group, accessed via Caldbeck or Mungrisdale from Keswick." },
-            "Brae Fell": { town: "Keswick", desc: "Located in the quiet moorlands, reached via northern road links from Keswick." },
-            "Brandreth": { town: "Buttermere", desc: "Reached via Honister Pass or the western ridges above Buttermere lake." },
-            "Branstree": { town: "Shap", desc: "Rises above Haweswater Reservoir, accessed from the eastern Shap/Bampton approach." },
-            "Brim Fell": { town: "Coniston", desc: "Sits on the high ridge directly adjoining The Old Man of Coniston, anchored by Coniston." },
-            "Brock Crags": { town: "Ambleside", desc: "Reached via Hartsop or the high paths connecting Ambleside to the Far Eastern fells." },
-            "Broom Fell": { town: "Keswick", desc: "Part of the Whinlatter forest group, accessed via the pass roads west of Keswick." },
-            "Buckbarrow": { town: "Wasdale Head", desc: "Overlooks the lower entrance of Wasdale, making Wasdale Head the primary local hub." },
-            "Burnbank Fell": { town: "Buttermere", desc: "Anchors the far north-western corner near Loweswater, best staged from Buttermere." },
-            "Calf Crag": { town: "Ambleside", desc: "Positioned at the head of Easedale above Grasmere, logistically served by Ambleside." },
-            "Carl Side": { town: "Keswick", desc: "Forms the western flank of Skiddaw, climbed directly from Keswick or Millbeck." },
-            "Carrock Fell": { town: "Keswick", desc: "The easternmost peak of the Northern Fells, accessed along northern valley roads from Keswick." },
-            "Castle Crag": { town: "Keswick", desc: "The legendary small fell in the jaws of Borrowdale, accessed directly from Keswick or Grange." },
-            "Catbells": { town: "Keswick", desc: "The iconic Derwentwater ridge walk, accessible via the Keswick Launch ferry or Hawes End." },
-            "Catstycam": { town: "Glenridding", desc: "The dramatic pyramid peak branching off Helvellyn, climbed out of Glenridding via Red Tarn." },
-            "Caudale Moor": { town: "Ambleside", desc: "Guards the Kirkstone Pass summit, accessed directly from the Ambleside side." },
-            "Causey Pike": { town: "Keswick", desc: "The distinctive knobbed peak dominating the Newlands Valley, minutes from Keswick." },
-            "Caw": { town: "Coniston", desc: "A southern outlier overlooking the Duddon Valley, anchored by Coniston for road access." },
-            "Caw Fell": { town: "Wasdale Head", desc: "A remote western moorland fell, accessed from Ennerdale or Wasdale Head approaches." },
-            "Clough Head": { town: "Keswick", desc: "The northern anchor of the Helvellyn range, rising above Threlkeld east of Keswick." },
-            "Cold Pike": { town: "Ambleside", desc: "Sits on the high ground above Wrynose Pass and Great Langdale, served by Ambleside." },
-            "Coniston Old Man": { town: "Coniston", desc: "Rises directly above Coniston village, serving as its namesake flagship peak." },
-            "Crag Hill": { town: "Keswick", desc: "The central high point of the Coledale Horseshoe, staged out of Braithwaite and Keswick." },
-            "Crag Fell": { town: "Wasdale Head", desc: "Overlooks Ennerdale Water, accessed via the western valley approaches near Wasdale." },
-            "Crinkle Crags": { town: "Ambleside", desc: "The famous multi-topped ridge at the head of Langdale, anchored by Ambleside." },
-            "Dale Head": { town: "Keswick", desc: "The high centerpiece connecting the Newlands and Buttermere valleys, staged out of Keswick." },
-            "Dodd": { town: "Keswick", desc: "Overlooks Bassenthwaite Lake, starting directly from Dodd Wood car park near Keswick." },
-            "Dollywagon Pike": { town: "Glenridding", desc: "The southern high summit of the Helvellyn ridge, accessed via Grisedale Tarn from Glenridding." },
-            "Dove Crag": { town: "Ambleside", desc: "A cornerstone peak of the Fairfield Horseshoe, walked directly from Ambleside." },
-            "Dow Crag": { town: "Coniston", desc: "The rock-climber’s precipice adjoining Coniston Old Man, accessed directly from Coniston." },
-            "Eagle Crag": { town: "Keswick", desc: "Guards the entrance to Stonethwaite in Borrowdale, accessed via Keswick." },
-            "Esk Pike": { town: "Ambleside", desc: "Links Bowfell to Scafell Pike at the head of Eskdale and Langdale, anchored by Ambleside." },
-            "Fairfield": { town: "Ambleside", desc: "The centerpiece summit of the Fairfield Horseshoe, walked straight out of Ambleside." },
-            "Fellbarrow": { town: "Buttermere", desc: "Overlooks the Vale of Lorton, staged from the Loweswater/Buttermere base." },
-            "Fleetwith Pike": { town: "Buttermere", desc: "The dramatic wall rising above Buttermere lake, climbed directly from Buttermere or Honister." },
-            "Froswick": { town: "Ambleside", desc: "A sharp peak on the Kentmere Horseshoe, accessed via Troutbeck from Ambleside." },
-            "Gavel Fell": { town: "Buttermere", desc: "Tucked away near Loweswater, using Buttermere as its nearest commercial valley hub." },
-            "Gibson Knott": { town: "Ambleside", desc: "Part of the central Helm Crag ridge above Grasmere, anchored by Ambleside." },
-            "Glaramara": { town: "Ambleside", desc: "The long rocky ridge running up Borrowdale toward Langdale, served by Ambleside and Keswick." },
-            "Glenridding Dodd": { town: "Glenridding", desc: "Rises directly over Glenridding village as an immediate local vantage point." },
-            "Gowbarrow Fell": { town: "Glenridding", desc: "Home to Aira Force waterfall along Ullswater, staged out of Glenridding." },
-            "Grange Fell": { town: "Keswick", desc: "Overlooks the entrance to Borrowdale, accessed within minutes of Keswick." },
-            "Grasmoor": { town: "Keswick", desc: "The massive western wall of the Coledale group, staged from Braithwaite/Keswick or Crummock Water." },
-            "Gray Crag": { town: "Shap", desc: "Deep in the Hayswater/Mardale horseshoe, accessed from eastern Shap approaches or Patterdale." },
-            "Graystones": { town: "Buttermere", desc: "Sits above Whinlatter Pass, serving as the gateway to the Loweswater fells." },
-            "Great Borne": { town: "Buttermere", desc: "The western boundary fell of Ennerdale and Loweswater, staged from Buttermere." },
-            "Great Calva": { town: "Keswick", desc: "Positioned deep in Skiddaw Forest, accessed via Caldbeck or Keswick." },
-            "Great Carrs": { town: "Coniston", desc: "Part of the Coniston Fells range above Wrynose Pass, anchored by Coniston." },
-            "Great Cockup": { town: "Keswick", desc: "A northern fell, accessed via northern roads from Keswick." },
-            "Great Crag": { town: "Keswick", desc: "Sits above Rosthwaite and Watendlath in central Borrowdale, served by Keswick." },
-            "Great Dodd": { town: "Glenridding", desc: "The high northern dome of the Helvellyn range, accessed from St John's or Glenridding." },
-            "Great End": { town: "Wasdale Head", desc: "The imposing northern cliff wall of the Scafell massif, staged from Wasdale Head or Seathwaite." },
-            "Great Gable": { town: "Wasdale Head", desc: "The iconic pyramid mountain of the Lakes, universally staged from Wasdale Head." },
-            "Great Mell Fell": { town: "Glenridding", desc: "An isolated wooded cone near Ullswater, accessed along the A66/Glenridding corridor." },
-            "Great Rigg": { town: "Ambleside", desc: "A key summit on the western arm of the Fairfield Horseshoe, walked from Ambleside." },
-            "Great Sca Fell": { town: "Keswick", desc: "Central high point of the group, accessed from Keswick." },
-            "Green Crag": { town: "Coniston", desc: "A wild southern fell in lower Eskdale, reached via Coniston and Birker Fell pass." },
-            "Green Gable": { town: "Buttermere", desc: "Great Gable’s twin companion, accessed via Honister Pass or Buttermere." },
-            "Grey Crag": { town: "Shap", desc: "Sits above Longsleddale, accessed from the far eastern Shap/Kendal borders." },
-            "Grey Friar": { town: "Coniston", desc: "The western outpost of the Coniston group, accessed via Wrynose Pass or Coniston." },
-            "Grey Knotts": { town: "Buttermere", desc: "Rises directly above the top of Honister Pass, anchored by Buttermere." },
-            "Grike": { town: "Wasdale Head", desc: "The western boundary peak above Ennerdale, staged from the western Wasdale valley." },
-            "Grisedale Pike": { town: "Keswick", desc: "The striking summit west of Keswick, climbed directly from Braithwaite." },
-            "Hallin Fell": { town: "Glenridding", desc: "Rises over Martindale on Ullswater, accessed via Howtown ferry from Glenridding." },
-            "Hard Knott": { town: "Coniston", desc: "Overlooks Hardknott Pass, accessed via Wrynose from Coniston or Eskdale." },
-            "Harrison Stickle": { town: "Ambleside", desc: "The highest of the Langdale Pikes, walked straight from Langdale/Ambleside." },
-            "Hart Crag": { town: "Ambleside", desc: "A prominent high peak on the Fairfield Horseshoe circuit above Ambleside." },
-            "Hart Side": { town: "Glenridding", desc: "An eastern spur off Great Dodd, accessed via Glenridding and Deepdale approaches." },
-            "Harter Fell": { town: "Coniston", desc: "The circular peak dominating upper Eskdale, accessed via passes from Coniston." },
-            "Hartsop Above How": { town: "Glenridding", desc: "A long ridge spur stepping down into Patterdale, anchored by Glenridding." },
-            "Hartsop Dodd": { town: "Glenridding", desc: "Guards the entrance to Kirkstone Pass near Brothers Water, minutes from Glenridding." },
-            "Haycock": { town: "Wasdale Head", desc: "A high, stony western giant between Wasdale and Ennerdale, staged from Wasdale Head." },
-            "Haystacks": { town: "Buttermere", desc: "Alfred Wainwright’s favorite fell, climbed directly from the head of Buttermere lake." },
-            "Helm Crag": { town: "Ambleside", desc: "Above Grasmere, universally staged from Grasmere and Ambleside." },
-            "Helvellyn": { town: "Glenridding", desc: "England’s third highest peak, famous for Striding Edge, starting out of Glenridding." },
-            "Hen Comb": { town: "Buttermere", desc: "A quiet valley fell in Loweswater, staged out of Buttermere village." },
-            "Heron Pike": { town: "Ambleside", desc: "Positioned on the lower ridge of the Fairfield Horseshoe above Grasmere and Ambleside." },
-            "High Crag": { town: "Buttermere", desc: "The southern anchor of the High Stile ridge, towering directly over Buttermere." },
-            "High Hartsop Dodd": { town: "Glenridding", desc: "A sharp steep spur rising out of Kirkstone Pass, staged from Glenridding." },
-            "High Pike": { town: "Keswick", desc: "The highest point of the group, accessed north of Keswick." },
-            "High Raise": { town: "Ambleside", desc: "The central geographical hub of the entire Lake District, reached from Langdale/Ambleside." },
-            "High Rigg": { town: "Keswick", desc: "The long low ridge separating St John's in the Vale from Tewet Tarn, minutes from Keswick." },
-            "High Seat": { town: "Keswick", desc: "The peaty plateau towering above Derwentwater, walked straight out of Keswick." },
-            "High Spy": { town: "Keswick", desc: "The high ridge point above Borrowdale and Newlands, accessed via Keswick." },
-            "High Stile": { town: "Buttermere", desc: "The highest summit of the Buttermere trilogy, rising directly over Buttermere lake." },
-            "High Street": { town: "Ambleside", altTown: "Patterdale", desc: "The ancient Roman road summit, accessed via Kentmere Horseshoe from Ambleside or Patterdale." },
-            "High Tove": { town: "Keswick", desc: "Sits in the central moss between Thirlmere and Borrowdale, staged from Keswick." },
-            "Hindscarth": { town: "Keswick", desc: "A central spur of the Newlands Horseshoe, climbed directly from Keswick/Newlands." },
-            "Holme Fell": { town: "Coniston", desc: "A low fell between Coniston and Hodge Close, anchored by Coniston." },
-            "Hopegill Head": { town: "Keswick", desc: "Famous for its alpine west canopy ridge, climbed from Whinlatter or Braithwaite/Keswick." },
-            "Ill Bell": { town: "Ambleside", desc: "The sharpest peak on the Kentmere Horseshoe, accessed via Troutbeck from Ambleside." },
-            "Illgill Head": { town: "Wasdale Head", desc: "Forms the top wall of Wastwater Screes, walked directly from Wasdale Head." },
-            "Kentmere Pike": { town: "Ambleside", desc: "Anchors the eastern arm of the Kentmere Horseshoe, served logistically by Ambleside." },
-            "Kidsty Pike": { town: "Shap", desc: "The classic high pass peak above Haweswater, staged from eastern Shap approaches." },
-            "Kirk Fell": { town: "Wasdale Head", desc: "The massive, steep mountain between Great Gable and Pillar at Wasdale Head." },
-            "Knott": { town: "Keswick", desc: "The high dome of moorland, accessed via Keswick." },
-            "Knott Rigg": { town: "Keswick", desc: "Forms the sharp narrow ridge above Newlands Pass, minutes from Keswick." },
-            "Lank Rigg": { town: "Wasdale Head", desc: "The lonely western outpost beyond Ennerdale, staged from Wasdale Head." },
-            "Latrigg": { town: "Keswick", desc: "Offering a direct walk right from Keswick town center." },
-            "Ling Fell": { town: "Keswick", desc: "A smooth isolated dome near Bassenthwaite, accessed via northern road links from Keswick." },
-            "Lingmoor Fell": { town: "Ambleside", desc: "The heather ridge separating Great Langdale from Little Langdale, served by Ambleside." },
-            "Lingmell": { town: "Wasdale Head", desc: "Scafell Pike’s immediate shoulder peak, rising directly out of Wasdale Head valley." },
-            "Little Hart Crag": { town: "Glenridding", desc: "Sits at the head of Scandale Pass, accessed from Patterdale/Glenridding or Ambleside." },
-            "Little Mell Fell": { town: "Glenridding", desc: "A rounded solitary cone near Ullswater, staged along the A66/Glenridding area." },
-            "Loadpot Hill": { town: "Shap", desc: "A broad grassy plateau on the Roman road above Haweswater, accessed via Shap." },
-            "Loft Crag": { town: "Ambleside", desc: "One of the Langdale Pikes overlooking the valley, walked from Langdale/Ambleside." },
-            "Long Side": { town: "Keswick", desc: "Forms the dramatic edge connecting Ullock Pike to Skiddaw, staged out of Keswick." },
-            "Longlands Fell": { town: "Keswick", desc: "The northernmost spur of the range, accessed via Keswick." },
-            "Lonscale Fell": { town: "Keswick", desc: "The eastern granite precipice of Skiddaw, rising directly above Keswick town." },
-            "Lord's Seat": { town: "Keswick", desc: "The highest point of Whinlatter forest fells, accessed directly west of Keswick." },
-            "Loughrigg Fell": { town: "Ambleside", desc: "Ambleside’s resident introductory fell, walked straight out of Ambleside." },
-            "Low Fell": { town: "Buttermere", desc: "Offers classic views down Crummock Water, climbed directly from Loweswater/Buttermere." },
-            "Low Pike": { town: "Ambleside", desc: "The introductory southern peak on the Fairfield Horseshoe, walked directly out of Ambleside." },
-            "Maiden Moor": { town: "Keswick", desc: "The rolling ridge connecting Catbells to High Spy above Derwentwater, accessed via Keswick." },
-            "Mardale Ill Bell": { town: "Shap", desc: "Overlooks Haweswater Reservoir, accessed directly from the Shap/Mardale valley." },
-            "Meal Fell": { town: "Keswick", desc: "A small rugged fell, staged from Keswick." },
-            "Mellbreak": { town: "Buttermere", desc: "The dramatic mountain standing guard over Crummock Water, staged from Buttermere." },
-            "Middle Dodd": { town: "Glenridding", desc: "The steep triangular wedge rising above Kirkstone Pass road, accessed via Glenridding." },
-            "Middle Fell": { town: "Wasdale Head", desc: "Rises above Nether Wasdale, providing direct ascent from Wasdale Head." },
-            "Mungrisdale Common": { town: "Keswick", desc: "The flat moss fell behind Blencathra, accessed via Keswick." },
-            "Nab Scar": { town: "Ambleside", desc: "The steep starting ridge of the Fairfield Horseshoe rising above Rydal and Ambleside." },
-            "Nethermost Pike": { town: "Glenridding", desc: "Sits on the high Helvellyn plateau, climbed straight out of Glenridding." },
-            "Outerside": { town: "Keswick", desc: "A pleasant rocky fell in the heart of Coledale valley near Braithwaite and Keswick." },
-            "Pavey Ark": { town: "Ambleside", desc: "The cliff face above Stickle Tarn in Langdale, staged out of Ambleside." },
-            "Pike o' Blisco": { town: "Ambleside", desc: "The rocky peak guarding the head of Great Langdale, walked from Langdale/Ambleside." },
-            "Pike of Blisco": { town: "Ambleside", desc: "The rocky peak guarding the head of Great Langdale, walked from Langdale/Ambleside." },
-            "Pike o' Stickle": { town: "Ambleside", desc: "The famous stone-axe quarry dome of the Langdale Pikes, accessed from Ambleside." },
-            "Pike of Stickle": { town: "Ambleside", desc: "The famous stone-axe quarry dome of the Langdale Pikes, accessed from Ambleside." },
-            "Pillar": { town: "Wasdale Head", desc: "Named after its rock spire, climbed directly from Wasdale Head or Ennerdale." },
-            "Place Fell": { town: "Glenridding", desc: "The imposing peak dominating eastern Ullswater, walked directly from Glenridding." },
-            "Raise": { town: "Glenridding", desc: "Home to the Lake District Ski Club, positioned on the Helvellyn range above Glenridding." },
-            "Rampsgill Head": { town: "Shap", desc: "High plateau peak at the convergence of Martindale and Haweswater, accessed via Shap." },
-            "Rannerdale Knotts": { town: "Buttermere", desc: "Famous for spring bluebells, rising directly between Buttermere and Crummock Water." },
-            "Raven Crag": { town: "Keswick", desc: "The dark cliff wall overlooking Thirlmere reservoir, minutes south of Keswick." },
-            "Red Pike (Buttermere)": { town: "Buttermere", desc: "The red-syenite peak rising straight up from Buttermere village." },
-            "Red Pike (Wasdale)": { town: "Wasdale Head", desc: "Part of the high Mosedale Horseshoe, climbed directly out of Wasdale Head." },
-            "Red Screes": { town: "Ambleside", desc: "Dominates the top of Kirkstone Pass, climbed directly from Ambleside." },
-            "Rest Dodd": { town: "Glenridding", desc: "Tucked away in Martindale deer forest, accessed via Glenridding/Patterdale." },
-            "Robinson": { town: "Keswick", desc: "The final high fell on the Newlands Horseshoe, descending back toward Keswick." },
-            "Rossett Pike": { town: "Ambleside", desc: "Guards the high pass between Great Langdale and Wasdale, staged from Ambleside." },
-            "Sail": { town: "Keswick", desc: "The central high point on the Coledale Horseshoe, accessed via Keswick." },
-            "Sale Fell": { town: "Keswick", desc: "Overlooks northern Bassenthwaite Lake, accessed via A66 north of Keswick." },
-            "Scar Crags": { town: "Keswick", desc: "The long running ridge paired with Causey Pike in Newlands Valley near Keswick." },
-            "Scafell": { town: "Wasdale Head", desc: "Scafell Pike’s formidable neighbor, staged directly from Wasdale Head." },
-            "Scafell Pike": { town: "Wasdale Head", desc: "The highest peak in England, universally staged from Wasdale Head." },
-            "Seat Sandal": { town: "Ambleside", desc: "Guards Dunmail Raise pass above Grasmere, logistically anchored by Ambleside." },
-            "Seatallan": { town: "Wasdale Head", desc: "A broad western dome overlooking Wastwater, climbed directly from Wasdale Head." },
-            "Seathwaite Fell": { town: "Wasdale Head", desc: "Sits in the heart of Borrowdale/Wasdale headwaters, accessed via Wasdale or Seathwaite." },
-            "Selside Pike": { town: "Shap", desc: "The easternmost high fell above Haweswater, accessed directly from Shap approaches." },
-            "Sergeant Man": { town: "Ambleside", desc: "A rocky knoll on the high moss above Grasmere and Langdale, staged from Ambleside." },
-            "Sergeant's Crag": { town: "Keswick", desc: "Deep in Langstrath valley in Borrowdale, accessed via Keswick." },
-            "Sheffield Pike": { town: "Glenridding", desc: "Overlooks Glenridding village and Ullswater, climbed directly from Glenridding." },
-            "Shipman Knotts": { town: "Ambleside", desc: "The southern terminal fell of the Kentmere Horseshoe, served by Ambleside." },
-            "Silver How": { town: "Ambleside", desc: "The popular fell rising directly above Grasmere lake, anchored by Ambleside." },
+            "Scafell Pike": { town: "Wasdale Head", desc: "England's highest peak, universally staged from Wasdale Head." },
+            "Helvellyn": { town: "Glenridding", desc: "Famous for Striding Edge, starting out of Glenridding." },
             "Skiddaw": { town: "Keswick", desc: "Keswick's landmark mountain, climbed directly from town via Jenkin Hill path." },
-            "Skiddaw Little Man": { town: "Keswick", desc: "Skiddaw’s southern shoulder summit, walked directly on main Keswick route." },
-            "Slight Side": { town: "Wasdale Head", desc: "The southern craggy ridge extension of Scafell, climbed out of Wasdale Head." },
-            "Sour Howes": { town: "Ambleside", desc: "Positioned above Troutbeck, forming part of eastern Ambleside fells." },
-            "Souther Fell": { town: "Keswick", desc: "Rises above Threlkeld village, minutes from Keswick." },
-            "Starling Dodd": { town: "Buttermere", desc: "A remote fell on the ridge between Ennerdale and Loweswater, staged from Buttermere." },
-            "Steel Fell": { town: "Ambleside", desc: "Guards western Dunmail Raise above Grasmere, served by Ambleside." },
-            "Steel Knotts": { town: "Glenridding", desc: "Known as Pike How, rising directly above Martindale near Ullswater." },
-            "Steeple": { town: "Wasdale Head", desc: "The dramatic arête extension of Scoat Fell, staged directly out of Wasdale Head." },
-            "Stickle Pike": { town: "Coniston", desc: "The sharp rocky peak dominating Dunnerdale fells, accessed via Coniston." },
-            "St Sunday Crag": { town: "Glenridding", desc: "The grand mountain framing Grisedale valley, walked directly from Glenridding." },
-            "Stone Arthur": { town: "Ambleside", desc: "A rocky outcrop spur of Fairfield rising directly over Grasmere and Ambleside." },
-            "Stony Cove Pike": { town: "Ambleside", desc: "Anchors the high junction above Kirkstone Pass, accessed via Ambleside." },
-            "Stybarrow Dodd": { town: "Glenridding", desc: "A central high point on the Helvellyn ridge, accessed via Glenridding." },
-            "Swirl How": { town: "Coniston", desc: "The central high hub linking Wetherlam to Coniston Old Man, walked directly from Coniston." },
-            "Tarn Crag (Easedale)": { town: "Ambleside", desc: "Rises above Easedale Tarn behind Grasmere, anchored by Ambleside." },
-            "Tarn Crag (Sleddale)": { town: "Shap", desc: "A remote eastern fell above Wet Sleddale, accessed from the Shap corridor." },
-            "The Knott": { town: "Glenridding", desc: "High junction peak connecting High Street to Hayeswater valley near Glenridding." },
-            "The Nab": { town: "Glenridding", desc: "Located in the restricted Martindale deer forest, accessed via Glenridding/Howtown." },
-            "Thornthwaite Crag": { town: "Ambleside", desc: "Famous for its tall stone beacon, reached via Kentmere circuit from Ambleside." },
-            "Thunacar Knott": { town: "Ambleside", desc: "Sits behind the Langdale Pikes on the high plateau, staged from Langdale/Ambleside." },
-            "Top o' Selside": { town: "Coniston", desc: "Overlooks eastern shore of Coniston Water, accessed directly from Coniston." },
-            "Troutbeck Tongue": { town: "Ambleside", desc: "A small isolated fell tucked inside Troutbeck valley, walked directly from Ambleside." },
-            "Ullock Pike": { town: "Keswick", desc: "The sharp ridge spur of Skiddaw, climbed directly from Bassenthwaite/Keswick." },
-            "Ullscarf": { town: "Keswick", desc: "The broad mossy fell dividing Thirlmere from Stonethwaite, accessed via Keswick." },
-            "Walla Crag": { town: "Keswick", desc: "The cliff-top viewpoint overlooking Derwentwater, walked straight from Keswick." },
-            "Wandope": { town: "Keswick", desc: "Part of high Coledale wall above Newlands, climbed out of Braithwaite and Keswick." },
-            "Wansfell": { town: "Ambleside", desc: "Ambleside’s popular eastern neighbor, climbed directly via Stockghyll waterfalls from town." },
-            "Watson's Dodd": { town: "Glenridding", desc: "An eastern spur on Great Dodd plateau, accessed via Thirlmere or Glenridding." },
-            "Wether Hill": { town: "Shap", desc: "Broad high moorland fell on ancient High Street ridge, accessed via Shap." },
-            "Wetherlam": { town: "Coniston", desc: "The massive eastern mountain of the Coniston group, climbed directly out of Coniston." },
-            "Whin Rigg": { town: "Buttermere", desc: "Forms the southern end of Wastwater Screes, accessed via Wasdale or Nether Wasdale." },
-            "Whinlatter": { town: "Keswick", desc: "The namesake fell of Whinlatter Forest Pass, located minutes west of Keswick." },
-            "Whiteside": { town: "Keswick", desc: "The narrow dramatic ridge extending west from Grasmoor, staged out of Loweswater or Keswick." },
-            "Whiteless Pike": { town: "Buttermere", desc: "The steep cone rising directly above Buttermere village, climbed straight from the valley." },
-            "Yoke": { town: "Ambleside", desc: "The first high peak on the western arm of Kentmere Horseshoe, walked via Troutbeck from Ambleside." },
-            "Soper": { town: "Wasdale Head", desc: "A remote western outpost, staged out of Wasdale Head." }
+            "Catbells": { town: "Keswick", desc: "The iconic Derwentwater ridge walk, accessible via the Keswick Launch ferry." }
         };
 
         const wainwrights = [
@@ -496,38 +272,8 @@
             { name: "Hopegill Head", elevation: 770, lat: 54.5873, lng: -3.2612, region: "Northwestern" },
             { name: "Crag Hill", elevation: 839, lat: 54.5739, lng: -3.2519, region: "Northwestern" },
             { name: "Sail", elevation: 785, lat: 54.5714, lng: -3.2351, region: "Northwestern" },
-            { name: "Eel Crag", elevation: 839, lat: 54.5739, lng: -3.2519, region: "Northwestern" },
             { name: "Wetherlam", elevation: 763, lat: 54.3908, lng: -3.0901, region: "Southern" },
-            { name: "Dow Crag", elevation: 778, lat: 54.3638, lng: -3.1362, region: "Southern" },
-            { name: "Grey Friar", elevation: 773, lat: 54.3971, lng: -3.1283, region: "Southern" },
-            { name: "Great Carrs", elevation: 785, lat: 54.3948, lng: -3.1187, region: "Southern" },
-            { name: "Cold Pike", elevation: 701, lat: 54.4285, lng: -3.1531, region: "Southern" },
-            { name: "Slight Side", elevation: 762, lat: 54.4336, lng: -3.2201, region: "Southern" },
-            { name: "Hard Knott", elevation: 549, lat: 54.4021, lng: -3.1979, region: "Southern" },
-            { name: "Harter Fell (Eskdale)", elevation: 653, lat: 54.3821, lng: -3.2036, region: "Southern" },
-            { name: "Green Gable", elevation: 801, lat: 54.4883, lng: -3.2179, region: "Western" },
-            { name: "Base Brown", elevation: 646, lat: 54.4921, lng: -3.1983, region: "Western" },
-            { name: "Brandreth", elevation: 715, lat: 54.5002, lng: -3.2185, region: "Western" },
-            { name: "Grey Knotts", elevation: 697, lat: 54.5074, lng: -3.2148, region: "Western" },
-            { name: "Kirk Fell", elevation: 802, lat: 54.4882, lng: -3.2427, region: "Western" },
-            { name: "Soper", elevation: 650, lat: 54.5000, lng: -3.3000, region: "Western" },
-            { name: "Starling Dodd", elevation: 633, lat: 54.5368, lng: -3.3182, region: "Western" },
-            { name: "Great Borne", elevation: 616, lat: 54.5445, lng: -3.3332, region: "Western" },
-            { name: "Mellbreak", elevation: 512, lat: 54.5682, lng: -3.3082, region: "Western" },
-            { name: "Hen Comb", elevation: 509, lat: 54.5512, lng: -3.3134, region: "Western" },
-            { name: "Gavel Fell", elevation: 526, lat: 54.5369, lng: -3.3402, region: "Western" },
-            { name: "Blake Fell", elevation: 573, lat: 54.5511, lng: -3.3551, region: "Western" },
-            { name: "Burnbank Fell", elevation: 475, lat: 54.5612, lng: -3.3610, region: "Western" },
-            { name: "Low Fell", elevation: 423, lat: 54.5882, lng: -3.3331, region: "Western" },
-            { name: "Fellbarrow", elevation: 416, lat: 54.6012, lng: -3.3421, region: "Western" },
-            { name: "Whin Rigg", elevation: 535, lat: 54.4172, lng: -3.2961, region: "Western" },
-            { name: "Illgill Head", elevation: 609, lat: 54.4312, lng: -3.2731, region: "Western" },
-            { name: "Seatallan", elevation: 692, lat: 54.4712, lng: -3.2921, region: "Western" },
-            { name: "Buckbarrow", elevation: 423, lat: 54.4582, lng: -3.2912, region: "Western" },
-            { name: "Middle Fell", elevation: 582, lat: 54.4612, lng: -3.2751, region: "Western" },
-            { name: "Caw", elevation: 529, lat: 54.3412, lng: -3.1582, region: "Southern" },
-            { name: "Stickle Pike", elevation: 375, lat: 54.3282, lng: -3.1812, region: "Southern" },
-            { name: "Black Combe", elevation: 600, lat: 54.2751, lng: -3.3281, region: "Southern" }
+            { name: "Dow Crag", elevation: 778, lat: 54.3638, lng: -3.1362, region: "Southern" }
         ];
 
         window.onload = function() {
@@ -566,6 +312,20 @@
             });
 
             setTimeout(() => { map.invalidateSize(); }, 250);
+        }
+
+        function formatElevation(meters) {
+            if (unitSystem === 'imperial') {
+                return `${Math.round(meters * 3.28084)} ft`;
+            }
+            return `${meters} m`;
+        }
+
+        function formatDistance(meters) {
+            if (unitSystem === 'imperial') {
+                return `${(meters / 1609.34).toFixed(1)} mi`;
+            }
+            return `${(meters / 1000).toFixed(1)} km`;
         }
 
         function plotAllFellsOnMap() {
@@ -607,7 +367,7 @@
                 const marker = L.marker([fell.lat, fell.lng], { icon: icon }).bindPopup(`
                     <div class="text-[#1E2A38] p-1 max-w-xs font-sans">
                         <h4 class="font-extrabold text-sm brand-font">${fell.name}</h4>
-                        <p class="text-xs text-[#1E2A38]/70">Elevation: <strong>${fell.elevation}m</strong> | Region: <strong>${fell.region}</strong></p>
+                        <p class="text-xs text-[#1E2A38]/70">Elevation: <strong>${formatElevation(fell.elevation)}</strong> | Region: <strong>${fell.region}</strong></p>
                         <div class="mt-2 pt-2 border-t border-[#1E2A38]/15 space-y-1">
                             <p class="text-xs"><strong>Start Town:</strong> <span class="text-[#5B7B7A] font-bold">${hubData.town}</span></p>
                             <p class="text-[11px] text-[#1E2A38]/80">${hubData.desc}</p>
@@ -756,8 +516,14 @@
         function updateCumulativeStatsSummary() {
             let distM = 0, eleM = 0;
             savedRoutes.forEach(r => { if (r.type !== 'planned') { distM += r.distanceMeters; eleM += r.elevationGainMeters; } });
-            document.getElementById('stat-distance').innerHTML = `${(distM/1000).toFixed(1)} <span class="text-[10px] text-[#1E2A38]/60 font-normal">km</span>`;
-            document.getElementById('stat-elevation').innerHTML = `${eleM} <span class="text-[10px] text-[#1E2A38]/60 font-normal">m</span>`;
+            
+            const distStr = unitSystem === 'imperial' ? (distM / 1609.34).toFixed(1) : (distM / 1000).toFixed(1);
+            const distUnit = unitSystem === 'imperial' ? 'mi' : 'km';
+            const eleStr = unitSystem === 'imperial' ? Math.round(eleM * 3.28084) : eleM;
+            const eleUnit = unitSystem === 'imperial' ? 'ft' : 'm';
+
+            document.getElementById('stat-distance').innerHTML = `${distStr} <span class="text-[10px] text-[#1E2A38]/60 font-normal">${distUnit}</span>`;
+            document.getElementById('stat-elevation').innerHTML = `${eleStr} <span class="text-[10px] text-[#1E2A38]/60 font-normal">${eleUnit}</span>`;
             document.getElementById('stat-bagged').textContent = getGlobalBaggedFellNames().size;
             document.getElementById('stat-near').textContent = getGlobalNearMissFellNames().size;
         }
@@ -766,15 +532,18 @@
             const container = document.getElementById('saved-routes-list');
             document.getElementById('routes-count').textContent = savedRoutes.length;
             if (savedRoutes.length === 0) { container.innerHTML = `<p class="text-[#1E2A38]/60 italic text-center py-2">No saved routes yet.</p>`; return; }
-            container.innerHTML = savedRoutes.map(r => `
-                <div class="bg-[#FAF7F2] border-2 border-[#1E2A38]/15 rounded-xl p-2.5 flex items-center justify-between shadow-sm">
-                    <div>
-                        <p class="font-bold text-[#1E2A38] brand-font">${r.name}</p>
-                        <p class="text-[10px] text-[#1E2A38]/70">${(r.distanceMeters/1000).toFixed(1)} km • ${r.bagged.length} bagged</p>
+            container.innerHTML = savedRoutes.map(r => {
+                const dStr = unitSystem === 'imperial' ? `${(r.distanceMeters / 1609.34).toFixed(1)} mi` : `${(r.distanceMeters / 1000).toFixed(1)} km`;
+                return `
+                    <div class="bg-[#FAF7F2] border-2 border-[#1E2A38]/15 rounded-xl p-2.5 flex items-center justify-between shadow-sm">
+                        <div>
+                            <p class="font-bold text-[#1E2A38] brand-font">${r.name}</p>
+                            <p class="text-[10px] text-[#1E2A38]/70">${dStr} • ${r.bagged.length} bagged</p>
+                        </div>
+                        <button onclick="deleteRoute(${r.id})" class="text-red-600 p-1"><i class="fa-solid fa-trash-can text-xs"></i></button>
                     </div>
-                    <button onclick="deleteRoute(${r.id})" class="text-red-600 p-1"><i class="fa-solid fa-trash-can text-xs"></i></button>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         function deleteRoute(id) {
@@ -825,17 +594,20 @@
                 return;
             }
 
-            container.innerHTML = list.map(f => `
-                <div onclick="centerMapOnFell('${f.name}')" class="w-full bg-[#FAF7F2] hover:bg-[#EAE3DC]/50 border-2 border-[#1E2A38]/15 rounded-xl p-2.5 flex items-center justify-between cursor-pointer transition text-xs shadow-sm flex-shrink-0">
-                    <div class="flex flex-col">
-                        <p class="font-bold text-[#1E2A38] brand-font leading-tight">${f.name}</p>
-                        <p class="text-[10px] text-[#1E2A38]/60 font-medium">${f.region} • ${f.elevation}m</p>
+            container.innerHTML = list.map(f => {
+                const eleStr = formatElevation(f.elevation);
+                return `
+                    <div onclick="centerMapOnFell('${f.name}')" class="w-full bg-[#FAF7F2] hover:bg-[#EAE3DC]/50 border-2 border-[#1E2A38]/15 rounded-xl p-2.5 flex items-center justify-between cursor-pointer transition text-xs shadow-sm flex-shrink-0">
+                        <div class="flex flex-col">
+                            <p class="font-bold text-[#1E2A38] brand-font leading-tight">${f.name}</p>
+                            <p class="text-[10px] text-[#1E2A38]/60 font-medium">${f.region} • ${eleStr}</p>
+                        </div>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded flex-shrink-0 ${baggedMap.has(f.name) ? 'bg-[#5B7B7A] text-white' : 'bg-[#1E2A38]/10 text-[#1E2A38]'}">
+                            ${baggedMap.has(f.name) ? 'Bagged' : 'Unvisited'}
+                        </span>
                     </div>
-                    <span class="text-[10px] font-bold px-2 py-0.5 rounded flex-shrink-0 ${baggedMap.has(f.name) ? 'bg-[#5B7B7A] text-white' : 'bg-[#1E2A38]/10 text-[#1E2A38]'}">
-                        ${baggedMap.has(f.name) ? 'Bagged' : 'Unvisited'}
-                    </span>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         function centerMapOnFell(name) {
@@ -850,6 +622,12 @@
         function toggleUnits() {
             unitSystem = unitSystem === 'metric' ? 'imperial' : 'metric';
             document.getElementById('unit-toggle').textContent = unitSystem === 'metric' ? 'Metric' : 'Imperial';
+            
+            // Re-render components with updated units
+            updateCumulativeStatsSummary();
+            renderSavedRoutesList();
+            renderFellList();
+            plotAllFellsOnMap();
         }
 
         function updateBaggingRadius() {
