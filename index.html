@@ -93,7 +93,7 @@
             <div>
                 <div class="flex items-center gap-1.5 leading-tight">
                     <h1 class="font-extrabold text-xs md:text-sm text-[#1E2A38] tracking-tight brand-font">Wainwright Bagger</h1>
-                    <span class="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-[#1E2A38]/10 text-[#1E2A38]">v1.5.0</span>
+                    <span class="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-[#1E2A38]/10 text-[#1E2A38]">v1.6.0</span>
                 </div>
                 <p id="header-progress-txt" class="text-[10px] text-[#5B7B7A] font-bold">0 / 214 Bagged (0%)</p>
             </div>
@@ -703,7 +703,7 @@
                                 <p class="font-bold text-[#1E2A38] brand-font">${r.name}</p>
                                 <p class="text-[10px] text-[#1E2A38]/70">${r.date} • ${dStr} • ${r.bagged.length} bagged</p>
                             </div>
-                            <button onclick="event.stopPropagation(); deleteRoute(${r.id})" class="text-red-600 hover:text-red-800 p-2 cursor-pointer"><i class="fa-solid fa-trash-can text-sm"></i></button>
+                            <button onclick="deleteRoute(${r.id})" class="text-red-600 hover:text-red-800 p-2 cursor-pointer transition"><i class="fa-solid fa-trash-can text-sm"></i></button>
                         </div>
                     `;
                 }).join('');
@@ -720,7 +720,7 @@
                                 <p class="font-bold text-[#9333ea] brand-font">${r.name}</p>
                                 <p class="text-[10px] text-[#1E2A38]/70">${dStr} • ${r.bagged.length} fells mapped</p>
                             </div>
-                            <button onclick="event.stopPropagation(); deleteRoute(${r.id})" class="text-red-600 hover:text-red-800 p-2 cursor-pointer"><i class="fa-solid fa-trash-can text-sm"></i></button>
+                            <button onclick="deleteRoute(${r.id})" class="text-red-600 hover:text-red-800 p-2 cursor-pointer transition"><i class="fa-solid fa-trash-can text-sm"></i></button>
                         </div>
                     `;
                 }).join('');
@@ -728,11 +728,17 @@
         }
 
         function deleteRoute(id) {
+            // Remove polyline layer from Leaflet map
+            if (routePolylines[id]) {
+                tracksLayerGroup.removeLayer(routePolylines[id]);
+                delete routePolylines[id];
+            }
+
+            // Filter out route from internal saved list
             savedRoutes = savedRoutes.filter(r => r.id !== id);
             saveHistoryToStorage();
-            tracksLayerGroup.clearLayers();
-            routePolylines = {};
-            savedRoutes.forEach(r => renderRouteOnMap(r));
+
+            // Refresh UI components
             renderSavedRoutesLists();
             updateOverallProgress();
             plotAllFellsOnMap();
@@ -750,6 +756,7 @@
                 updateOverallProgress();
                 plotAllFellsOnMap();
                 renderFellList();
+                updateCumulativeStatsSummary();
             }
         }
 
