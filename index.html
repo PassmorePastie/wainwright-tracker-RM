@@ -93,7 +93,7 @@
             <div>
                 <div class="flex items-center gap-1.5 leading-tight">
                     <h1 class="font-extrabold text-xs md:text-sm text-[#1E2A38] tracking-tight brand-font">Wainwright Bagger</h1>
-                    <span class="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-[#1E2A38]/10 text-[#1E2A38]">v1.7.0</span>
+                    <span class="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-[#1E2A38]/10 text-[#1E2A38]">v1.8.0</span>
                 </div>
                 <p id="header-progress-txt" class="text-[10px] text-[#5B7B7A] font-bold">0 / 214 Bagged (0%)</p>
             </div>
@@ -558,11 +558,10 @@
                 else if (minDistance <= 300) nearMisses.push({ name: fell.name });
             });
 
-            // Coerce ID strictly to a String
             const routeObj = {
                 id: String(Date.now()),
                 name: fileName.replace('.gpx', ''),
-                date: walkDate,
+                date: type === 'completed' && bagged.length > 0 ? walkDate : null, // Near misses or empty completed don't force a completion date
                 type: type,
                 distanceMeters: totalDistMeters,
                 elevationGainMeters: Math.round(totalElevationGain),
@@ -623,7 +622,11 @@
 
         function getGlobalBaggedFellsWithDates() {
             const baggedMap = new Map();
-            savedRoutes.forEach(r => { if (r.type !== 'planned') r.bagged.forEach(f => baggedMap.set(f, r.date)); });
+            savedRoutes.forEach(r => { 
+                if (r.type !== 'planned' && r.date) { 
+                    r.bagged.forEach(f => baggedMap.set(f, r.date)); 
+                } 
+            });
             const manual = JSON.parse(localStorage.getItem('wainwright_manual_bagged') || '{}');
             Object.keys(manual).forEach(f => baggedMap.set(f, manual[f]));
             return baggedMap;
@@ -700,11 +703,12 @@
             } else {
                 completedContainer.innerHTML = completedRoutes.map(r => {
                     const dStr = unitSystem === 'imperial' ? `${(r.distanceMeters / 1609.34).toFixed(1)} mi` : `${(r.distanceMeters / 1000).toFixed(1)} km`;
+                    const dateDisplay = r.date ? `${r.date} • ` : `Near Miss Walk • `;
                     return `
                         <div class="bg-[#FAF7F2] border-2 border-[#1E2A38]/15 rounded-xl p-2.5 flex items-center justify-between shadow-sm">
                             <div>
                                 <p class="font-bold text-[#1E2A38] brand-font">${r.name}</p>
-                                <p class="text-[10px] text-[#1E2A38]/70">${r.date} • ${dStr} • ${r.bagged.length} bagged</p>
+                                <p class="text-[10px] text-[#1E2A38]/70">${dateDisplay}${dStr} • ${r.bagged.length} bagged</p>
                             </div>
                             <button onclick="event.stopPropagation(); event.preventDefault(); deleteRoute('${r.id}')" class="text-red-600 hover:text-red-800 p-2 cursor-pointer transition flex items-center justify-center">
                                 <i class="fa-solid fa-trash-can text-sm pointer-events-none"></i>
@@ -737,11 +741,9 @@
         function deleteRoute(id) {
             const targetId = String(id);
 
-            // Filter out targeted route from saved list
             savedRoutes = savedRoutes.filter(r => String(r.id) !== targetId);
             saveHistoryToStorage();
 
-            // Full re-render of map tracks, lists, and stats
             renderAllMapRoutes();
             renderSavedRoutesLists();
             updateOverallProgress();
