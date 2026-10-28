@@ -86,11 +86,11 @@
                 </button>
             </div>
 
-            <!-- Custom Retro Outdoor Badge -->
+            <!-- Custom Retro Outdoor Badge (Fixed Text Path Arc & Font Sizing) -->
             <div class="w-20 h-20 rounded-full border-[3px] border-[#1E2A38] bg-[#F4EFEB] flex flex-col items-center justify-center shadow-md relative overflow-hidden mb-2 mt-1">
-                <svg viewBox="0 0 100 100" class="w-full h-full absolute inset-0">
-                    <path id="curve" fill="transparent" d="M 15, 50 A 35,35 0 1,1 85,50" />
-                    <text font-size="9" font-weight="bold" fill="#1E2A38" letter-spacing="1.5">
+                <svg viewBox="0 0 100 100" class="w-full h-full absolute inset-0 overflow-visible">
+                    <path id="curve" fill="transparent" d="M 12, 50 A 38,38 0 1,1 88,50" />
+                    <text font-size="7.5" font-weight="800" fill="#1E2A38" letter-spacing="1">
                         <textPath href="#curve" startOffset="50%" text-anchor="middle">WAINWRIGHT BAGGER</textPath>
                     </text>
                 </svg>
@@ -103,7 +103,7 @@
 
             <h1 class="font-extrabold text-lg text-[#1E2A38] tracking-tight brand-font leading-tight">Wainwright Bagger</h1>
             <p class="text-xs text-[#1E2A38]/70 font-medium">Your Lake District Fell Tracker</p>
-            <span class="mt-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-[#1E2A38]/10 text-[#1E2A38]">v1.4.1</span>
+            <span class="mt-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-[#1E2A38]/10 text-[#1E2A38]">v1.4.2</span>
         </div>
 
         <!-- Scrollable Content -->
@@ -549,7 +549,7 @@
         function registerServiceWorker() {
             if ('serviceWorker' in navigator) {
                 const swCode = `
-                    const CACHE = 'wainwright-cache-v1.4.1';
+                    const CACHE = 'wainwright-cache-v1.4.2';
                     self.addEventListener('install', e => { self.skipWaiting(); });
                     self.addEventListener('activate', e => { self.clients.claim(); });
                     self.addEventListener('fetch', e => {
