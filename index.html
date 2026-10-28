@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Wainwright Bagger — Live UI Concepts</title>
+    <title>Wainwright Bagger — Explorer Edition</title>
     
     <!-- PWA Web App Manifest -->
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#F4EFEB">
+    <meta name="theme-color" content="#1E2A38">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -22,20 +22,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #F4EFEB; color: #1E2A38; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #1E2A38; color: #1E2A38; overflow: hidden; }
         h1, h2, h3, h4, .brand-font { font-family: 'Montserrat', sans-serif; }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
         ::-webkit-scrollbar-track { background: #EAE3DC; }
         ::-webkit-scrollbar-thumb { background: #1E2A38; border-radius: 4px; }
-
-        .leaflet-control-custom-panel {
-            background-color: #FFFBF7;
-            color: #1E2A38;
-            border: 2px solid #1E2A38;
-            border-radius: 0.75rem;
-            box-shadow: 0 4px 6px -1px rgba(30, 42, 56, 0.15);
-            overflow: hidden;
-        }
 
         .custom-pin {
             display: flex;
@@ -51,133 +42,497 @@
         .pin-near { background-color: #D49B53; }
         .pin-planned { background-color: #9333ea; }
         .pin-unvisited { background-color: #94a3b8; opacity: 0.8; }
+
+        .fell-label {
+            background: rgba(30, 42, 56, 0.9);
+            border: 1px solid #1E2A38;
+            color: #F4EFEB;
+            font-weight: 600;
+            font-size: 10px;
+            padding: 1px 6px;
+            border-radius: 4px;
+            white-space: nowrap;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            pointer-events: none;
+        }
+
+        /* Bottom Sheet Slide Drawer Transition */
+        #explore-drawer {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
     </style>
 </head>
-<body class="h-screen overflow-hidden flex flex-col bg-[#F4EFEB]">
+<body class="h-screen w-screen relative flex flex-col">
 
-    <!-- LIVE UI CONCEPT SWITCHER HEADER -->
-    <header id="concept-switcher-header" class="bg-[#1E2A38] text-[#F4EFEB] p-3 flex flex-wrap items-center justify-between border-b-2 border-amber-500/50 z-50 flex-shrink-0 shadow-lg transition-all duration-300">
-        <div class="flex items-center gap-2 mb-2 md:mb-0">
-            <i class="fa-solid fa-palette text-amber-400"></i>
-            <span class="font-black brand-font text-xs uppercase tracking-wider">LIVE UI CONCEPTS</span>
-            <span class="text-[10px] bg-amber-500 text-black px-1.5 py-0.5 rounded font-mono font-bold">v1.5.0</span>
+    <!-- FULL SCREEN MAP BACKDROP -->
+    <main class="absolute inset-0 z-0">
+        <div id="map" class="w-full h-full"></div>
+    </main>
+
+    <!-- FLOATING TOP HEADER BAR (Minimal HUD) -->
+    <header class="absolute top-4 left-4 right-4 z-20 flex items-center justify-between pointer-events-none">
+        <!-- Badge & Title Pill -->
+        <div class="pointer-events-auto bg-[#FFFBF7]/95 backdrop-blur-md border-2 border-[#1E2A38]/20 px-3 py-2 rounded-2xl shadow-xl flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full border-2 border-[#1E2A38] bg-[#F4EFEB] flex items-center justify-center flex-shrink-0 shadow-sm relative overflow-hidden">
+                <svg viewBox="0 0 100 100" class="w-full h-full absolute inset-0 overflow-visible">
+                    <path id="curve" fill="transparent" d="M 12, 50 A 38,38 0 1,1 88,50" />
+                    <text font-size="7.5" font-weight="800" fill="#1E2A38" letter-spacing="1">
+                        <textPath href="#curve" startOffset="50%" text-anchor="middle">WAINWRIGHT BAGGER</textPath>
+                    </text>
+                </svg>
+                <i class="fa-solid fa-mountain text-xs text-[#D49B53] z-10 mt-1"></i>
+            </div>
+            <div>
+                <h1 class="font-extrabold text-sm text-[#1E2A38] tracking-tight brand-font leading-tight">Wainwright Bagger</h1>
+                <p id="header-progress-txt" class="text-[11px] text-[#5B7B7A] font-bold">0 / 214 Bagged (0%)</p>
+            </div>
         </div>
-        
-        <div class="flex items-center gap-1.5 overflow-x-auto py-1 text-xs">
-            <button onclick="setUIConcept(1)" id="btn-concept-1" class="px-3 py-1 rounded-lg font-bold bg-amber-500 text-black transition shadow-sm">Option 1: Top-Bar</button>
-            <button onclick="setUIConcept(2)" id="btn-concept-2" class="px-3 py-1 rounded-lg font-bold bg-[#FAF7F2]/10 hover:bg-[#FAF7F2]/20 text-[#F4EFEB] transition">Option 2: Drawer</button>
-            <button onclick="setUIConcept(3)" id="btn-concept-3" class="px-3 py-1 rounded-lg font-bold bg-[#FAF7F2]/10 hover:bg-[#FAF7F2]/20 text-[#F4EFEB] transition">Option 3: Grid</button>
-            <button onclick="setUIConcept(4)" id="btn-concept-4" class="px-3 py-1 rounded-lg font-bold bg-[#FAF7F2]/10 hover:bg-[#FAF7F2]/20 text-[#F4EFEB] transition">Option 4: Heritage</button>
-            <button onclick="setUIConcept(5)" id="btn-concept-5" class="px-3 py-1 rounded-lg font-bold bg-[#FAF7F2]/10 hover:bg-[#FAF7F2]/20 text-[#F4EFEB] transition">Option 5: HUD</button>
+
+        <!-- Quick Controls Pill -->
+        <div class="pointer-events-auto bg-[#FFFBF7]/95 backdrop-blur-md border-2 border-[#1E2A38]/20 p-1.5 rounded-2xl shadow-xl flex items-center gap-2">
+            <button onclick="toggleUnits()" id="unit-toggle" class="px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-xl bg-[#1E2A38] text-[#F4EFEB] hover:bg-[#374151] transition shadow-sm">
+                Metric
+            </button>
+            <button onclick="toggleDrawer()" class="px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-xl bg-[#5B7B7A] text-white hover:bg-[#4a6463] transition shadow-sm flex items-center gap-1.5">
+                <i class="fa-solid fa-bars-staggered"></i> Menu
+            </button>
         </div>
     </header>
 
-    <!-- MAIN APP WRAPPER -->
-    <div id="app-wrapper" class="flex-1 relative flex flex-col md:flex-row overflow-hidden">
+    <!-- FLOATING BOTTOM SHEET / EXPLORER DRAWER (Option 1 Concept) -->
+    <aside id="explore-drawer" class="absolute bottom-0 left-0 right-0 md:left-4 md:right-auto md:w-[420px] md:bottom-4 md:top-20 bg-[#FFFBF7] border-2 border-[#1E2A38]/20 rounded-t-3xl md:rounded-3xl shadow-2xl z-30 flex flex-col overflow-hidden transform translate-y-[calc(100%-64px)] md:translate-y-0">
         
-        <!-- SIDEBAR CONTAINER (Concept target) -->
-        <aside id="sidebar" class="w-full md:w-96 bg-[#FFFBF7] border-r-2 border-[#1E2A38]/20 flex flex-col h-full z-20 shadow-xl flex-shrink-0 transition-all duration-300">
-            
-            <!-- Logo Header -->
-            <div class="p-4 border-b-2 border-[#1E2A38]/10 flex flex-col items-center justify-center bg-[#FAF7F2] text-center relative">
-                <div class="absolute right-4 top-4">
-                    <button onclick="toggleUnits()" class="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-lg bg-[#1E2A38] text-[#F4EFEB] hover:bg-[#374151] transition">
-                        Metric
-                    </button>
+        <!-- Drawer Drag Handle & Toggle Header -->
+        <div onclick="toggleDrawer()" class="p-3 bg-[#FAF7F2] border-b-2 border-[#1E2A38]/10 flex flex-col items-center justify-center cursor-pointer flex-shrink-0 select-none">
+            <div class="w-12 h-1.5 bg-[#1E2A38]/20 rounded-full mb-2 md:hidden"></div>
+            <div class="w-full flex items-center justify-between px-2">
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg bg-[#5B7B7A]/20 text-[#5B7B7A] flex items-center justify-center font-bold">
+                        <i class="fa-solid fa-compass text-xs"></i>
+                    </div>
+                    <span class="font-extrabold text-xs uppercase tracking-wider brand-font text-[#1E2A38]">Expedition Control Panel</span>
                 </div>
-                <img src="https://raw.githubusercontent.com/username/repo/main/logo.png" alt="Wainwright Bagger Logo" class="w-20 h-20 rounded-full border-4 border-[#1E2A38] shadow-md mb-2 mt-1">
-                <h1 class="font-extrabold text-xl text-[#1E2A38] brand-font">Wainwright Bagger</h1>
-                <p class="text-xs text-[#1E2A38]/70">Your Fell Tracker</p>
-                <span class="mt-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-[#1E2A38]/10 text-[#1E2A38]">v1.5.0</span>
+                <i id="drawer-chevron" class="fa-solid fa-chevron-up text-xs text-[#1E2A38]/60 transition-transform duration-300 md:hidden"></i>
+            </div>
+        </div>
+
+        <!-- Scrollable Drawer Content -->
+        <div class="flex-1 overflow-y-auto p-4 space-y-4 pb-20 md:pb-4">
+
+            <!-- Overall Progress Summary -->
+            <div class="bg-[#FAF7F2] border-2 border-[#1E2A38]/15 rounded-2xl p-3.5 space-y-2 shadow-sm">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="text-[#1E2A38]/80 font-bold brand-font">Overall Progress</span>
+                    <span id="overall-bagged-count" class="font-extrabold text-[#5B7B7A]">0 / 214 (0%)</span>
+                </div>
+                <div class="w-full bg-[#EAE3DC] rounded-full h-3 overflow-hidden border border-[#1E2A38]/20">
+                    <div id="overall-progress-bar" class="bg-[#5B7B7A] h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
             </div>
 
-            <!-- Scrollable Content -->
-            <div class="flex-1 overflow-y-auto p-4 space-y-4 pb-16">
-                <!-- Dashboard stats go here... -->
-                <p class="text-xs text-[#1E2A38]/70 italic">Select a design concept using the switcher at the top to change the layout!</p>
+            <!-- Dual Upload Buttons -->
+            <div class="grid grid-cols-2 gap-2.5">
+                <div class="border-2 border-[#1E2A38] bg-[#1E2A38] hover:bg-[#374151] rounded-2xl p-3 text-center transition cursor-pointer group relative shadow-md flex flex-col items-center justify-center min-h-[100px]">
+                    <input type="file" id="gpx-completed-input" accept=".gpx" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" multiple />
+                    <div class="w-7 h-7 rounded-full bg-[#FAF7F2]/20 text-[#F4EFEB] flex items-center justify-center mx-auto mb-1">
+                        <i class="fa-solid fa-check text-xs"></i>
+                    </div>
+                    <p class="text-xs font-bold text-[#F4EFEB] brand-font uppercase tracking-wide leading-tight">+ Add Completed Walk</p>
+                </div>
+
+                <div class="border-2 border-[#D49B53] bg-[#D49B53] hover:bg-[#c28842] rounded-2xl p-3 text-center transition cursor-pointer group relative shadow-md flex flex-col items-center justify-center min-h-[100px]">
+                    <input type="file" id="gpx-planned-input" accept=".gpx" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" multiple />
+                    <div class="w-7 h-7 rounded-full bg-[#1E2A38]/20 text-[#1E2A38] flex items-center justify-center mx-auto mb-1">
+                        <i class="fa-solid fa-map text-xs"></i>
+                    </div>
+                    <p class="text-xs font-bold text-[#1E2A38] brand-font uppercase tracking-wide leading-tight">+ Add Planned Walk</p>
+                </div>
             </div>
-        </aside>
 
-        <!-- MAP CONTAINER -->
-        <main id="map-container" class="flex-1 relative h-full bg-[#F4EFEB]">
-            <div id="map" class="w-full h-full z-0"></div>
-        </main>
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-2 gap-2">
+                <div class="bg-[#FAF7F2] border-2 border-[#1E2A38]/15 rounded-2xl p-2.5 shadow-sm">
+                    <span class="text-[10px] font-bold text-[#1E2A38]/70 uppercase tracking-wider block mb-0.5 brand-font">Total Distance</span>
+                    <span id="stat-distance" class="text-base font-extrabold text-[#1E2A38]">0.0 <span class="text-xs text-[#1E2A38]/60 font-normal">km</span></span>
+                </div>
+                <div class="bg-[#FAF7F2] border-2 border-[#1E2A38]/15 rounded-2xl p-2.5 shadow-sm">
+                    <span class="text-[10px] font-bold text-[#1E2A38]/70 uppercase tracking-wider block mb-0.5 brand-font">Elevation Gain</span>
+                    <span id="stat-elevation" class="text-base font-extrabold text-[#1E2A38]">0 <span class="text-xs text-[#1E2A38]/60 font-normal">m</span></span>
+                </div>
+                <div class="bg-[#5B7B7A]/10 border-2 border-[#5B7B7A]/40 rounded-2xl p-2.5 shadow-sm">
+                    <span class="text-[10px] font-bold text-[#5B7B7A] uppercase tracking-wider block mb-0.5 brand-font"><i class="fa-solid fa-circle-check mr-1"></i>Bagged</span>
+                    <span id="stat-bagged" class="text-base font-extrabold text-[#5B7B7A]">0</span>
+                </div>
+                <div class="bg-[#D49B53]/15 border-2 border-[#D49B53]/50 rounded-2xl p-2.5 shadow-sm">
+                    <span class="text-[10px] font-bold text-[#D49B53] uppercase tracking-wider block mb-0.5 brand-font"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Near Misses</span>
+                    <span id="stat-near" class="text-base font-extrabold text-[#D49B53]">0</span>
+                </div>
+            </div>
 
-    </div>
+            <!-- Radius Settings -->
+            <div class="flex items-center justify-between text-xs bg-[#FAF7F2] border-2 border-[#1E2A38]/15 rounded-2xl p-3 shadow-sm">
+                <span class="text-[#1E2A38]/80 font-bold brand-font">Bagging Radius:</span>
+                <select id="radius-select" onchange="updateBaggingRadius()" class="bg-[#F4EFEB] text-[#1E2A38] border-2 border-[#1E2A38]/30 rounded-xl px-2.5 py-1 font-semibold focus:outline-none">
+                    <option value="50">50m (Strict)</option>
+                    <option value="100" selected>100m (Standard)</option>
+                    <option value="200">200m (Generous)</option>
+                </select>
+            </div>
+
+            <!-- Saved Routes -->
+            <div class="space-y-2">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xs font-bold text-[#1E2A38] uppercase tracking-wider brand-font">Saved Routes (<span id="routes-count">0</span>)</h3>
+                    <button onclick="clearAllHistory()" class="text-[11px] text-red-600 hover:underline font-bold">Clear History</button>
+                </div>
+                <div id="saved-routes-list" class="space-y-2 max-h-40 overflow-y-auto pr-1 text-xs">
+                    <p class="text-[#1E2A38]/60 italic text-center py-2">No saved routes yet.</p>
+                </div>
+            </div>
+
+            <!-- Wainwright List / Search -->
+            <div class="pt-2 border-t-2 border-[#1E2A38]/15 space-y-3">
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-xs text-[#1E2A38]/50"></i>
+                    <input type="text" id="fell-search" oninput="renderFellList()" placeholder="Search fell or town..." class="w-full bg-[#FAF7F2] border-2 border-[#1E2A38]/20 rounded-2xl pl-8 pr-3 py-2 text-xs text-[#1E2A38] focus:outline-none font-medium" />
+                </div>
+
+                <div class="flex rounded-2xl bg-[#FAF7F2] p-1 border-2 border-[#1E2A38]/20 text-xs">
+                    <button id="tab-bagged" onclick="switchTab('bagged')" class="flex-1 py-1.5 rounded-xl font-bold text-[#1E2A38]/70 transition">Bagged (<span id="count-tab-bagged">0</span>)</button>
+                    <button id="tab-near" onclick="switchTab('near')" class="flex-1 py-1.5 rounded-xl font-bold text-[#1E2A38]/70 transition">Near (<span id="count-tab-near">0</span>)</button>
+                    <button id="tab-all" onclick="switchTab('all')" class="flex-1 py-1.5 bg-[#1E2A38] text-[#F4EFEB] rounded-xl font-bold transition">All 214</button>
+                </div>
+
+                <div id="fell-list" class="space-y-1.5 max-h-56 overflow-y-auto pr-1"></div>
+            </div>
+
+        </div>
+    </aside>
 
     <script>
         let map;
-        let baggedLayerGroup = L.layerGroup();
-        let unvisitedLayerGroup = L.layerGroup();
+        let unitSystem = 'metric';
+        let baggingRadius = 100;
+        let currentTab = 'all';
+        let savedRoutes = [];
+        let fellMarkers = {};
+        let isDrawerOpen = false;
 
-        // Sample Data for Live Demo
+        let baggedLayerGroup = L.layerGroup();
+        let nearMissLayerGroup = L.layerGroup();
+        let plannedLayerGroup = L.layerGroup();
+        let unvisitedLayerGroup = L.layerGroup();
+        let tracksLayerGroup = L.layerGroup();
+
+        const wainwrightGatewayTowns = {
+            "Catbells": { town: "Keswick", desc: "Iconic Derwentwater ridge walk." },
+            "Helvellyn": { town: "Glenridding", desc: "Famous for Striding Edge." },
+            "Scafell Pike": { town: "Wasdale Head", desc: "England's highest peak." },
+            "Skiddaw": { town: "Keswick", desc: "Landmark northern mountain." }
+        };
+
         const wainwrights = [
-            { name: "Scafell Pike", lat: 54.4543, lng: -3.2117 },
-            { name: "Helvellyn", lat: 54.5270, lng: -3.0175 },
-            { name: "Skiddaw", lat: 54.6514, lng: -3.1478 },
-            { name: "Catbells", lat: 54.5683, lng: -3.1707 }
+            { name: "Scafell Pike", elevation: 978, lat: 54.4543, lng: -3.2117, region: "Southern" },
+            { name: "Helvellyn", elevation: 950, lat: 54.5270, lng: -3.0175, region: "Eastern" },
+            { name: "Skiddaw", elevation: 931, lat: 54.6514, lng: -3.1478, region: "Northern" },
+            { name: "Blencathra", elevation: 868, lat: 54.6399, lng: -3.0498, region: "Northern" },
+            { name: "Coniston Old Man", elevation: 803, lat: 54.3705, lng: -3.1189, region: "Southern" },
+            { name: "Catbells", elevation: 451, lat: 54.5683, lng: -3.1707, region: "Northwestern" }
         ];
 
         window.onload = function() {
             initMap();
-            plotFellsOnMap();
-            setUIConcept(1); // Load Concept 1 by default
+            loadHistoryFromStorage();
+            plotAllFellsOnMap();
+            renderFellList();
+            updateOverallProgress();
+            setupUploadInputs();
         };
 
-        function setUIConcept(conceptNumber) {
-            const sidebar = document.getElementById('sidebar');
-            const wrapper = document.getElementById('app-wrapper');
-            const mapContainer = document.getElementById('map-container');
-
-            // Reset Active Button Styling
-            for (let i = 1; i <= 5; i++) {
-                const btn = document.getElementById(`btn-concept-${i}`);
-                btn.className = (i === conceptNumber) 
-                    ? "px-3 py-1 rounded-lg font-bold bg-amber-500 text-black transition shadow-sm"
-                    : "px-3 py-1 rounded-lg font-bold bg-[#FAF7F2]/10 hover:bg-[#FAF7F2]/20 text-[#F4EFEB] transition";
+        function toggleDrawer() {
+            const drawer = document.getElementById('explore-drawer');
+            const chevron = document.getElementById('drawer-chevron');
+            isDrawerOpen = !isDrawerOpen;
+            
+            if (window.innerWidth < 768) {
+                if (isDrawerOpen) {
+                    drawer.style.transform = 'translateY(0)';
+                    chevron.classList.add('rotate-180');
+                } else {
+                    drawer.style.transform = 'translateY(calc(100% - 64px))';
+                    chevron.classList.remove('rotate-180');
+                }
             }
-
-            // Reset layout defaults
-            sidebar.className = "w-full md:w-96 bg-[#FFFBF7] border-r-2 border-[#1E2A38]/20 flex flex-col h-full z-20 shadow-xl flex-shrink-0 transition-all duration-300";
-            wrapper.className = "flex-1 relative flex flex-col md:flex-row overflow-hidden";
-
-            if (conceptNumber === 1) {
-                // Concept 1: Top-Bar Command Center
-                sidebar.classList.add('hidden', 'md:block');
-            } else if (conceptNumber === 2) {
-                // Concept 2: Bottom Sheet Drawer Style
-                sidebar.className = "w-full h-80 fixed bottom-0 left-0 right-0 bg-[#FFFBF7] border-t-4 border-[#1E2A38] z-30 shadow-2xl rounded-t-2xl transition-all duration-300";
-            } else if (conceptNumber === 3) {
-                // Concept 3: Compact Dual Grid Split
-                sidebar.className = "w-full md:w-[420px] bg-[#FFFBF7] border-r-2 border-[#1E2A38]/30 flex flex-col h-full z-20 shadow-xl flex-shrink-0";
-            } else if (conceptNumber === 4) {
-                // Concept 4: Vintage Field Journal (Heritage Look)
-                sidebar.className = "w-full md:w-96 bg-[#FAF7F2] border-r-4 border-amber-900 flex flex-col h-full z-20 shadow-2xl flex-shrink-0";
-            } else if (conceptNumber === 5) {
-                // Concept 5: Floating HUD
-                sidebar.className = "w-full md:w-80 absolute top-4 left-4 bottom-4 bg-[#FFFBF7]/90 backdrop-blur-sm border-2 border-[#1E2A38] z-30 shadow-2xl rounded-2xl flex flex-col overflow-hidden";
-            }
-
-            setTimeout(() => { if (map) map.invalidateSize(); }, 200);
         }
 
         function initMap() {
-            map = L.map('map', { center: [54.5, -3.1], zoom: 10, zoomControl: false });
-            L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { maxZoom: 17 }).addTo(map);
-            baggedLayerGroup.addTo(map);
-            unvisitedLayerGroup.addTo(map);
+            const openTopo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { maxZoom: 17 });
+            map = L.map('map', {
+                center: [54.5, -3.1],
+                zoom: 10,
+                layers: [openTopo, baggedLayerGroup, nearMissLayerGroup, plannedLayerGroup, unvisitedLayerGroup, tracksLayerGroup],
+                zoomControl: true
+            });
+            setTimeout(() => map.invalidateSize(), 200);
         }
 
-        function plotFellsOnMap() {
+        function plotAllFellsOnMap() {
+            baggedLayerGroup.clearLayers();
+            nearMissLayerGroup.clearLayers();
+            plannedLayerGroup.clearLayers();
+            unvisitedLayerGroup.clearLayers();
+            fellMarkers = {};
+
+            const baggedMap = getGlobalBaggedFellsWithDates();
+            const nearNames = getGlobalNearMissFellNames();
+            const plannedNames = getGlobalPlannedFellNames();
+
             wainwrights.forEach(fell => {
+                const isBagged = baggedMap.has(fell.name);
+                const isNear = !isBagged && nearNames.has(fell.name);
+                const isPlanned = !isBagged && plannedNames.has(fell.name);
+
+                let pinClass = "pin-unvisited", targetGroup = unvisitedLayerGroup;
+                if (isBagged) { pinClass = "pin-bagged"; targetGroup = baggedLayerGroup; }
+                else if (isNear) { pinClass = "pin-near"; targetGroup = nearMissLayerGroup; }
+                else if (isPlanned) { pinClass = "pin-planned"; targetGroup = plannedLayerGroup; }
+
                 const icon = L.divIcon({
                     className: 'custom-div-icon',
-                    html: `<div class="custom-pin pin-unvisited w-6 h-6 text-[10px]"><i class="fa-solid fa-mountain"></i></div>`,
+                    html: `<div class="custom-pin ${pinClass} w-6 h-6 text-[10px]"><i class="fa-solid fa-mountain"></i></div>`,
                     iconSize: [24, 24], iconAnchor: [12, 12]
                 });
-                const marker = L.marker([fell.lat, fell.lng], { icon: icon }).bindPopup(`<b>${fell.name}</b>`);
-                unvisitedLayerGroup.addLayer(marker);
+
+                const marker = L.marker([fell.lat, fell.lng], { icon: icon }).bindPopup(`<b>${fell.name}</b><br>${fell.elevation}m`);
+                targetGroup.addLayer(marker);
+                fellMarkers[fell.name] = marker;
             });
+        }
+
+        function setupUploadInputs() {
+            document.getElementById('gpx-completed-input').addEventListener('change', (e) => {
+                if (e.target.files.length > 0) handleFiles(e.target.files, 'completed');
+            });
+            document.getElementById('gpx-planned-input').addEventListener('change', (e) => {
+                if (e.target.files.length > 0) handleFiles(e.target.files, 'planned');
+            });
+        }
+
+        function handleFiles(files, type) {
+            Array.from(files).forEach(file => {
+                if (!file.name.toLowerCase().endsWith('.gpx')) return;
+                const reader = new FileReader();
+                reader.onload = (e) => processGPXXML(e.target.result, file.name, type);
+                reader.readAsText(file);
+            });
+        }
+
+        function processGPXXML(gpxXmlString, fileName, type) {
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(gpxXmlString, "text/xml");
+            const trkpts = xmlDoc.getElementsByTagName("trkpt");
+            let trackPoints = [], totalElevationGain = 0, lastEle = null;
+
+            for (let i = 0; i < trkpts.length; i++) {
+                const lat = parseFloat(trkpts[i].getAttribute("lat"));
+                const lon = parseFloat(trkpts[i].getAttribute("lon"));
+                const ele = trkpts[i].getElementsByTagName("ele")[0] ? parseFloat(trkpts[i].getElementsByTagName("ele")[0].textContent) : 0;
+                if (lastEle !== null && ele > lastEle) totalElevationGain += (ele - lastEle);
+                lastEle = ele;
+                trackPoints.push([lat, lon]);
+            }
+
+            let totalDistMeters = 0;
+            for (let i = 0; i < trackPoints.length - 1; i++) {
+                totalDistMeters += getDistanceMeters(trackPoints[i][0], trackPoints[i][1], trackPoints[i+1][0], trackPoints[i+1][1]);
+            }
+
+            const bagged = [], nearMisses = [];
+            wainwrights.forEach(fell => {
+                let minDistance = Infinity;
+                trackPoints.forEach(pt => {
+                    const d = getDistanceMeters(pt[0], pt[1], fell.lat, fell.lng);
+                    if (d < minDistance) minDistance = d;
+                });
+                if (minDistance <= baggingRadius) bagged.push(fell.name);
+                else if (minDistance <= 300) nearMisses.push({ name: fell.name });
+            });
+
+            const routeObj = {
+                id: Date.now(),
+                name: fileName.replace('.gpx', ''),
+                date: new Date().toISOString().split('T')[0],
+                type: type,
+                distanceMeters: totalDistMeters,
+                elevationGainMeters: Math.round(totalElevationGain),
+                trackPoints: trackPoints,
+                bagged: bagged,
+                nearMisses: nearMisses
+            };
+
+            savedRoutes.unshift(routeObj);
+            saveHistoryToStorage();
+            renderRouteOnMap(routeObj);
+            renderSavedRoutesList();
+            updateOverallProgress();
+            plotAllFellsOnMap();
+            renderFellList();
+            updateCumulativeStatsSummary();
+        }
+
+        function renderRouteOnMap(route) {
+            const isPlanned = route.type === 'planned';
+            const visibleLine = L.polyline(route.trackPoints, {
+                color: isPlanned ? '#9333ea' : '#5B7B7A',
+                weight: 4.5,
+                opacity: 0.9
+            });
+            tracksLayerGroup.addLayer(visibleLine);
+            map.fitBounds(visibleLine.getBounds(), { padding: [30, 30] });
+        }
+
+        function getDistanceMeters(lat1, lon1, lat2, lon2) {
+            const R = 6371e3, φ1 = lat1 * Math.PI/180, φ2 = lat2 * Math.PI/180;
+            const Δφ = (lat2-lat1) * Math.PI/180, Δλ = (lon2-lon1) * Math.PI/180;
+            const a = Math.sin(Δφ/2)**2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2)**2;
+            return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+        }
+
+        function saveHistoryToStorage() { localStorage.setItem('wainwright_saved_routes', JSON.stringify(savedRoutes)); }
+        function loadHistoryFromStorage() {
+            const data = localStorage.getItem('wainwright_saved_routes');
+            if (data) {
+                savedRoutes = JSON.parse(data);
+                renderSavedRoutesList();
+                savedRoutes.forEach(r => renderRouteOnMap(r));
+                updateCumulativeStatsSummary();
+            }
+        }
+
+        function getGlobalBaggedFellsWithDates() {
+            const baggedMap = new Map();
+            savedRoutes.forEach(r => { if (r.type !== 'planned') r.bagged.forEach(f => baggedMap.set(f, r.date)); });
+            const manual = JSON.parse(localStorage.getItem('wainwright_manual_bagged') || '{}');
+            Object.keys(manual).forEach(f => baggedMap.set(f, manual[f]));
+            return baggedMap;
+        }
+
+        function getGlobalBaggedFellNames() { return new Set(getGlobalBaggedFellsWithDates().keys()); }
+        function getGlobalNearMissFellNames() {
+            const near = new Set(), bagged = getGlobalBaggedFellNames();
+            savedRoutes.forEach(r => r.nearMisses.forEach(nm => { if (!bagged.has(nm.name)) near.add(nm.name); }));
+            return near;
+        }
+        function getGlobalPlannedFellNames() {
+            const planned = new Set(), bagged = getGlobalBaggedFellNames();
+            savedRoutes.forEach(r => { if (r.type === 'planned') r.bagged.forEach(f => { if (!bagged.has(f)) planned.add(f); }); });
+            return planned;
+        }
+
+        function updateOverallProgress() {
+            const count = getGlobalBaggedFellNames().size, pct = Math.round((count / 214) * 100);
+            document.getElementById('overall-bagged-count').textContent = `${count} / 214 (${pct}%)`;
+            document.getElementById('overall-progress-bar').style.width = `${pct}%`;
+            document.getElementById('header-progress-txt').textContent = `${count} / 214 Bagged (${pct}%)`;
+            document.getElementById('count-tab-bagged').textContent = count;
+            document.getElementById('count-tab-near').textContent = getGlobalNearMissFellNames().size;
+        }
+
+        function updateCumulativeStatsSummary() {
+            let distM = 0, eleM = 0;
+            savedRoutes.forEach(r => { if (r.type !== 'planned') { distM += r.distanceMeters; eleM += r.elevationGainMeters; } });
+            document.getElementById('stat-distance').innerHTML = `${(distM/1000).toFixed(1)} <span class="text-xs text-[#1E2A38]/60 font-normal">km</span>`;
+            document.getElementById('stat-elevation').innerHTML = `${eleM} <span class="text-xs text-[#1E2A38]/60 font-normal">m</span>`;
+            document.getElementById('stat-bagged').textContent = getGlobalBaggedFellNames().size;
+            document.getElementById('stat-near').textContent = getGlobalNearMissFellNames().size;
+        }
+
+        function renderSavedRoutesList() {
+            const container = document.getElementById('saved-routes-list');
+            document.getElementById('routes-count').textContent = savedRoutes.length;
+            if (savedRoutes.length === 0) { container.innerHTML = `<p class="text-[#1E2A38]/60 italic text-center py-2">No saved routes yet.</p>`; return; }
+            container.innerHTML = savedRoutes.map(r => `
+                <div class="bg-[#FAF7F2] border-2 border-[#1E2A38]/15 rounded-xl p-2.5 flex items-center justify-between shadow-sm">
+                    <div>
+                        <p class="font-bold text-[#1E2A38] brand-font">${r.name}</p>
+                        <p class="text-[10px] text-[#1E2A38]/70">${(r.distanceMeters/1000).toFixed(1)} km • ${r.bagged.length} bagged</p>
+                    </div>
+                    <button onclick="deleteRoute(${r.id})" class="text-red-600 p-1"><i class="fa-solid fa-trash-can text-xs"></i></button>
+                </div>
+            `).join('');
+        }
+
+        function deleteRoute(id) {
+            savedRoutes = savedRoutes.filter(r => r.id !== id);
+            saveHistoryToStorage();
+            tracksLayerGroup.clearLayers();
+            savedRoutes.forEach(r => renderRouteOnMap(r));
+            renderSavedRoutesList();
+            updateOverallProgress();
+            plotAllFellsOnMap();
+            renderFellList();
+            updateCumulativeStatsSummary();
+        }
+
+        function clearAllHistory() {
+            if (confirm("Delete all routes?")) {
+                savedRoutes = [];
+                localStorage.removeItem('wainwright_saved_routes');
+                tracksLayerGroup.clearLayers();
+                renderSavedRoutesList();
+                updateOverallProgress();
+                plotAllFellsOnMap();
+                renderFellList();
+            }
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            ['bagged', 'near', 'all'].forEach(t => {
+                const btn = document.getElementById(`tab-${t}`);
+                btn.className = (t === tab) ? "flex-1 py-1.5 bg-[#1E2A38] text-[#F4EFEB] rounded-xl font-bold transition" : "flex-1 py-1.5 text-[#1E2A38]/70 font-bold transition";
+            });
+            renderFellList();
+        }
+
+        function renderFellList() {
+            const container = document.getElementById('fell-list');
+            const search = document.getElementById('fell-search').value.toLowerCase();
+            const baggedMap = getGlobalBaggedFellsWithDates();
+            const nearSet = getGlobalNearMissFellNames();
+
+            let list = wainwrights.filter(f => f.name.toLowerCase().includes(search));
+            if (currentTab === 'bagged') list = list.filter(f => baggedMap.has(f.name));
+            else if (currentTab === 'near') list = list.filter(f => nearSet.has(f.name));
+
+            container.innerHTML = list.map(f => `
+                <div onclick="centerMapOnFell('${f.name}')" class="bg-[#FAF7F2] hover:bg-[#EAE3DC]/50 border-2 border-[#1E2A38]/15 rounded-xl p-2.5 flex items-center justify-between cursor-pointer transition text-xs shadow-sm">
+                    <div>
+                        <p class="font-bold text-[#1E2A38] brand-font">${f.name}</p>
+                        <p class="text-[10px] text-[#1E2A38]/60">${f.region} • ${f.elevation}m</p>
+                    </div>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded ${baggedMap.has(f.name) ? 'bg-[#5B7B7A] text-white' : 'bg-[#1E2A38]/10 text-[#1E2A38]'}>
+                        ${baggedMap.has(f.name) ? 'Bagged' : 'Unvisited'}
+                    </span>
+                </div>
+            `).join('');
+        }
+
+        function centerMapOnFell(name) {
+            const fell = wainwrights.find(f => f.name === name);
+            if (fell && fellMarkers[name]) {
+                map.setView([fell.lat, fell.lng], 14);
+                fellMarkers[name].openPopup();
+            }
+        }
+
+        function toggleUnits() {
+            unitSystem = unitSystem === 'metric' ? 'imperial' : 'metric';
+            document.getElementById('unit-toggle').textContent = unitSystem === 'metric' ? 'Metric' : 'Imperial';
+        }
+
+        function updateBaggingRadius() {
+            baggingRadius = parseInt(document.getElementById('radius-select').value);
         }
     </script>
 </body>
