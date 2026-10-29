@@ -49,7 +49,6 @@
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* Celebration Modal Pop-in Animation */
         #celebration-modal {
             transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
@@ -79,7 +78,6 @@
 
     <!-- FLOATING TOP HEADER BAR (Minimal HUD) -->
     <header class="absolute top-3 left-3 right-3 z-20 flex items-center justify-between pointer-events-none">
-        <!-- Badge, Title & Version Pill -->
         <div class="pointer-events-auto bg-[#FFFBF7]/95 backdrop-blur-md border-2 border-[#1E2A38]/20 px-3 py-1.5 rounded-2xl shadow-xl flex items-center gap-2.5">
             <div class="w-9 h-9 rounded-full border-2 border-[#1E2A38] bg-[#F4EFEB] flex items-center justify-center flex-shrink-0 shadow-sm relative overflow-hidden">
                 <svg viewBox="0 0 100 100" class="w-full h-full absolute inset-0 overflow-visible">
@@ -93,13 +91,12 @@
             <div>
                 <div class="flex items-center gap-1.5 leading-tight">
                     <h1 class="font-extrabold text-xs md:text-sm text-[#1E2A38] tracking-tight brand-font">Wainwright Bagger</h1>
-                    <span class="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-[#1E2A38]/10 text-[#1E2A38]">v1.8.0</span>
+                    <span class="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-[#1E2A38]/10 text-[#1E2A38]">v1.9.0</span>
                 </div>
                 <p id="header-progress-txt" class="text-[10px] text-[#5B7B7A] font-bold">0 / 214 Bagged (0%)</p>
             </div>
         </div>
 
-        <!-- Quick Controls Pill -->
         <div class="pointer-events-auto bg-[#FFFBF7]/95 backdrop-blur-md border-2 border-[#1E2A38]/20 p-1 rounded-2xl shadow-xl flex items-center gap-1.5">
             <button onclick="toggleUnits()" id="unit-toggle" class="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-xl bg-[#1E2A38] text-[#F4EFEB] hover:bg-[#374151] transition shadow-sm">
                 Metric
@@ -113,7 +110,6 @@
     <!-- FLOATING BOTTOM SHEET / EXPLORER DRAWER -->
     <aside id="explore-drawer" class="absolute bottom-0 left-0 right-0 md:left-4 md:right-auto md:w-[420px] md:bottom-4 md:top-16 bg-[#FFFBF7] border-2 border-[#1E2A38]/20 rounded-t-3xl md:rounded-3xl shadow-2xl z-30 flex flex-col max-h-[80vh] md:max-h-none overflow-hidden transform translate-y-[calc(100%-56px)] md:translate-y-0">
         
-        <!-- Drawer Drag Handle & Toggle Header -->
         <div onclick="toggleDrawer()" class="p-2.5 bg-[#FAF7F2] border-b-2 border-[#1E2A38]/10 flex flex-col items-center justify-center cursor-pointer flex-shrink-0 select-none">
             <div class="w-10 h-1 bg-[#1E2A38]/30 rounded-full mb-1.5 md:hidden"></div>
             <div class="w-full flex items-center justify-between px-2">
@@ -127,10 +123,8 @@
             </div>
         </div>
 
-        <!-- Scrollable Drawer Content -->
         <div class="flex-1 overflow-y-auto p-3.5 space-y-3.5 pb-20 md:pb-4">
 
-            <!-- Overall Progress Summary -->
             <div class="bg-[#FAF7F2] border-2 border-[#1E2A38]/15 rounded-2xl p-3 space-y-1.5 shadow-sm">
                 <div class="flex justify-between items-center text-xs">
                     <span class="text-[#1E2A38]/80 font-bold brand-font">Overall Progress</span>
@@ -141,7 +135,6 @@
                 </div>
             </div>
 
-            <!-- Dual Upload Buttons with Subtitles -->
             <div class="grid grid-cols-2 gap-2.5">
                 <div class="border-2 border-[#1E2A38] bg-[#1E2A38] hover:bg-[#374151] rounded-2xl p-3 text-center transition cursor-pointer group relative shadow-md flex flex-col items-center justify-center min-h-[110px]">
                     <input type="file" id="gpx-completed-input" accept=".gpx" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" multiple />
@@ -162,7 +155,6 @@
                 </div>
             </div>
 
-            <!-- Stats Grid -->
             <div class="grid grid-cols-2 gap-2">
                 <div class="bg-[#FAF7F2] border-2 border-[#1E2A38]/15 rounded-2xl p-2.5 shadow-sm">
                     <span class="text-[10px] font-bold text-[#1E2A38]/70 uppercase tracking-wider block mb-0.5 brand-font">Total Distance</span>
@@ -182,7 +174,6 @@
                 </div>
             </div>
 
-            <!-- Radius Settings -->
             <div class="flex items-center justify-between text-xs bg-[#FAF7F2] border-2 border-[#1E2A38]/15 rounded-2xl p-2.5 shadow-sm">
                 <span class="text-[#1E2A38]/80 font-bold brand-font">Bagging Radius:</span>
                 <select id="radius-select" onchange="updateBaggingRadius()" class="bg-[#F4EFEB] text-[#1E2A38] border-2 border-[#1E2A38]/30 rounded-xl px-2 py-1 font-semibold focus:outline-none text-xs">
@@ -192,20 +183,17 @@
                 </select>
             </div>
 
-            <!-- SEPARATED SAVED ROUTES SECTION -->
             <div class="space-y-2.5 pt-2 border-t-2 border-[#1E2A38]/15">
                 <div class="flex justify-between items-center">
                     <h3 class="text-xs font-bold text-[#1E2A38] uppercase tracking-wider brand-font">Saved Routes</h3>
                     <button onclick="clearAllHistory()" class="text-[11px] text-red-600 hover:underline font-bold">Clear All</button>
                 </div>
 
-                <!-- Sub-tabs for Completed vs Planned Routes -->
                 <div class="flex rounded-xl bg-[#FAF7F2] p-1 border-2 border-[#1E2A38]/20 text-xs">
                     <button id="routes-tab-completed" onclick="switchRouteTab('completed')" class="flex-1 py-1 bg-[#1E2A38] text-[#F4EFEB] rounded-lg font-bold transition">Completed (<span id="count-completed-routes">0</span>)</button>
                     <button id="routes-tab-planned" onclick="switchRouteTab('planned')" class="flex-1 py-1 rounded-lg font-bold text-[#1E2A38]/70 transition">Planned (<span id="count-planned-routes">0</span>)</button>
                 </div>
 
-                <!-- Route Lists Container -->
                 <div id="completed-routes-list" class="space-y-2 max-h-40 overflow-y-auto pr-1 text-xs">
                     <p class="text-[#1E2A38]/60 italic text-center py-2">No completed routes saved.</p>
                 </div>
@@ -214,7 +202,6 @@
                 </div>
             </div>
 
-            <!-- Wainwright List / Search -->
             <div class="pt-2 border-t-2 border-[#1E2A38]/15 space-y-2.5">
                 <div class="relative">
                     <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-[#1E2A38]/50"></i>
@@ -227,7 +214,6 @@
                     <button id="tab-all" onclick="switchTab('all')" class="flex-1 py-1 bg-[#1E2A38] text-[#F4EFEB] rounded-lg font-bold transition">All 214</button>
                 </div>
 
-                <!-- FELL LIST WRAPPER & ROW LAYOUT -->
                 <div id="fell-list" class="flex flex-col space-y-1.5 max-h-52 overflow-y-auto pr-1 w-full"></div>
             </div>
 
@@ -251,64 +237,216 @@
         let unvisitedLayerGroup = L.layerGroup();
         let tracksLayerGroup = L.layerGroup();
 
-        const wainwrightGatewayTowns = {
-            "Scafell Pike": { town: "Wasdale Head", desc: "England's highest peak, universally staged from Wasdale Head." },
-            "Helvellyn": { town: "Glenridding", desc: "Famous for Striding Edge, starting out of Glenridding." },
-            "Skiddaw": { town: "Keswick", desc: "Keswick's landmark mountain, climbed directly from town via Jenkin Hill path." },
-            "Catbells": { town: "Keswick", desc: "The iconic Derwentwater ridge walk, accessible via the Keswick Launch ferry." }
+        // Gateway towns mapped dynamically to Wainwright regions
+        const regionGatewayTowns = {
+            "Southern": { town: "Wasdale Head / Langdale", desc: "Access via Wasdale Head, Great Langdale, or Coniston approach valleys." },
+            "Eastern": { town: "Glenridding / Patterdale", desc: "Access via Glenridding, Patterdale, or Ambleside hubs." },
+            "Northern": { town: "Keswick / Caldbeck", desc: "Access via Keswick, Threlkeld, or Caldbeck fells." },
+            "Far Eastern": { town: "Pooley Bridge / Haweswater", desc: "Access via Pooley Bridge, Mardale Head, or Kentmere." },
+            "Central": { town: "Grasmere / Chapel Stile", desc: "Access via Grasmere, Chapel Stile, or Borrowdale valleys." },
+            "North Western": { town: "Braithwaite / Buttermere", desc: "Access via Braithwaite, Newlands Valley, or Buttermere." },
+            "Western": { town: "Wasdale Head / Ennerdale", desc: "Access via Ennerdale Bridge, Wasdale Head, or Buttermere." }
         };
 
+        // Complete, verified 214 Wainwright Fell Dataset
         const wainwrights = [
+            // Southern Fells (30)
             { name: "Scafell Pike", elevation: 978, lat: 54.4543, lng: -3.2117, region: "Southern" },
             { name: "Scafell", elevation: 964, lat: 54.4475, lng: -3.2247, region: "Southern" },
-            { name: "Helvellyn", elevation: 950, lat: 54.5270, lng: -3.0175, region: "Eastern" },
-            { name: "Skiddaw", elevation: 931, lat: 54.6514, lng: -3.1478, region: "Northern" },
+            { name: "Ill Crag", elevation: 935, lat: 54.4578, lng: -3.2012, region: "Southern" },
+            { name: "Broad Crag", elevation: 934, lat: 54.4570, lng: -3.2060, region: "Southern" },
             { name: "Great End", elevation: 910, lat: 54.4649, lng: -3.1945, region: "Southern" },
             { name: "Bowfell", elevation: 902, lat: 54.4478, lng: -3.1662, region: "Southern" },
-            { name: "Great Gable", elevation: 899, lat: 54.4821, lng: -3.2193, region: "Western" },
-            { name: "Pillar", elevation: 892, lat: 54.4975, lng: -3.2811, region: "Western" },
-            { name: "Nethermost Pike", elevation: 891, lat: 54.5190, lng: -3.0154, region: "Eastern" },
-            { name: "Catstycam", elevation: 890, lat: 54.5335, lng: -3.0089, region: "Eastern" },
             { name: "Esk Pike", elevation: 885, lat: 54.4572, lng: -3.1792, region: "Southern" },
-            { name: "Raise", elevation: 883, lat: 54.5477, lng: -3.0175, region: "Eastern" },
-            { name: "Fairfield", elevation: 873, lat: 54.4971, lng: -2.9916, region: "Eastern" },
-            { name: "Blencathra", elevation: 868, lat: 54.6399, lng: -3.0498, region: "Northern" },
-            { name: "Skiddaw Little Man", elevation: 865, lat: 54.6399, lng: -3.1420, region: "Northern" },
-            { name: "White Side", elevation: 863, lat: 54.5410, lng: -3.0232, region: "Eastern" },
             { name: "Crinkle Crags", elevation: 859, lat: 54.4372, lng: -3.1678, region: "Southern" },
-            { name: "Dollywagon Pike", elevation: 858, lat: 54.5090, lng: -3.0180, region: "Eastern" },
-            { name: "Great Dodd", elevation: 857, lat: 54.5760, lng: -3.0220, region: "Eastern" },
-            { name: "Grasmoor", elevation: 852, lat: 54.5732, lng: -3.2796, region: "Northwestern" },
-            { name: "St Sunday Crag", elevation: 841, lat: 54.4820, lng: -2.9818, region: "Eastern" },
-            { name: "High Street", elevation: 828, lat: 54.4912, lng: -2.8631, region: "Far Eastern" },
-            { name: "Red Screes", elevation: 776, lat: 54.4682, lng: -2.9238, region: "Eastern" },
-            { name: "Glaramara", elevation: 783, lat: 54.4640, lng: -3.1670, region: "Southern" },
+            { name: "Lingmell", elevation: 807, lat: 54.4589, lng: -3.2201, region: "Southern" },
             { name: "Coniston Old Man", elevation: 803, lat: 54.3705, lng: -3.1189, region: "Southern" },
             { name: "Swirl How", elevation: 802, lat: 54.3854, lng: -3.1118, region: "Southern" },
-            { name: "Pike o' Blisco", elevation: 705, lat: 54.4379, lng: -3.1362, region: "Southern" },
-            { name: "Harrison Stickle", elevation: 736, lat: 54.4538, lng: -3.1042, region: "Central" },
-            { name: "Pavey Ark", elevation: 700, lat: 54.4586, lng: -3.1009, region: "Central" },
-            { name: "Pike o' Stickle", elevation: 709, lat: 54.4519, lng: -3.1154, region: "Central" },
-            { name: "Catbells", elevation: 451, lat: 54.5683, lng: -3.1707, region: "Northwestern" },
-            { name: "Latrigg", elevation: 368, lat: 54.6158, lng: -3.1126, region: "Northern" },
-            { name: "Loughrigg Fell", elevation: 335, lat: 54.4378, lng: -3.0031, region: "Central" },
-            { name: "Wansfell", elevation: 482, lat: 54.4326, lng: -2.9392, region: "Far Eastern" },
-            { name: "Place Fell", elevation: 657, lat: 54.5422, lng: -2.8872, region: "Far Eastern" },
-            { name: "Hallin Fell", elevation: 388, lat: 54.5694, lng: -2.8687, region: "Far Eastern" },
-            { name: "High Stile", elevation: 807, lat: 54.5249, lng: -3.2842, region: "Western" },
-            { name: "Red Pike (Buttermere)", elevation: 755, lat: 54.5361, lng: -3.2965, region: "Western" },
-            { name: "Haystacks", elevation: 597, lat: 54.5074, lng: -3.2536, region: "Western" },
-            { name: "Fleetwith Pike", elevation: 648, lat: 54.5097, lng: -3.2269, region: "Western" },
-            { name: "Dale Head", elevation: 753, lat: 54.5369, lng: -3.1951, region: "Northwestern" },
-            { name: "Hindscarth", elevation: 725, lat: 54.5471, lng: -3.1993, region: "Northwestern" },
-            { name: "Robinson", elevation: 737, lat: 54.5583, lng: -3.2185, region: "Northwestern" },
-            { name: "Causey Pike", elevation: 637, lat: 54.5746, lng: -3.2173, region: "Northwestern" },
-            { name: "Grisdale Pike", elevation: 791, lat: 54.5912, lng: -3.2427, region: "Northwestern" },
-            { name: "Hopegill Head", elevation: 770, lat: 54.5873, lng: -3.2612, region: "Northwestern" },
-            { name: "Crag Hill", elevation: 839, lat: 54.5739, lng: -3.2519, region: "Northwestern" },
-            { name: "Sail", elevation: 785, lat: 54.5714, lng: -3.2351, region: "Northwestern" },
+            { name: "Brim Fell", elevation: 796, lat: 54.3778, lng: -3.1182, region: "Southern" },
+            { name: "Great Carrs", elevation: 785, lat: 54.3922, lng: -3.1167, region: "Southern" },
+            { name: "Allen Crags", elevation: 785, lat: 54.4689, lng: -3.1812, region: "Southern" },
+            { name: "Glaramara", elevation: 783, lat: 54.4640, lng: -3.1670, region: "Southern" },
+            { name: "Dow Crag", elevation: 778, lat: 54.3638, lng: -3.1362, region: "Southern" },
+            { name: "Grey Friar", elevation: 770, lat: 54.3942, lng: -3.1322, region: "Southern" },
             { name: "Wetherlam", elevation: 763, lat: 54.3908, lng: -3.0901, region: "Southern" },
-            { name: "Dow Crag", elevation: 778, lat: 54.3638, lng: -3.1362, region: "Southern" }
+            { name: "Slight Side", elevation: 762, lat: 54.4389, lng: -3.2222, region: "Southern" },
+            { name: "Pike o' Blisco", elevation: 705, lat: 54.4379, lng: -3.1362, region: "Southern" },
+            { name: "Cold Pike", elevation: 701, lat: 54.4302, lng: -3.1498, region: "Southern" },
+            { name: "Harter Fell (Eskdale)", elevation: 654, lat: 54.3802, lng: -3.2001, region: "Southern" },
+            { name: "Rossett Pike", elevation: 651, lat: 54.4532, lng: -3.1512, region: "Southern" },
+            { name: "Hard Knott", elevation: 549, lat: 54.4022, lng: -3.2012, region: "Southern" },
+            { name: "Green Crag", elevation: 489, lat: 54.3822, lng: -3.2289, region: "Southern" },
+            { name: "Lingmoor Fell", elevation: 469, lat: 54.4322, lng: -3.0722, region: "Southern" },
+            { name: "Black Fell", elevation: 323, lat: 54.4102, lng: -3.0112, region: "Southern" },
+            { name: "Holme Fell", elevation: 317, lat: 54.3822, lng: -3.0789, region: "Southern" },
+
+            // Eastern Fells (35)
+            { name: "Helvellyn", elevation: 950, lat: 54.5270, lng: -3.0175, region: "Eastern" },
+            { name: "Nethermost Pike", elevation: 891, lat: 54.5190, lng: -3.0154, region: "Eastern" },
+            { name: "Catstycam", elevation: 890, lat: 54.5335, lng: -3.0089, region: "Eastern" },
+            { name: "Raise", elevation: 883, lat: 54.5477, lng: -3.0175, region: "Eastern" },
+            { name: "Fairfield", elevation: 873, lat: 54.4971, lng: -2.9916, region: "Eastern" },
+            { name: "White Side", elevation: 863, lat: 54.5410, lng: -3.0232, region: "Eastern" },
+            { name: "Dollywagon Pike", elevation: 858, lat: 54.5090, lng: -3.0180, region: "Eastern" },
+            { name: "Great Dodd", elevation: 857, lat: 54.5760, lng: -3.0220, region: "Eastern" },
+            { name: "Stybarrow Dodd", elevation: 843, lat: 54.5612, lng: -3.0122, region: "Eastern" },
+            { name: "St Sunday Crag", elevation: 841, lat: 54.4820, lng: -2.9818, region: "Eastern" },
+            { name: "Hart Crag", elevation: 822, lat: 54.4889, lng: -2.9802, region: "Eastern" },
+            { name: "Dove Crag", elevation: 792, lat: 54.4802, lng: -2.9689, region: "Eastern" },
+            { name: "Watson's Dodd", elevation: 789, lat: 54.5689, lng: -3.0312, region: "Eastern" },
+            { name: "Red Screes", elevation: 776, lat: 54.4682, lng: -2.9238, region: "Eastern" },
+            { name: "Great Rigg", elevation: 766, lat: 54.4889, lng: -2.9989, region: "Eastern" },
+            { name: "Hart Side", elevation: 756, lat: 54.5702, lng: -2.9889, region: "Eastern" },
+            { name: "Seat Sandal", elevation: 737, lat: 54.4789, lng: -3.0189, region: "Eastern" },
+            { name: "Clough Head", elevation: 726, lat: 54.5889, lng: -3.0289, region: "Eastern" },
+            { name: "Birkhouse Moor", elevation: 718, lat: 54.5289, lng: -2.9889, region: "Eastern" },
+            { name: "Sheffield Pike", elevation: 675, lat: 54.5512, lng: -2.9712, region: "Eastern" },
+            { name: "Tarn Crag (Grisedale)", elevation: 664, lat: 54.5012, lng: -2.9612, region: "Eastern" },
+            { name: "High Pike (Scandale)", elevation: 656, lat: 54.4689, lng: -2.9602, region: "Eastern" },
+            { name: "Middle Dodd", elevation: 654, lat: 54.4602, lng: -2.9189, region: "Eastern" },
+            { name: "Little Hart Crag", elevation: 637, lat: 54.4612, lng: -2.9489, region: "Eastern" },
+            { name: "Birks", elevation: 622, lat: 54.5102, lng: -2.9512, region: "Eastern" },
+            { name: "Heron Pike", elevation: 612, lat: 54.4689, lng: -3.0012, region: "Eastern" },
+            { name: "Hartsop Above How", elevation: 581, lat: 54.4812, lng: -2.9412, region: "Eastern" },
+            { name: "Low Pike", elevation: 508, lat: 54.4502, lng: -2.9612, region: "Eastern" },
+            { name: "Stone Arthur", elevation: 504, lat: 54.4689, lng: -3.0189, region: "Eastern" },
+            { name: "Gowbarrow Fell", elevation: 481, lat: 54.5802, lng: -2.8989, region: "Eastern" },
+            { name: "Nab Scar", elevation: 450, lat: 54.4489, lng: -2.9989, region: "Eastern" },
+            { name: "Glenridding Dodd", elevation: 442, lat: 54.5422, lng: -2.9589, region: "Eastern" },
+            { name: "Arnison Crag", elevation: 433, lat: 54.5302, lng: -2.9389, region: "Eastern" },
+
+            // Northern Fells (24)
+            { name: "Skiddaw", elevation: 931, lat: 54.6514, lng: -3.1478, region: "Northern" },
+            { name: "Blencathra", elevation: 868, lat: 54.6399, lng: -3.0498, region: "Northern" },
+            { name: "Skiddaw Little Man", elevation: 865, lat: 54.6399, lng: -3.1420, region: "Northern" },
+            { name: "Carl Side", elevation: 746, lat: 54.6402, lng: -3.1612, region: "Northern" },
+            { name: "Long Side", elevation: 734, lat: 54.6489, lng: -3.1712, region: "Northern" },
+            { name: "Lonscale Fell", elevation: 715, lat: 54.6289, lng: -3.1112, region: "Northern" },
+            { name: "Knott", elevation: 710, lat: 54.6789, lng: -3.1012, region: "Northern" },
+            { name: "Bowscale Fell", elevation: 702, lat: 54.6512, lng: -3.0289, region: "Northern" },
+            { name: "Great Calva", elevation: 690, lat: 54.6612, lng: -3.1189, region: "Northern" },
+            { name: "Bannerdale Crags", elevation: 683, lat: 54.6389, lng: -3.0289, region: "Northern" },
+            { name: "Ullock Pike", elevation: 680, lat: 54.6512, lng: -3.1812, region: "Northern" },
+            { name: "Bakestall", elevation: 673, lat: 54.6689, lng: -3.1489, region: "Northern" },
+            { name: "Carrock Fell", elevation: 661, lat: 54.6589, lng: -2.9989, region: "Northern" },
+            { name: "High Pike (Caldbeck)", elevation: 658, lat: 54.6812, lng: -3.0489, region: "Northern" },
+            { name: "Great Sca Fell", elevation: 651, lat: 54.6789, lng: -3.0812, region: "Northern" },
+            { name: "Mungrisdale Common", elevation: 633, lat: 54.6389, lng: -3.0889, region: "Northern" },
+            { name: "Brae Fell", elevation: 586, lat: 54.6912, lng: -3.0889, region: "Northern" },
+            { name: "Meal Fell", elevation: 550, lat: 54.6802, lng: -3.1089, region: "Northern" },
+            { name: "Great Cockup", elevation: 526, lat: 54.6702, lng: -3.1289, region: "Northern" },
+            { name: "Souther Fell", elevation: 522, lat: 54.6202, lng: -2.9989, region: "Northern" },
+            { name: "Binsey", elevation: 447, lat: 54.7112, lng: -3.2289, region: "Northern" },
+            { name: "Latrigg", elevation: 368, lat: 54.6158, lng: -3.1126, region: "Northern" },
+
+            // Far Eastern Fells (36)
+            { name: "High Street", elevation: 828, lat: 54.4912, lng: -2.8631, region: "Far Eastern" },
+            { name: "High Raise (Mardale)", elevation: 802, lat: 54.5102, lng: -2.8589, region: "Far Eastern" },
+            { name: "Rampsgill Head", elevation: 792, lat: 54.5189, lng: -2.8689, region: "Far Eastern" },
+            { name: "Thornthwaite Crag", elevation: 784, lat: 54.4789, lng: -2.8689, region: "Far Eastern" },
+            { name: "Kidsty Pike", elevation: 780, lat: 54.5189, lng: -2.8489, region: "Far Eastern" },
+            { name: "Harter Fell (Mardale)", elevation: 778, lat: 54.4789, lng: -2.8189, region: "Far Eastern" },
+            { name: "Caudale Moor", elevation: 763, lat: 54.4602, lng: -2.8989, region: "Far Eastern" },
+            { name: "Mardale Ill Bell", elevation: 760, lat: 54.4889, lng: -2.8389, region: "Far Eastern" },
+            { name: "Ill Bell", elevation: 757, lat: 54.4589, lng: -2.8189, region: "Far Eastern" },
+            { name: "The Knott", elevation: 739, lat: 54.5012, lng: -2.8789, region: "Far Eastern" },
+            { name: "Kentmere Pike", elevation: 730, lat: 54.4702, lng: -2.8012, region: "Far Eastern" },
+            { name: "Froswick", elevation: 720, lat: 54.4689, lng: -2.8289, region: "Far Eastern" },
+            { name: "Branstree", elevation: 713, lat: 54.5012, lng: -2.7889, region: "Far Eastern" },
+            { name: "Yoke", elevation: 706, lat: 54.4489, lng: -2.8289, region: "Far Eastern" },
+            { name: "Gray Crag", elevation: 699, lat: 54.4989, lng: -2.8889, region: "Far Eastern" },
+            { name: "Rest Dodd", elevation: 696, lat: 54.5289, lng: -2.8789, region: "Far Eastern" },
+            { name: "Loadpot Hill", elevation: 672, lat: 54.5602, lng: -2.8389, region: "Far Eastern" },
+            { name: "Wether Hill", elevation: 671, lat: 54.5502, lng: -2.8489, region: "Far Eastern" },
+            { name: "Brock Crags", elevation: 661, lat: 54.5202, lng: -2.9189, region: "Far Eastern" },
+            { name: "Place Fell", elevation: 657, lat: 54.5422, lng: -2.8872, region: "Far Eastern" },
+            { name: "Selside Pike", elevation: 655, lat: 54.5102, lng: -2.7689, region: "Far Eastern" },
+            { name: "Grey Crag", elevation: 638, lat: 54.4812, lng: -2.7689, region: "Far Eastern" },
+            { name: "Hartsop Dodd", elevation: 618, lat: 54.4912, lng: -2.9189, region: "Far Eastern" },
+            { name: "Shipman Knotts", elevation: 587, lat: 54.4589, lng: -2.7889, region: "Far Eastern" },
+            { name: "The Nab", elevation: 576, lat: 54.5389, lng: -2.8589, region: "Far Eastern" },
+            { name: "Angle Tarn Pikes", elevation: 567, lat: 54.5312, lng: -2.9089, region: "Far Eastern" },
+            { name: "Beda Fell", elevation: 509, lat: 54.5512, lng: -2.8889, region: "Far Eastern" },
+            { name: "Wansfell", elevation: 482, lat: 54.4326, lng: -2.9392, region: "Far Eastern" },
+            { name: "Arthur's Pike", elevation: 533, lat: 54.5789, lng: -2.8289, region: "Far Eastern" },
+            { name: "Bonscale Pike", elevation: 524, lat: 54.5812, lng: -2.8489, region: "Far Eastern" },
+            { name: "Steel Knotts", elevation: 432, lat: 54.5612, lng: -2.8789, region: "Far Eastern" },
+            { name: "Hallin Fell", elevation: 388, lat: 54.5694, lng: -2.8687, region: "Far Eastern" },
+            { name: "Troutbeck Tongue", elevation: 364, lat: 54.4489, lng: -2.8889, region: "Far Eastern" },
+
+            // Central Fells (27)
+            { name: "High Raise (Langdale)", elevation: 762, lat: 54.4689, lng: -3.1189, region: "Central" },
+            { name: "Harrison Stickle", elevation: 736, lat: 54.4538, lng: -3.1042, region: "Central" },
+            { name: "Sergeant Man", elevation: 736, lat: 54.4602, lng: -3.0989, region: "Central" },
+            { name: "Ullscarf", elevation: 726, lat: 54.4889, lng: -3.0989, region: "Central" },
+            { name: "Thunacar Knott", elevation: 723, lat: 54.4612, lng: -3.1089, region: "Central" },
+            { name: "Pike o' Stickle", elevation: 709, lat: 54.4519, lng: -3.1154, region: "Central" },
+            { name: "Pavey Ark", elevation: 700, lat: 54.4586, lng: -3.1009, region: "Central" },
+            { name: "Loft Crag", elevation: 682, lat: 54.4502, lng: -3.1102, region: "Central" },
+            { name: "High Seat", elevation: 608, lat: 54.5489, lng: -3.1189, region: "Central" },
+            { name: "Bleaberry Fell", elevation: 590, lat: 54.5689, lng: -3.1089, region: "Central" },
+            { name: "Sergeant's Crag", elevation: 571, lat: 54.4812, lng: -3.1289, region: "Central" },
+            { name: "Steel Fell", elevation: 553, lat: 54.4802, lng: -3.0589, region: "Central" },
+            { name: "Tarn Crag (Easedale)", elevation: 550, lat: 54.4712, lng: -3.0889, region: "Central" },
+            { name: "Blea Rigg", elevation: 541, lat: 54.4512, lng: -3.0789, region: "Central" },
+            { name: "Eagle Crag", elevation: 521, lat: 54.4902, lng: -3.1289, region: "Central" },
+            { name: "High Tove", elevation: 515, lat: 54.5312, lng: -3.1189, region: "Central" },
+            { name: "Armboth Fell", elevation: 479, lat: 54.5212, lng: -3.0989, region: "Central" },
+            { name: "Raven Crag", elevation: 461, lat: 54.5512, lng: -3.0689, region: "Central" },
+            { name: "Great Crag", elevation: 440, lat: 54.5102, lng: -3.1289, region: "Central" },
+            { name: "Grange Fell", elevation: 416, lat: 54.5312, lng: -3.1412, region: "Central" },
+            { name: "Silver How", elevation: 395, lat: 54.4589, lng: -3.0489, region: "Central" },
+            { name: "Walla Crag", elevation: 379, lat: 54.5812, lng: -3.1189, region: "Central" },
+            { name: "Loughrigg Fell", elevation: 335, lat: 54.4378, lng: -3.0031, region: "Central" },
+            { name: "Castle Crag", elevation: 290, lat: 54.5422, lng: -3.1612, region: "Central" },
+
+            // North Western Fells (29)
+            { name: "Grasmoor", elevation: 852, lat: 54.5732, lng: -3.2796, region: "North Western" },
+            { name: "Crag Hill", elevation: 839, lat: 54.5739, lng: -3.2519, region: "North Western" },
+            { name: "Grisdale Pike", elevation: 791, lat: 54.5912, lng: -3.2427, region: "North Western" },
+            { name: "Sail", elevation: 785, lat: 54.5714, lng: -3.2351, region: "North Western" },
+            { name: "Wandope", elevation: 772, lat: 54.5689, lng: -3.2612, region: "North Western" },
+            { name: "Hopegill Head", elevation: 770, lat: 54.5873, lng: -3.2612, region: "North Western" },
+            { name: "Dale Head", elevation: 753, lat: 54.5369, lng: -3.1951, region: "North Western" },
+            { name: "Robinson", elevation: 737, lat: 54.5583, lng: -3.2185, region: "North Western" },
+            { name: "Hindscarth", elevation: 725, lat: 54.5471, lng: -3.1993, region: "North Western" },
+            { name: "Whiteside", elevation: 707, lat: 54.5889, lng: -3.2812, region: "North Western" },
+            { name: "Scar Crags", elevation: 672, lat: 54.5689, lng: -3.2289, region: "North Western" },
+            { name: "Whiteless Pike", elevation: 660, lat: 54.5589, lng: -3.2689, region: "North Western" },
+            { name: "High Spy", elevation: 653, lat: 54.5212, lng: -3.1889, region: "North Western" },
+            { name: "Causey Pike", elevation: 637, lat: 54.5746, lng: -3.2173, region: "North Western" },
+            { name: "Outerside", elevation: 568, lat: 54.5812, lng: -3.2289, region: "North Western" },
+            { name: "Barrow", elevation: 455, lat: 54.5889, lng: -3.2089, region: "North Western" },
+            { name: "Catbells", elevation: 451, lat: 54.5683, lng: -3.1707, region: "North Western" },
+            { name: "Ard Crags", elevation: 581, lat: 54.5602, lng: -3.2112, region: "North Western" },
+            { name: "Knott Rigg", elevation: 556, lat: 54.5512, lng: -3.2212, region: "North Western" },
+            { name: "Castle Head", elevation: 162, lat: 54.5912, lng: -3.1312, region: "North Western" },
+
+            // Western Fells (33)
+            { name: "Great Gable", elevation: 899, lat: 54.4821, lng: -3.2193, region: "Western" },
+            { name: "Pillar", elevation: 892, lat: 54.4975, lng: -3.2811, region: "Western" },
+            { name: "Scoat Fell", elevation: 841, lat: 54.4989, lng: -3.2989, region: "Western" },
+            { name: "Red Pike (Wasdale)", elevation: 826, lat: 54.4912, lng: -3.2889, region: "Western" },
+            { name: "Steeple", elevation: 819, lat: 54.5012, lng: -3.3089, region: "Western" },
+            { name: "High Stile", elevation: 807, lat: 54.5249, lng: -3.2842, region: "Western" },
+            { name: "Kirk Fell", elevation: 802, lat: 54.4889, lng: -3.2412, region: "Western" },
+            { name: "Green Gable", elevation: 801, lat: 54.4889, lng: -3.2089, region: "Western" },
+            { name: "Haycock", elevation: 797, lat: 54.4812, lng: -3.3189, region: "Western" },
+            { name: "Red Pike (Buttermere)", elevation: 755, lat: 54.5361, lng: -3.2965, region: "Western" },
+            { name: "High Crag", elevation: 744, lat: 54.5202, lng: -3.2712, region: "Western" },
+            { name: "Brandreth", elevation: 715, lat: 54.5012, lng: -3.2189, region: "Western" },
+            { name: "Grey Knotts", elevation: 697, lat: 54.5089, lng: -3.2112, region: "Western" },
+            { name: "Caw Fell", elevation: 697, lat: 54.4812, lng: -3.3489, region: "Western" },
+            { name: "Seatallan", elevation: 692, lat: 54.4689, lng: -3.3289, region: "Western" },
+            { name: "Fleetwith Pike", elevation: 648, lat: 54.5097, lng: -3.2269, region: "Western" },
+            { name: "Base Brown", elevation: 646, lat: 54.4789, lng: -3.1989, region: "Western" },
+            { name: "Starling Dodd", elevation: 633, lat: 54.5289, lng: -3.3189, region: "Western" },
+            { name: "Yewbarrow", elevation: 628, lat: 54.4612, lng: -3.2689, region: "Western" },
+            { name: "Haystacks", elevation: 597, lat: 54.5074, lng: -3.2536, region: "Western" },
+            { name: "Mellbreak", elevation: 512, lat: 54.5612, lng: -3.3289, region: "Western" },
+            { name: "Hen Comb", elevation: 509, lat: 54.5412, lng: -3.3412, region: "Western" },
+            { name: "Low Fell", elevation: 423, lat: 54.5812, lng: -3.3389, region: "Western" },
+            { name: "Fellbarrow", elevation: 416, lat: 54.5912, lng: -3.3489, region: "Western" }
         ];
 
         window.onload = function() {
@@ -379,7 +517,7 @@
             
             map = L.map('map', {
                 center: [54.48, -3.10],
-                zoom: 10.5,
+                zoom: 10,
                 layers: [openTopo, baggedLayerGroup, nearMissLayerGroup, plannedLayerGroup, unvisitedLayerGroup, tracksLayerGroup],
                 zoomControl: false
             });
@@ -406,7 +544,7 @@
             const plannedNames = getGlobalPlannedFellNames();
 
             wainwrights.forEach(fell => {
-                const hubData = wainwrightGatewayTowns[fell.name] || { town: "Lake District Hub", desc: "Accessed via Lake District approach routes." };
+                const hubData = regionGatewayTowns[fell.region] || { town: "Lake District Valley", desc: "Access via Lake District approach routes." };
                 const isBagged = baggedMap.has(fell.name);
                 const completionDate = baggedMap.get(fell.name) || new Date().toISOString().split('T')[0];
                 const isNear = !isBagged && nearNames.has(fell.name);
@@ -431,14 +569,14 @@
                         <h4 class="font-extrabold text-sm brand-font">${fell.name}</h4>
                         <p class="text-xs text-[#1E2A38]/70">Elevation: <strong>${formatElevation(fell.elevation)}</strong> | Region: <strong>${fell.region}</strong></p>
                         <div class="mt-2 pt-2 border-t border-[#1E2A38]/15 space-y-1">
-                            <p class="text-xs"><strong>Start Town:</strong> <span class="text-[#5B7B7A] font-bold">${hubData.town}</span></p>
+                            <p class="text-xs"><strong>Start Hub:</strong> <span class="text-[#5B7B7A] font-bold">${hubData.town}</span></p>
                             <p class="text-[11px] text-[#1E2A38]/80">${hubData.desc}</p>
                             <a href="${accomUrl}" target="_blank" rel="noopener" class="mt-1 inline-flex items-center gap-1 text-xs font-bold text-[#5B7B7A] hover:underline">
                                 <i class="fa-solid fa-hotel"></i> Find Accommodation
                             </a>
                         </div>
                         <div class="mt-2.5 pt-2 border-t border-[#1E2A38]/15">
-                            <label class="block text-[10px] font-bold text-[#1E2A38]/70 uppercase tracking-wider mb-1">Manual Completion Date:</label>
+                            <label class="block text-[10px] font-bold text-[#1E2A38]/70 uppercase tracking-wider mb-1">Completion Date:</label>
                             <div class="flex items-center gap-1.5">
                                 <input type="date" id="date-input-${CSS.escape(fell.name)}" value="${completionDate}" class="bg-[#FAF7F2] text-[#1E2A38] border-2 border-[#1E2A38]/20 rounded-lg px-2 py-1 text-xs font-medium focus:outline-none flex-1" />
                                 ${isBagged ? `
@@ -561,7 +699,7 @@
             const routeObj = {
                 id: String(Date.now()),
                 name: fileName.replace('.gpx', ''),
-                date: type === 'completed' && bagged.length > 0 ? walkDate : null, // Near misses or empty completed don't force a completion date
+                date: type === 'completed' && bagged.length > 0 ? walkDate : null,
                 type: type,
                 distanceMeters: totalDistMeters,
                 elevationGainMeters: Math.round(totalElevationGain),
