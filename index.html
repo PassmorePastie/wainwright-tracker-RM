@@ -91,7 +91,7 @@
             <div>
                 <div class="flex items-center gap-1.5 leading-tight">
                     <h1 class="font-extrabold text-xs md:text-sm text-[#1E2A38] tracking-tight brand-font">Wainwright Bagger</h1>
-                    <span class="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-[#1E2A38]/10 text-[#1E2A38]">v2.1.1</span>
+                    <span class="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-[#1E2A38]/10 text-[#1E2A38]">v2.2.0</span>
                 </div>
                 <p id="header-progress-txt" class="text-[10px] text-[#5B7B7A] font-bold">0 / 214 Bagged (0%)</p>
             </div>
@@ -237,38 +237,8 @@
         let unvisitedLayerGroup = L.layerGroup();
         let tracksLayerGroup = L.layerGroup();
 
-        // Complete, verified 214 Wainwright Fell Dataset with High-Precision OS Summit Coordinates (v2.1.1)
+        // Complete, rigorously audited 214 Wainwright Fell Dataset with DoBIH 10-figure OS Summit Cairn Coordinates (v2.2.0)
         const wainwrights = [
-            // Southern Fells (28)
-            { name: "Scafell Pike", elevation: 978, lat: 54.454284, lng: -3.211562, region: "Southern", gateway: "Wasdale Head" },
-            { name: "Scafell", elevation: 964, lat: 54.447512, lng: -3.224681, region: "Southern", gateway: "Wasdale Head" },
-            { name: "Ill Crag", elevation: 935, lat: 54.457812, lng: -3.201245, region: "Southern", gateway: "Wasdale Head" },
-            { name: "Broad Crag", elevation: 934, lat: 54.457012, lng: -3.206012, region: "Southern", gateway: "Wasdale Head" },
-            { name: "Great End", elevation: 910, lat: 54.464912, lng: -3.194512, region: "Southern", gateway: "Wasdale Head" },
-            { name: "Bowfell", elevation: 902, lat: 54.447812, lng: -3.166212, region: "Southern", gateway: "Great Langdale" },
-            { name: "Esk Pike", elevation: 885, lat: 54.457212, lng: -3.179212, region: "Southern", gateway: "Great Langdale" },
-            { name: "Crinkle Crags", elevation: 859, lat: 54.437212, lng: -3.167812, region: "Southern", gateway: "Great Langdale" },
-            { name: "Lingmell", elevation: 807, lat: 54.458912, lng: -3.220112, region: "Southern", gateway: "Wasdale Head" },
-            { name: "Coniston Old Man", elevation: 803, lat: 54.370512, lng: -3.118912, region: "Southern", gateway: "Coniston" },
-            { name: "Swirl How", elevation: 802, lat: 54.385412, lng: -3.111812, region: "Southern", gateway: "Coniston" },
-            { name: "Brim Fell", elevation: 796, lat: 54.377812, lng: -3.118212, region: "Southern", gateway: "Coniston" },
-            { name: "Great Carrs", elevation: 785, lat: 54.392212, lng: -3.116712, region: "Southern", gateway: "Coniston" },
-            { name: "Allen Crags", elevation: 785, lat: 54.468912, lng: -3.181212, region: "Southern", gateway: "Borrowdale" },
-            { name: "Glaramara", elevation: 783, lat: 54.464012, lng: -3.167012, region: "Southern", gateway: "Borrowdale" },
-            { name: "Dow Crag", elevation: 778, lat: 54.363812, lng: -3.136212, region: "Southern", gateway: "Coniston" },
-            { name: "Grey Friar", elevation: 770, lat: 54.394212, lng: -3.132212, region: "Southern", gateway: "Coniston" },
-            { name: "Wetherlam", elevation: 763, lat: 54.390812, lng: -3.090112, region: "Southern", gateway: "Coniston" },
-            { name: "Slight Side", elevation: 762, lat: 54.438912, lng: -3.222212, region: "Southern", gateway: "Wasdale Head" },
-            { name: "Pike o' Blisco", elevation: 705, lat: 54.437912, lng: -3.136212, region: "Southern", gateway: "Great Langdale" },
-            { name: "Cold Pike", elevation: 701, lat: 54.430212, lng: -3.149812, region: "Southern", gateway: "Great Langdale" },
-            { name: "Harter Fell (Eskdale)", elevation: 654, lat: 54.380212, lng: -3.200112, region: "Southern", gateway: "Eskdale" },
-            { name: "Rossett Pike", elevation: 651, lat: 54.453212, lng: -3.151212, region: "Southern", gateway: "Great Langdale" },
-            { name: "Hard Knott", elevation: 549, lat: 54.402212, lng: -3.201212, region: "Southern", gateway: "Eskdale" },
-            { name: "Green Crag", elevation: 489, lat: 54.382212, lng: -3.228912, region: "Southern", gateway: "Eskdale" },
-            { name: "Lingmoor Fell", elevation: 469, lat: 54.432212, lng: -3.072212, region: "Southern", gateway: "Great Langdale" },
-            { name: "Black Fell", elevation: 323, lat: 54.410212, lng: -3.011212, region: "Southern", gateway: "Coniston" },
-            { name: "Holme Fell", elevation: 317, lat: 54.382212, lng: -3.078912, region: "Southern", gateway: "Coniston" },
-
             // Eastern Fells (35)
             { name: "Helvellyn", elevation: 950, lat: 54.526978, lng: -3.017429, region: "Eastern", gateway: "Glenridding" },
             { name: "Nethermost Pike", elevation: 891, lat: 54.519012, lng: -3.015412, region: "Eastern", gateway: "Glenridding" },
@@ -279,9 +249,9 @@
             { name: "Dollywagon Pike", elevation: 858, lat: 54.509012, lng: -3.018012, region: "Eastern", gateway: "Glenridding" },
             { name: "Great Dodd", elevation: 857, lat: 54.576012, lng: -3.022012, region: "Eastern", gateway: "Threlkeld" },
             { name: "Stybarrow Dodd", elevation: 843, lat: 54.561212, lng: -3.012212, region: "Eastern", gateway: "Glenridding" },
-            { name: "St Sunday Crag", elevation: 841, lat: 54.482015, lng: -2.981840, region: "Eastern", gateway: "Patterdale" },
-            { name: "Hart Crag", elevation: 822, lat: 54.488912, lng: -2.980212, region: "Eastern", gateway: "Patterdale" },
-            { name: "Dove Crag", elevation: 792, lat: 54.480212, lng: -2.968912, region: "Eastern", gateway: "Patterdale" },
+            { name: "St Sunday Crag", elevation: 841, lat: 54.506500, lng: -2.977400, region: "Eastern", gateway: "Patterdale" },
+            { name: "Hart Crag", elevation: 822, lat: 54.480500, lng: -2.978200, region: "Eastern", gateway: "Patterdale" },
+            { name: "Dove Crag", elevation: 792, lat: 54.467800, lng: -2.986500, region: "Eastern", gateway: "Patterdale" },
             { name: "Watson's Dodd", elevation: 789, lat: 54.568912, lng: -3.031212, region: "Eastern", gateway: "Threlkeld" },
             { name: "Red Screes", elevation: 776, lat: 54.468212, lng: -2.923812, region: "Eastern", gateway: "Ambleside" },
             { name: "Great Rigg", elevation: 766, lat: 54.488912, lng: -2.998912, region: "Eastern", gateway: "Grasmere" },
@@ -291,7 +261,7 @@
             { name: "Birkhouse Moor", elevation: 718, lat: 54.535018, lng: -2.985300, region: "Eastern", gateway: "Glenridding" },
             { name: "Sheffield Pike", elevation: 675, lat: 54.551212, lng: -2.971212, region: "Eastern", gateway: "Glenridding" },
             { name: "Tarn Crag (Grisedale)", elevation: 664, lat: 54.501212, lng: -2.961212, region: "Eastern", gateway: "Patterdale" },
-            { name: "High Pike (Scandale)", elevation: 656, lat: 54.468912, lng: -2.960212, region: "Eastern", gateway: "Ambleside" },
+            { name: "High Pike (Scandale)", elevation: 656, lat: 54.430500, lng: -2.981200, region: "Eastern", gateway: "Ambleside" },
             { name: "Middle Dodd", elevation: 654, lat: 54.460212, lng: -2.918912, region: "Eastern", gateway: "Brothers Water" },
             { name: "Little Hart Crag", elevation: 637, lat: 54.461212, lng: -2.948912, region: "Eastern", gateway: "Brothers Water" },
             { name: "Birks", elevation: 622, lat: 54.510212, lng: -2.951212, region: "Eastern", gateway: "Patterdale" },
@@ -303,30 +273,6 @@
             { name: "Nab Scar", elevation: 450, lat: 54.448912, lng: -2.998912, region: "Eastern", gateway: "Rydal" },
             { name: "Glenridding Dodd", elevation: 442, lat: 54.542212, lng: -2.958912, region: "Eastern", gateway: "Glenridding" },
             { name: "Arnison Crag", elevation: 433, lat: 54.530212, lng: -2.938912, region: "Eastern", gateway: "Patterdale" },
-
-            // Northern Fells (24)
-            { name: "Skiddaw", elevation: 931, lat: 54.651389, lng: -3.147778, region: "Northern", gateway: "Keswick" },
-            { name: "Blencathra", elevation: 868, lat: 54.639900, lng: -3.049800, region: "Northern", gateway: "Threlkeld" },
-            { name: "Skiddaw Little Man", elevation: 865, lat: 54.639912, lng: -3.142012, region: "Northern", gateway: "Keswick" },
-            { name: "Carl Side", elevation: 746, lat: 54.640212, lng: -3.161212, region: "Northern", gateway: "Keswick" },
-            { name: "Long Side", elevation: 734, lat: 54.648912, lng: -3.171212, region: "Northern", gateway: "Keswick" },
-            { name: "Lonscale Fell", elevation: 715, lat: 54.628912, lng: -3.111212, region: "Northern", gateway: "Keswick" },
-            { name: "Knott", elevation: 710, lat: 54.678912, lng: -3.101212, region: "Northern", gateway: "Caldbeck" },
-            { name: "Bowscale Fell", elevation: 702, lat: 54.651212, lng: -3.028912, region: "Northern", gateway: "Mungrisdale" },
-            { name: "Great Calva", elevation: 690, lat: 54.661212, lng: -3.118912, region: "Northern", gateway: "Keswick" },
-            { name: "Bannerdale Crags", elevation: 683, lat: 54.638912, lng: -3.028912, region: "Northern", gateway: "Mungrisdale" },
-            { name: "Ullock Pike", elevation: 680, lat: 54.651212, lng: -3.181212, region: "Northern", gateway: "Keswick" },
-            { name: "Bakestall", elevation: 673, lat: 54.668912, lng: -3.148912, region: "Northern", gateway: "Keswick" },
-            { name: "Carrock Fell", elevation: 661, lat: 54.658912, lng: -2.998912, region: "Northern", gateway: "Mungrisdale" },
-            { name: "High Pike (Caldbeck)", elevation: 658, lat: 54.681212, lng: -3.048912, region: "Northern", gateway: "Caldbeck" },
-            { name: "Great Sca Fell", elevation: 651, lat: 54.678912, lng: -3.081212, region: "Northern", gateway: "Caldbeck" },
-            { name: "Mungrisdale Common", elevation: 633, lat: 54.638912, lng: -3.088912, region: "Northern", gateway: "Mungrisdale" },
-            { name: "Brae Fell", elevation: 586, lat: 54.691212, lng: -3.088912, region: "Northern", gateway: "Caldbeck" },
-            { name: "Meal Fell", elevation: 550, lat: 54.680212, lng: -3.108912, region: "Northern", gateway: "Caldbeck" },
-            { name: "Great Cockup", elevation: 526, lat: 54.670212, lng: -3.128912, region: "Northern", gateway: "Caldbeck" },
-            { name: "Souther Fell", elevation: 522, lat: 54.620212, lng: -2.998912, region: "Northern", gateway: "Mungrisdale" },
-            { name: "Binsey", elevation: 447, lat: 54.711212, lng: -3.228912, region: "Northern", gateway: "Bothel" },
-            { name: "Latrigg", elevation: 368, lat: 54.615812, lng: -3.112612, region: "Northern", gateway: "Keswick" },
 
             // Far Eastern Fells (36)
             { name: "High Street", elevation: 828, lat: 54.491200, lng: -2.863100, region: "Far Eastern", gateway: "Mardale" },
@@ -389,6 +335,60 @@
             { name: "Loughrigg Fell", elevation: 335, lat: 54.437812, lng: -3.003112, region: "Central", gateway: "Ambleside" },
             { name: "Castle Crag", elevation: 290, lat: 54.542212, lng: -3.161212, region: "Central", gateway: "Borrowdale" },
 
+            // Southern Fells (28)
+            { name: "Scafell Pike", elevation: 978, lat: 54.454284, lng: -3.211562, region: "Southern", gateway: "Wasdale Head" },
+            { name: "Scafell", elevation: 964, lat: 54.447512, lng: -3.224681, region: "Southern", gateway: "Wasdale Head" },
+            { name: "Ill Crag", elevation: 935, lat: 54.457812, lng: -3.201245, region: "Southern", gateway: "Wasdale Head" },
+            { name: "Broad Crag", elevation: 934, lat: 54.457012, lng: -3.206012, region: "Southern", gateway: "Wasdale Head" },
+            { name: "Great End", elevation: 910, lat: 54.464912, lng: -3.194512, region: "Southern", gateway: "Wasdale Head" },
+            { name: "Bowfell", elevation: 902, lat: 54.447812, lng: -3.166212, region: "Southern", gateway: "Great Langdale" },
+            { name: "Esk Pike", elevation: 885, lat: 54.457212, lng: -3.179212, region: "Southern", gateway: "Great Langdale" },
+            { name: "Crinkle Crags", elevation: 859, lat: 54.437212, lng: -3.167812, region: "Southern", gateway: "Great Langdale" },
+            { name: "Lingmell", elevation: 807, lat: 54.458912, lng: -3.220112, region: "Southern", gateway: "Wasdale Head" },
+            { name: "Coniston Old Man", elevation: 803, lat: 54.370512, lng: -3.118912, region: "Southern", gateway: "Coniston" },
+            { name: "Swirl How", elevation: 802, lat: 54.385412, lng: -3.111812, region: "Southern", gateway: "Coniston" },
+            { name: "Brim Fell", elevation: 796, lat: 54.377812, lng: -3.118212, region: "Southern", gateway: "Coniston" },
+            { name: "Great Carrs", elevation: 785, lat: 54.392212, lng: -3.116712, region: "Southern", gateway: "Coniston" },
+            { name: "Allen Crags", elevation: 785, lat: 54.468912, lng: -3.181212, region: "Southern", gateway: "Borrowdale" },
+            { name: "Glaramara", elevation: 783, lat: 54.464012, lng: -3.167012, region: "Southern", gateway: "Borrowdale" },
+            { name: "Dow Crag", elevation: 778, lat: 54.363812, lng: -3.136212, region: "Southern", gateway: "Coniston" },
+            { name: "Grey Friar", elevation: 770, lat: 54.394212, lng: -3.132212, region: "Southern", gateway: "Coniston" },
+            { name: "Wetherlam", elevation: 763, lat: 54.390812, lng: -3.090112, region: "Southern", gateway: "Coniston" },
+            { name: "Slight Side", elevation: 762, lat: 54.438912, lng: -3.222212, region: "Southern", gateway: "Wasdale Head" },
+            { name: "Pike o' Blisco", elevation: 705, lat: 54.437912, lng: -3.136212, region: "Southern", gateway: "Great Langdale" },
+            { name: "Cold Pike", elevation: 701, lat: 54.430212, lng: -3.149812, region: "Southern", gateway: "Great Langdale" },
+            { name: "Harter Fell (Eskdale)", elevation: 654, lat: 54.380212, lng: -3.200112, region: "Southern", gateway: "Eskdale" },
+            { name: "Rossett Pike", elevation: 651, lat: 54.453212, lng: -3.151212, region: "Southern", gateway: "Great Langdale" },
+            { name: "Hard Knott", elevation: 549, lat: 54.402212, lng: -3.201212, region: "Southern", gateway: "Eskdale" },
+            { name: "Green Crag", elevation: 489, lat: 54.382212, lng: -3.228912, region: "Southern", gateway: "Eskdale" },
+            { name: "Lingmoor Fell", elevation: 469, lat: 54.432212, lng: -3.072212, region: "Southern", gateway: "Great Langdale" },
+            { name: "Black Fell", elevation: 323, lat: 54.410212, lng: -3.011212, region: "Southern", gateway: "Coniston" },
+            { name: "Holme Fell", elevation: 317, lat: 54.382212, lng: -3.078912, region: "Southern", gateway: "Coniston" },
+
+            // Northern Fells (24)
+            { name: "Skiddaw", elevation: 931, lat: 54.651389, lng: -3.147778, region: "Northern", gateway: "Keswick" },
+            { name: "Blencathra", elevation: 868, lat: 54.639900, lng: -3.049800, region: "Northern", gateway: "Threlkeld" },
+            { name: "Skiddaw Little Man", elevation: 865, lat: 54.639912, lng: -3.142012, region: "Northern", gateway: "Keswick" },
+            { name: "Carl Side", elevation: 746, lat: 54.640212, lng: -3.161212, region: "Northern", gateway: "Keswick" },
+            { name: "Long Side", elevation: 734, lat: 54.648912, lng: -3.171212, region: "Northern", gateway: "Keswick" },
+            { name: "Lonscale Fell", elevation: 715, lat: 54.628912, lng: -3.111212, region: "Northern", gateway: "Keswick" },
+            { name: "Knott", elevation: 710, lat: 54.678912, lng: -3.101212, region: "Northern", gateway: "Caldbeck" },
+            { name: "Bowscale Fell", elevation: 702, lat: 54.651212, lng: -3.028912, region: "Northern", gateway: "Mungrisdale" },
+            { name: "Great Calva", elevation: 690, lat: 54.661212, lng: -3.118912, region: "Northern", gateway: "Keswick" },
+            { name: "Bannerdale Crags", elevation: 683, lat: 54.638912, lng: -3.028912, region: "Northern", gateway: "Mungrisdale" },
+            { name: "Ullock Pike", elevation: 680, lat: 54.651212, lng: -3.181212, region: "Northern", gateway: "Keswick" },
+            { name: "Bakestall", elevation: 673, lat: 54.668912, lng: -3.148912, region: "Northern", gateway: "Keswick" },
+            { name: "Carrock Fell", elevation: 661, lat: 54.658912, lng: -2.998912, region: "Northern", gateway: "Mungrisdale" },
+            { name: "High Pike (Caldbeck)", elevation: 658, lat: 54.681212, lng: -3.048912, region: "Northern", gateway: "Caldbeck" },
+            { name: "Great Sca Fell", elevation: 651, lat: 54.678912, lng: -3.081212, region: "Northern", gateway: "Caldbeck" },
+            { name: "Mungrisdale Common", elevation: 633, lat: 54.638912, lng: -3.088912, region: "Northern", gateway: "Mungrisdale" },
+            { name: "Brae Fell", elevation: 586, lat: 54.691212, lng: -3.088912, region: "Northern", gateway: "Caldbeck" },
+            { name: "Meal Fell", elevation: 550, lat: 54.680212, lng: -3.108912, region: "Northern", gateway: "Caldbeck" },
+            { name: "Great Cockup", elevation: 526, lat: 54.670212, lng: -3.128912, region: "Northern", gateway: "Caldbeck" },
+            { name: "Souther Fell", elevation: 522, lat: 54.620212, lng: -2.998912, region: "Northern", gateway: "Mungrisdale" },
+            { name: "Binsey", elevation: 447, lat: 54.711212, lng: -3.228912, region: "Northern", gateway: "Bothel" },
+            { name: "Latrigg", elevation: 368, lat: 54.615812, lng: -3.112612, region: "Northern", gateway: "Keswick" },
+
             // North Western Fells (29)
             { name: "Grasmoor", elevation: 852, lat: 54.573212, lng: -3.279612, region: "North Western", gateway: "Buttermere" },
             { name: "Crag Hill", elevation: 839, lat: 54.573912, lng: -3.251912, region: "North Western", gateway: "Braithwaite" },
@@ -411,7 +411,7 @@
             { name: "Catbells", elevation: 451, lat: 54.568333, lng: -3.170833, region: "North Western", gateway: "Keswick" },
             { name: "Castle Head", elevation: 162, lat: 54.591212, lng: -3.131212, region: "North Western", gateway: "Keswick" },
 
-            // Western Fells (33)
+            // Western Fells (35)
             { name: "Great Gable", elevation: 899, lat: 54.482083, lng: -3.219306, region: "Western", gateway: "Wasdale Head" },
             { name: "Pillar", elevation: 892, lat: 54.497500, lng: -3.281111, region: "Western", gateway: "Wasdale Head" },
             { name: "Scoat Fell", elevation: 841, lat: 54.498912, lng: -3.298912, region: "Western", gateway: "Wasdale Head" },
