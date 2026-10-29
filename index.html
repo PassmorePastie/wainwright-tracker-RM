@@ -91,7 +91,7 @@
             <div>
                 <div class="flex items-center gap-1.5 leading-tight">
                     <h1 class="font-extrabold text-xs md:text-sm text-[#1E2A38] tracking-tight brand-font">Wainwright Bagger</h1>
-                    <span class="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-[#1E2A38]/10 text-[#1E2A38]">v2.3.0</span>
+                    <span class="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-[#1E2A38]/10 text-[#1E2A38]">v2.3.1</span>
                 </div>
                 <p id="header-progress-txt" class="text-[10px] text-[#5B7B7A] font-bold">0 / 214 Bagged (0%)</p>
             </div>
@@ -169,7 +169,7 @@
                     <span id="stat-bagged" class="text-sm font-extrabold text-[#5B7B7A]">0</span>
                 </div>
                 <div class="bg-[#D49B53]/15 border-2 border-[#D49B53]/50 rounded-2xl p-2 shadow-sm">
-                    <span class="text-[10px] font-bold text-[#D49B53] uppercase tracking-wider block mb-0.5 brand-font"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Near Misses</span>
+                    <span title="A fell whose summit is within 300 m of a completed GPX track but outside the selected bagging radius." class="text-[10px] font-bold text-[#D49B53] uppercase tracking-wider block mb-0.5 brand-font"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Near Misses</span>
                     <span id="stat-near" class="text-sm font-extrabold text-[#D49B53]">0</span>
                 </div>
             </div>
@@ -624,7 +624,12 @@
 
                 const marker = L.marker([fell.lat, fell.lng], { icon: icon }).bindPopup(`
                     <div class="text-[#1E2A38] p-1 max-w-xs font-sans">
-                        <h4 class="font-extrabold text-sm brand-font">${fell.name}</h4>
+                        <div class="flex items-start justify-between gap-3">
+                            <h4 class="font-extrabold text-sm brand-font pr-1">${fell.name}</h4>
+                            <button type="button" onclick="closeFellPopup(event)" aria-label="Close fell popup" title="Close popup" class="flex-shrink-0 w-6 h-6 -mt-1 -mr-1 rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-900 flex items-center justify-center">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
                         <p class="text-xs text-[#1E2A38]/70">Elevation: <strong>${formatElevation(fell.elevation)}</strong> | Region: <strong>${fell.region}</strong></p>
                         <div class="mt-2 pt-2 border-t border-[#1E2A38]/15 space-y-1">
                             <p class="text-xs"><strong>Gateway hub:</strong> <span class="text-[#5B7B7A] font-bold">${fell.gateway}</span></p>
@@ -646,11 +651,20 @@
                             </div>
                         </div>
                     </div>
-                `);
+                `, { closeButton: false, autoClose: true, closeOnClick: true, maxWidth: 320 });
 
                 targetGroup.addLayer(marker);
                 fellMarkers[fell.name] = marker;
             });
+        }
+
+        // Use one explicit popup close handler so the X works consistently for every fell.
+        function closeFellPopup(event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            if (map) map.closePopup();
         }
 
         function markFellManual(fellName, isUpdate) {
@@ -669,9 +683,7 @@
             if (!isUpdate) {
                 triggerCelebration(fellName);
             }
-            if (fellMarkers[fellName]) {
-                fellMarkers[fellName].closePopup();
-            }
+            if (map) map.closePopup();
         }
 
         function removeManualFell(fellName) {
@@ -684,9 +696,7 @@
             renderFellList();
             updateOverallProgress();
             updateCumulativeStatsSummary();
-            if (fellMarkers[fellName]) {
-                fellMarkers[fellName].closePopup();
-            }
+            if (map) map.closePopup();
         }
 
         function setupUploadInputs() {
@@ -745,11 +755,9 @@
 
             const bagged = [], nearMisses = [];
             wainwrights.forEach(fell => {
-                let minDistance = Infinity;
-                trackPoints.forEach(pt => {
-                    const d = getDistanceMeters(pt[0], pt[1], fell.lat, fell.lng);
-                    if (d < minDistance) minDistance = d;
-                });
+                // Measure distance to the GPX path segments, not only recorded vertices.
+                // This avoids missing a summit when a GPX has widely spaced track points.
+                const minDistance = getMinimumDistanceToTrackMeters(fell.lat, fell.lng, trackPoints);
                 if (minDistance <= baggingRadius) bagged.push(fell.name);
                 else if (minDistance <= 300) nearMisses.push({ name: fell.name });
             });
@@ -796,6 +804,36 @@
                 opacity: 0.9
             });
             tracksLayerGroup.addLayer(visibleLine);
+        }
+
+        // Minimum approximate distance, in metres, from a summit to the GPX polyline.
+        // A local metre-based projection is accurate for the short distances used here.
+        function getMinimumDistanceToTrackMeters(targetLat, targetLng, trackPoints) {
+            if (!Array.isArray(trackPoints) || trackPoints.length === 0) return Infinity;
+            if (trackPoints.length === 1) {
+                return getDistanceMeters(targetLat, targetLng, trackPoints[0][0], trackPoints[0][1]);
+            }
+
+            const metresPerLatDegree = 111132;
+            const metresPerLngDegree = 111320 * Math.cos(targetLat * Math.PI / 180);
+            let minDistance = Infinity;
+
+            for (let i = 0; i < trackPoints.length - 1; i++) {
+                const a = trackPoints[i], b = trackPoints[i + 1];
+                const ax = (a[1] - targetLng) * metresPerLngDegree;
+                const ay = (a[0] - targetLat) * metresPerLatDegree;
+                const bx = (b[1] - targetLng) * metresPerLngDegree;
+                const by = (b[0] - targetLat) * metresPerLatDegree;
+                const dx = bx - ax, dy = by - ay;
+                const lengthSquared = dx * dx + dy * dy;
+                let t = lengthSquared === 0 ? 0 : -(ax * dx + ay * dy) / lengthSquared;
+                t = Math.max(0, Math.min(1, t));
+                const closestX = ax + t * dx;
+                const closestY = ay + t * dy;
+                const distance = Math.hypot(closestX, closestY);
+                if (distance < minDistance) minDistance = distance;
+            }
+            return minDistance;
         }
 
         function getDistanceMeters(lat1, lon1, lat2, lon2) {
