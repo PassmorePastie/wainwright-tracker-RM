@@ -61,6 +61,22 @@
         <div id="map" class="w-full h-full"></div>
     </main>
 
+    <!-- ROUTE REPLAY CONTROLS: hidden until a GPX is uploaded or replayed -->
+    <section id="replay-panel" class="hidden absolute top-16 right-3 z-20 bg-[#FFFBF7]/95 border-2 border-[#1E2A38]/20 rounded-2xl shadow-2xl p-3 w-[min(340px,calc(100vw-24px))]" aria-label="GPX route replay controls">
+        <div class="flex items-center justify-between gap-2 mb-2">
+            <div class="min-w-0"><p class="text-[10px] font-bold uppercase tracking-wider text-[#5B7B7A]">GPX replay</p><p id="replay-name" class="text-xs font-extrabold truncate">Route</p></div>
+            <button onclick="stopReplay()" class="text-[#1E2A38] p-2" aria-label="Close replay" title="Close replay"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="h-2 bg-[#EAE3DC] rounded-full overflow-hidden"><div id="replay-progress" class="h-full bg-[#FF5A1F] w-0"></div></div>
+        <div class="flex justify-between text-[10px] text-[#1E2A38]/70 mt-1 mb-2"><span id="replay-percent">0%</span><span id="replay-status">Starting…</span></div>
+        <div class="flex items-center gap-2">
+            <button onclick="toggleReplayPause()" id="replay-toggle" class="bg-[#1E2A38] text-white font-bold text-xs rounded-lg px-3 py-2"><i class="fa-solid fa-pause"></i> Pause</button>
+            <button onclick="restartReplay()" class="bg-[#EAE3DC] text-[#1E2A38] font-bold text-xs rounded-lg px-3 py-2"><i class="fa-solid fa-rotate-left"></i> Restart</button>
+            <label for="replay-speed" class="ml-auto text-[10px] font-bold">Speed</label>
+            <select id="replay-speed" onchange="setReplaySpeed(this.value)" class="text-xs border border-[#1E2A38]/20 rounded-lg p-1.5 bg-white"><option value="1">1×</option><option value="5" selected>5×</option><option value="10">10×</option></select>
+        </div>
+    </section>
+
     <!-- FLOATING CELEBRATION ACHIEVEMENT MODAL -->
     <div id="celebration-modal" class="fixed top-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 scale-90 translate-y-[-20px] transition-all duration-300">
         <div class="pointer-events-auto bg-[#1E2A38]/95 backdrop-blur-md border-2 border-[#D49B53] text-[#F4EFEB] px-6 py-4 rounded-3xl shadow-2xl flex items-center gap-4 max-w-sm w-[90vw]">
@@ -91,7 +107,7 @@
             <div>
                 <div class="flex items-center gap-1.5 leading-tight">
                     <h1 class="font-extrabold text-xs md:text-sm text-[#1E2A38] tracking-tight brand-font">Wainwright Bagger</h1>
-                    <span class="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-[#1E2A38]/10 text-[#1E2A38]">v2.3.1</span>
+                    <span class="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-[#1E2A38]/10 text-[#1E2A38]">v2.4.0</span>
                 </div>
                 <p id="header-progress-txt" class="text-[10px] text-[#5B7B7A] font-bold">0 / 214 Bagged (0%)</p>
             </div>
@@ -232,6 +248,12 @@
         let fellMarkers = {};
         let isDrawerOpen = false;
         let celebrationTimeout = null;
+        // Bright orange, outlined in dark navy, stays legible on topographic tiles.
+        const COMPLETED_ROUTE_COLOR = '#FF5A1F';
+        const COMPLETED_ROUTE_CASING = '#1E2A38';
+        let replay = null;
+        let replayFrame = null;
+
 
         // Compatibility aliases for records created with earlier dataset spellings.
         const fellNameAliases = {
@@ -783,27 +805,199 @@
             renderFellList();
             updateCumulativeStatsSummary();
 
-            if (type !== 'planned') {
-                const newBaggedFells = bagged.filter(f => !previousBaggedSet.has(f));
-                if (newBaggedFells.length > 0) {
-                    triggerCelebration(newBaggedFells[0]);
-                }
-            }
+            // Persist the uploaded walk immediately, then reveal its route in order.
+            // All summit celebrations happen during playback, never on initial import.
+            if (trackPoints.length > 1) startReplay(routeObj.id);
+
         }
 
         function renderAllMapRoutes() {
             tracksLayerGroup.clearLayers();
-            savedRoutes.forEach(r => renderRouteOnMap(r));
+            savedRoutes.forEach(r => {
+                if (replay && String(r.id) === String(replay.route.id)) return;
+                renderRouteOnMap(r);
+            });
+            if (replay) {
+                tracksLayerGroup.addLayer(replay.casing);
+                tracksLayerGroup.addLayer(replay.line);
+                tracksLayerGroup.addLayer(replay.dot);
+            }
         }
 
         function renderRouteOnMap(route) {
+            if (!route.trackPoints || route.trackPoints.length < 2) return;
             const isPlanned = route.type === 'planned';
-            const visibleLine = L.polyline(route.trackPoints, {
-                color: isPlanned ? '#9333ea' : '#5B7B7A',
-                weight: 4.5,
-                opacity: 0.9
-            });
-            tracksLayerGroup.addLayer(visibleLine);
+            const coords = route.trackPoints;
+            if (!isPlanned) tracksLayerGroup.addLayer(L.polyline(coords, {color: COMPLETED_ROUTE_CASING, weight: 8, opacity: .9, interactive: false}));
+            tracksLayerGroup.addLayer(L.polyline(coords, {
+                color: isPlanned ? '#9333ea' : COMPLETED_ROUTE_COLOR,
+                weight: isPlanned ? 5 : 5.5, opacity: 1, interactive: false
+            }));
+        }
+
+        // Project each summit to the closest location on a GPS segment so celebrations
+        // occur at the actual approach to the summit, even with sparse GPX points.
+        function closestPositionOnTrack(lat, lng, pts) {
+            const metresPerLatDegree = 111132;
+            const metresPerLngDegree = 111320 * Math.cos(lat * Math.PI / 180);
+            let best = {distance: Infinity, index: 0, fraction: 0};
+            for (let i = 0; i < pts.length - 1; i++) {
+                const a = pts[i], b = pts[i + 1];
+                const ax = (a[1] - lng) * metresPerLngDegree, ay = (a[0] - lat) * metresPerLatDegree;
+                const dx = (b[1] - a[1]) * metresPerLngDegree, dy = (b[0] - a[0]) * metresPerLatDegree;
+                const d2 = dx * dx + dy * dy;
+                const t = d2 ? Math.max(0, Math.min(1, -(ax * dx + ay * dy) / d2)) : 0;
+                const dist = Math.hypot(ax + t * dx, ay + t * dy);
+                if (dist < best.distance) best = {distance: dist, index: i, fraction: t};
+            }
+            return best;
+        }
+
+        function startReplay(routeId) {
+            stopReplay();
+            const route = savedRoutes.find(r => String(r.id) === String(routeId));
+            if (!route || !Array.isArray(route.trackPoints) || route.trackPoints.length < 2) return;
+            const pts = route.trackPoints;
+            const cumulative = [0];
+            for (let i = 1; i < pts.length; i++) {
+                cumulative.push(cumulative[i-1] + getDistanceMeters(...pts[i-1], ...pts[i]));
+            }
+            const length = cumulative[cumulative.length - 1];
+            if (!(length > 0)) return;
+            const celebrations = route.type === 'planned' ? [] : (route.bagged || []).map(name => {
+                const fell = wainwrights.find(f => f.name === canonicalFellName(name));
+                if (!fell) return null;
+                const closest = closestPositionOnTrack(fell.lat, fell.lng, pts);
+                return {name: fell.name, at: cumulative[closest.index] + closest.fraction * (cumulative[closest.index + 1] - cumulative[closest.index]), fired: false};
+            }).filter(Boolean).sort((a,b) => a.at - b.at);
+            const start = pts[0];
+            replay = {
+                route, pts, cumulative, length, celebrations, travelled: 0, segmentIndex: 0,
+                playing: true, speed: Number(document.getElementById('replay-speed').value) || 5,
+                lastFrame: null, holdUntil: 0,
+                casing: L.polyline([start, start], {color: COMPLETED_ROUTE_CASING, weight: 8, interactive:false}),
+                line: L.polyline([start, start], {color: route.type === 'planned' ? '#9333ea' : COMPLETED_ROUTE_COLOR, weight: 5.5, interactive:false}),
+                dot: L.circleMarker(start, {radius: 7, color:'#1E2A38', weight: 2, fillColor:'#FFFBF7', fillOpacity:1, interactive:false})
+            };
+            document.getElementById('replay-panel').classList.remove('hidden');
+            document.getElementById('replay-name').textContent = route.name;
+            renderAllMapRoutes();
+            map.closePopup();
+            map.fitBounds(L.latLngBounds(pts), {padding: [35, 35], maxZoom: 14});
+            updateReplayUI();
+            replayFrame = requestAnimationFrame(replayTick);
+        }
+
+        function replayTick(now) {
+            replayFrame = null;
+            if (!replay || !replay.playing) return;
+            if (replay.lastFrame === null) replay.lastFrame = now;
+            const delta = Math.min(100, Math.max(0, now - replay.lastFrame));
+            replay.lastFrame = now;
+            if (now < replay.holdUntil) {
+                replayFrame = requestAnimationFrame(replayTick);
+                return;
+            }
+            // At 5× a typical replay lasts about 30 seconds, excluding summit pauses.
+            const metresPerMs = replay.length / (150000 / replay.speed);
+            const target = Math.min(replay.length, replay.travelled + delta * metresPerMs);
+            const nextEvent = replay.celebrations.find(ev => !ev.fired && ev.at <= target + 0.001);
+            if (nextEvent) {
+                replay.travelled = Math.max(replay.travelled, nextEvent.at);
+                nextEvent.fired = true;
+                revealReplayPosition();
+                triggerCelebration(nextEvent.name);
+                replay.holdUntil = now + 1300;
+            } else {
+                replay.travelled = target;
+                revealReplayPosition();
+            }
+            if (replay.travelled >= replay.length) {
+                finishReplay();
+                return;
+            }
+            replayFrame = requestAnimationFrame(replayTick);
+        }
+
+        function revealReplayPosition() {
+            if (!replay) return;
+            const r = replay;
+            while (r.segmentIndex < r.cumulative.length - 2 && r.cumulative[r.segmentIndex + 1] < r.travelled) r.segmentIndex++;
+            const i = r.segmentIndex;
+            const segmentLength = r.cumulative[i + 1] - r.cumulative[i];
+            const t = segmentLength ? Math.max(0, Math.min(1, (r.travelled - r.cumulative[i]) / segmentLength)) : 0;
+            const a = r.pts[i], b = r.pts[i + 1];
+            const pos = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+            // Only append newly traversed points, rather than rebuilding thousands of vertices on each frame.
+            const seen = r.visibleIndex || 0;
+            if (i > seen && r.partialPosition) {
+                r.line.spliceLatLngs(r.line.getLatLngs().length - 1, 1);
+                r.casing.spliceLatLngs(r.casing.getLatLngs().length - 1, 1);
+                r.partialPosition = false;
+            }
+            if (i > seen) {
+                for (let k = seen + 1; k <= i; k++) {
+                    r.line.addLatLng(r.pts[k]);
+                    r.casing.addLatLng(r.pts[k]);
+                }
+                r.visibleIndex = i;
+            }
+            const points = r.line.getLatLngs();
+            const lastIndex = points.length - 1;
+            if (r.partialPosition) {
+                r.line.spliceLatLngs(lastIndex, 1, pos);
+                r.casing.spliceLatLngs(lastIndex, 1, pos);
+            } else {
+                r.line.addLatLng(pos);
+                r.casing.addLatLng(pos);
+                r.partialPosition = true;
+            }
+            r.dot.setLatLng(pos);
+            updateReplayUI();
+        }
+
+        function updateReplayUI() {
+            if (!replay) return;
+            const pct = Math.round(100 * replay.travelled / replay.length);
+            document.getElementById('replay-progress').style.width = pct + '%';
+            document.getElementById('replay-percent').textContent = pct + '%';
+            document.getElementById('replay-status').textContent = replay.playing ? 'Drawing route' : 'Paused';
+            document.getElementById('replay-toggle').innerHTML = replay.playing ? '<i class="fa-solid fa-pause"></i> Pause' : '<i class="fa-solid fa-play"></i> Play';
+        }
+
+        function toggleReplayPause() {
+            if (!replay) return;
+            replay.playing = !replay.playing;
+            replay.lastFrame = null;
+            if (replay.playing) {
+                replay.holdUntil = 0;
+                if (replayFrame !== null) cancelAnimationFrame(replayFrame);
+                replayFrame = requestAnimationFrame(replayTick);
+            } else if (replayFrame !== null) {
+                cancelAnimationFrame(replayFrame); replayFrame = null;
+            }
+            updateReplayUI();
+        }
+        function restartReplay() { if (replay) startReplay(replay.route.id); }
+        function setReplaySpeed(value) { if (replay) replay.speed = Number(value) || 5; }
+        function finishReplay() {
+            if (!replay) return;
+            const r = replay;
+            const baggedCount = r.celebrations.length;
+            stopReplay();
+            document.getElementById('replay-status').textContent = 'Finished';
+            // The complete track is now a permanent completed-route layer.
+            const distance = unitSystem === 'metric' ? `${(r.length / 1000).toFixed(1)} km` : `${(r.length / 1609.344).toFixed(1)} mi`;
+            const label = r.route.type === 'planned' ? 'planned route' : `${baggedCount} fell${baggedCount === 1 ? '' : 's'} bagged`;
+            const summary = L.popup({autoClose: true, closeButton: true}).setLatLng(r.pts[r.pts.length-1]).setContent(`<div class="text-xs font-bold">Walk replay finished<br>${distance} · ${label}</div>`);
+            summary.openOn(map);
+        }
+        function stopReplay() {
+            if (replayFrame !== null) { cancelAnimationFrame(replayFrame); replayFrame = null; }
+            replay = null;
+            const panel = document.getElementById('replay-panel');
+            if (panel) panel.classList.add('hidden');
+            if (tracksLayerGroup) renderAllMapRoutes();
         }
 
         // Minimum approximate distance, in metres, from a summit to the GPX polyline.
@@ -946,9 +1140,11 @@
                                 <p class="font-bold text-[#1E2A38] brand-font">${r.name}</p>
                                 <p class="text-[10px] text-[#1E2A38]/70">${dateDisplay}${dStr} • ${r.bagged.length} bagged</p>
                             </div>
+                            <div class="flex gap-1 items-center">
+                              <button onclick="event.stopPropagation(); startReplay('${r.id}')" class="text-[#1E2A38] bg-[#EAE3DC] rounded-lg p-2 text-xs font-bold" title="Replay this GPX" aria-label="Replay this GPX"><i class="fa-solid fa-play"></i></button>
                             <button onclick="event.stopPropagation(); event.preventDefault(); deleteRoute('${r.id}')" class="text-red-600 hover:text-red-800 p-2 cursor-pointer transition flex items-center justify-center">
                                 <i class="fa-solid fa-trash-can text-sm pointer-events-none"></i>
-                            </button>
+                            </button></div>
                         </div>
                     `;
                 }).join('');
@@ -965,9 +1161,11 @@
                                 <p class="font-bold text-[#9333ea] brand-font">${r.name}</p>
                                 <p class="text-[10px] text-[#1E2A38]/70">${dStr} • ${r.bagged.length} fells mapped</p>
                             </div>
+                            <div class="flex gap-1 items-center">
+                              <button onclick="event.stopPropagation(); startReplay('${r.id}')" class="text-[#1E2A38] bg-[#EAE3DC] rounded-lg p-2 text-xs font-bold" title="Replay this GPX" aria-label="Replay this GPX"><i class="fa-solid fa-play"></i></button>
                             <button onclick="event.stopPropagation(); event.preventDefault(); deleteRoute('${r.id}')" class="text-red-600 hover:text-red-800 p-2 cursor-pointer transition flex items-center justify-center">
                                 <i class="fa-solid fa-trash-can text-sm pointer-events-none"></i>
-                            </button>
+                            </button></div>
                         </div>
                     `;
                 }).join('');
@@ -976,6 +1174,7 @@
 
         function deleteRoute(id) {
             const targetId = String(id);
+            if (replay && String(replay.route.id) === targetId) stopReplay();
 
             savedRoutes = savedRoutes.filter(r => String(r.id) !== targetId);
             saveHistoryToStorage();
@@ -990,6 +1189,7 @@
 
         function clearAllHistory() {
             if (confirm("Delete all routes?")) {
+                stopReplay();
                 savedRoutes = [];
                 localStorage.removeItem('wainwright_saved_routes');
                 tracksLayerGroup.clearLayers();
