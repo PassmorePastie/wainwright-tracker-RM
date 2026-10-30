@@ -117,7 +117,7 @@
             <div>
                 <div class="flex items-center gap-1.5 leading-tight">
                     <h1 class="font-extrabold text-xs md:text-sm text-[#1E2A38] tracking-tight brand-font">Wainwright Bagger</h1>
-                    <span class="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-[#1E2A38]/10 text-[#1E2A38]">v2.6.0</span>
+                    <span class="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-[#1E2A38]/10 text-[#1E2A38]">v2.7.0</span>
                 </div>
                 <p id="header-progress-txt" class="text-[10px] text-[#5B7B7A] font-bold">0 / 214 Bagged (0%)</p>
             </div>
@@ -138,7 +138,7 @@
         <div class="flex items-center justify-between mb-3">
             <div>
                 <h2 id="settings-title" class="font-extrabold text-sm brand-font">Settings</h2>
-                <p class="text-[11px] text-[#1E2A38]/60 font-medium">Wainwright Bagger · v2.6.0</p>
+                <p class="text-[11px] text-[#1E2A38]/60 font-medium">Wainwright Bagger · v2.7.0</p>
             </div>
             <button type="button" onclick="closeSettings()" id="settings-close" aria-label="Close settings" class="rounded-lg p-2 hover:bg-[#EAE3DC] text-[#1E2A38]"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
         </div>
@@ -158,6 +158,29 @@
                 <span class="flex flex-col gap-0.5"><strong class="text-xs">CyclOSM</strong><span class="text-[11px] text-[#1E2A38]/65">An alternative OpenStreetMap style with route and cycle-path detail</span></span>
             </label>
             <p class="text-[10px] text-[#1E2A38]/65 pt-1">Your choice is saved for this browser. All three styles need an internet connection; community tile servers have usage limits.</p>
+        </fieldset>
+        <!-- Marker visibility: switches hide only summit pins, never saved GPX lines or progress. -->
+        <fieldset class="border-t border-[#1E2A38]/15 mt-4 pt-3 space-y-2">
+            <legend class="text-xs uppercase tracking-wider font-extrabold mb-2">Show Wainwrights on map</legend>
+            <label class="flex items-center gap-3 p-3 rounded-xl bg-[#FAF7F2] border border-[#1E2A38]/15 cursor-pointer hover:border-[#5B7B7A]">
+                <input type="checkbox" name="fell-visibility" value="uncompleted" checked onchange="setFellVisibility('uncompleted', this.checked)" class="h-4 w-4 accent-[#5B7B7A] flex-shrink-0" />
+                <span class="w-3 h-3 rounded-full bg-[#94a3b8] border border-white shadow-sm flex-shrink-0" aria-hidden="true"></span>
+                <span class="flex-1 flex flex-col gap-0.5"><strong class="text-xs">Uncompleted</strong><span class="text-[11px] text-[#1E2A38]/65">Unvisited summits and near misses</span></span>
+                <span id="visible-fell-count-uncompleted" class="text-[11px] font-bold text-[#1E2A38]/65" aria-label="Uncompleted fell count"></span>
+            </label>
+            <label class="flex items-center gap-3 p-3 rounded-xl bg-[#FAF7F2] border border-[#1E2A38]/15 cursor-pointer hover:border-[#5B7B7A]">
+                <input type="checkbox" name="fell-visibility" value="planned" checked onchange="setFellVisibility('planned', this.checked)" class="h-4 w-4 accent-[#5B7B7A] flex-shrink-0" />
+                <span class="w-3 h-3 rounded-full bg-[#9333ea] border border-white shadow-sm flex-shrink-0" aria-hidden="true"></span>
+                <span class="flex-1 flex flex-col gap-0.5"><strong class="text-xs">Planned</strong><span class="text-[11px] text-[#1E2A38]/65">Summits on planned GPX routes</span></span>
+                <span id="visible-fell-count-planned" class="text-[11px] font-bold text-[#1E2A38]/65" aria-label="Planned fell count"></span>
+            </label>
+            <label class="flex items-center gap-3 p-3 rounded-xl bg-[#FAF7F2] border border-[#1E2A38]/15 cursor-pointer hover:border-[#5B7B7A]">
+                <input type="checkbox" name="fell-visibility" value="completed" checked onchange="setFellVisibility('completed', this.checked)" class="h-4 w-4 accent-[#5B7B7A] flex-shrink-0" />
+                <span class="w-3 h-3 rounded-full bg-[#5B7B7A] border border-white shadow-sm flex-shrink-0" aria-hidden="true"></span>
+                <span class="flex-1 flex flex-col gap-0.5"><strong class="text-xs">Completed / Bagged</strong><span class="text-[11px] text-[#1E2A38]/65">Summits you have already bagged</span></span>
+                <span id="visible-fell-count-completed" class="text-[11px] font-bold text-[#1E2A38]/65" aria-label="Completed fell count"></span>
+            </label>
+            <p class="text-[10px] text-[#1E2A38]/65 pt-1">Near misses are included with Uncompleted. Filters only hide summit markers: GPX route lines, bagging history and progress remain unchanged. Your choices are saved on this device.</p>
         </fieldset>
         <div class="border-t border-[#1E2A38]/15 mt-4 pt-3">
             <h3 class="text-xs uppercase tracking-wider font-extrabold mb-2">Credits &amp; Licences</h3>
@@ -289,6 +312,9 @@
         let map;
         // Leaflet draws the map; the chosen tile provider supplies its background.
         // Switching only swaps the basemap, retaining all 214 markers and GPX tracks.
+        const FELL_VISIBILITY_KEY = 'wainwright_map_fell_visibility';
+        const DEFAULT_FELL_VISIBILITY = {uncompleted: true, planned: true, completed: true};
+        let fellVisibility = {...DEFAULT_FELL_VISIBILITY};
         const MAP_STYLE_KEY = 'wainwright_map_style';
         const MAP_STYLES = {
             topo: {
@@ -689,8 +715,55 @@
             try { localStorage.setItem(MAP_STYLE_KEY, style); } catch (_) { /* private browsing may block storage */ }
         }
 
+        function readSavedFellVisibility() {
+            try {
+                const stored = JSON.parse(localStorage.getItem(FELL_VISIBILITY_KEY) || '{}');
+                const result = {...DEFAULT_FELL_VISIBILITY};
+                for (const key of Object.keys(result)) {
+                    if (stored && typeof stored[key] === 'boolean') result[key] = stored[key];
+                }
+                return result;
+            } catch (_) { return {...DEFAULT_FELL_VISIBILITY}; }
+        }
+
+        // Show/hide marker groups, rather than deleting markers or touching route lines.
+        // A near miss is not bagged, so it belongs to Uncompleted until it is completed.
+        function applyFellVisibilityFilters() {
+            if (!map) return;
+            const groups = {
+                uncompleted: [unvisitedLayerGroup, nearMissLayerGroup],
+                planned: [plannedLayerGroup],
+                completed: [baggedLayerGroup]
+            };
+            for (const [category, layers] of Object.entries(groups)) {
+                for (const layer of layers) {
+                    if (fellVisibility[category]) {
+                        if (!map.hasLayer(layer)) map.addLayer(layer);
+                    } else if (map.hasLayer(layer)) {
+                        map.removeLayer(layer);
+                    }
+                }
+            }
+        }
+
+        function setFellVisibility(category, visible) {
+            if (!Object.prototype.hasOwnProperty.call(DEFAULT_FELL_VISIBILITY, category)) return;
+            fellVisibility[category] = Boolean(visible);
+            document.querySelectorAll('input[name="fell-visibility"]').forEach(input => {
+                input.checked = Boolean(fellVisibility[input.value]);
+            });
+            applyFellVisibilityFilters();
+            try { localStorage.setItem(FELL_VISIBILITY_KEY, JSON.stringify(fellVisibility)); }
+            catch (_) { /* Storage may be unavailable in private browsing. */ }
+        }
+
         function setupSettings() {
             const saved = readSavedMapStyle();
+            fellVisibility = readSavedFellVisibility();
+            document.querySelectorAll('input[name="fell-visibility"]').forEach(input => {
+                input.checked = Boolean(fellVisibility[input.value]);
+            });
+            applyFellVisibilityFilters();
             // The selected style is already initialised by initMap(). Keep radios in sync.
             document.querySelectorAll('input[name="map-style"]').forEach(input => {
                 input.checked = input.value === saved;
@@ -825,6 +898,17 @@
                 targetGroup.addLayer(marker);
                 fellMarkers[fell.name] = marker;
             });
+            const categoryCounts = {
+                completed: baggedLayerGroup.getLayers().length,
+                planned: plannedLayerGroup.getLayers().length,
+                uncompleted: unvisitedLayerGroup.getLayers().length + nearMissLayerGroup.getLayers().length
+            };
+            for (const [category, count] of Object.entries(categoryCounts)) {
+                const label = document.getElementById(`visible-fell-count-${category}`);
+                if (label) label.textContent = String(count);
+            }
+            // Redrawing markers must never reset a user's visibility choices.
+            applyFellVisibilityFilters();
         }
 
         // Use one explicit popup close handler so the X works consistently for every fell.
@@ -1353,7 +1437,12 @@
             const fell = wainwrights.find(f => f.name === name);
             if (fell && fellMarkers[name]) {
                 map.setView([fell.lat, fell.lng], 14);
-                fellMarkers[name].openPopup();
+                const marker = fellMarkers[name];
+                const popup = marker.getPopup();
+                if (popup) {
+                    if (marker._map) marker.openPopup();
+                    else popup.setLatLng([fell.lat, fell.lng]).openOn(map);
+                }
                 if (window.innerWidth < 768 && isDrawerOpen) toggleDrawer();
             }
         }
