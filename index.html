@@ -79,14 +79,6 @@
         <div id="map" class="w-full h-full"></div>
     </main>
 
-    <!-- Automatic 8-second route replay status (no playback controls). -->
-    <section id="replay-panel" class="hidden absolute top-16 right-3 z-20 bg-[#FFFBF7]/95 border-2 border-[#1E2A38]/20 rounded-2xl shadow-2xl p-3 w-[min(310px,calc(100vw-24px))] pointer-events-none" role="status" aria-label="GPX replay progress">
-        <p class="text-[10px] font-bold uppercase tracking-wider text-[#5B7B7A]">GPX replay · 8 seconds</p>
-        <p id="replay-name" class="text-xs font-extrabold truncate mt-0.5 mb-2">Route</p>
-        <div class="h-2 bg-[#EAE3DC] rounded-full overflow-hidden"><div id="replay-progress" class="h-full bg-[#FF5A1F]" style="width:0%"></div></div>
-        <div class="flex justify-between text-[10px] text-[#1E2A38]/70 mt-1"><span id="replay-percent">0%</span><span>Drawing route</span></div>
-    </section>
-
     <!-- FLOATING CELEBRATION ACHIEVEMENT MODAL -->
     <div id="celebration-modal" class="fixed top-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 scale-90 translate-y-[-20px] transition-all duration-300">
         <div class="pointer-events-auto bg-[#1E2A38]/95 backdrop-blur-md border-2 border-[#D49B53] text-[#F4EFEB] px-6 py-4 rounded-3xl shadow-2xl flex items-center gap-4 max-w-sm w-[90vw]">
@@ -117,7 +109,7 @@
             <div>
                 <div class="flex items-center gap-1.5 leading-tight">
                     <h1 class="font-extrabold text-xs md:text-sm text-[#1E2A38] tracking-tight brand-font">Wainwright Bagger</h1>
-                    <span class="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-[#1E2A38]/10 text-[#1E2A38]">v2.7.0</span>
+                    <span class="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-[#1E2A38]/10 text-[#1E2A38]">v2.7.1</span>
                 </div>
                 <p id="header-progress-txt" class="text-[10px] text-[#5B7B7A] font-bold">0 / 214 Bagged (0%)</p>
             </div>
@@ -138,7 +130,7 @@
         <div class="flex items-center justify-between mb-3">
             <div>
                 <h2 id="settings-title" class="font-extrabold text-sm brand-font">Settings</h2>
-                <p class="text-[11px] text-[#1E2A38]/60 font-medium">Wainwright Bagger · v2.7.0</p>
+                <p class="text-[11px] text-[#1E2A38]/60 font-medium">Wainwright Bagger · v2.7.1</p>
             </div>
             <button type="button" onclick="closeSettings()" id="settings-close" aria-label="Close settings" class="rounded-lg p-2 hover:bg-[#EAE3DC] text-[#1E2A38]"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
         </div>
@@ -343,6 +335,9 @@
         let fellMarkers = {};
         let isDrawerOpen = false;
         let celebrationTimeout = null;
+        const REPLAY_CELEBRATION_MS = 2600; // Was 1400 ms; allow more reading time.
+        let replayCelebrationQueue = [];
+        let replayCelebrationActive = false;
         // Bright orange, outlined in dark navy, stays legible on topographic tiles.
         const COMPLETED_ROUTE_COLOR = '#FF5A1F';
         const COMPLETED_ROUTE_CASING = '#1E2A38';
@@ -636,7 +631,36 @@
             setupUploadInputs();
         };
 
-        function triggerCelebration(fellName, displayMs = 5000) {
+        // Replay celebrations are queued, so multiple nearby summits each receive
+        // their full 2.6-second notice while the 8-second route animation continues.
+        function queueReplayCelebration(fellName) {
+            replayCelebrationQueue.push(fellName);
+            if (!replayCelebrationActive) showNextReplayCelebration();
+        }
+
+        function showNextReplayCelebration() {
+            if (!replayCelebrationQueue.length) {
+                replayCelebrationActive = false;
+                return;
+            }
+            replayCelebrationActive = true;
+            triggerCelebration(replayCelebrationQueue.shift(), REPLAY_CELEBRATION_MS, showNextReplayCelebration);
+        }
+
+        function clearReplayCelebrations() {
+            replayCelebrationQueue = [];
+            replayCelebrationActive = false;
+            if (celebrationTimeout) clearTimeout(celebrationTimeout);
+            celebrationTimeout = null;
+            hideCelebration();
+        }
+
+        function triggerCelebration(fellName, displayMs = 5000, onTimeout = null) {
+            // A manually bagged fell takes priority over queued replay celebrations.
+            if (!onTimeout) {
+                replayCelebrationQueue = [];
+                replayCelebrationActive = false;
+            }
             const fell = wainwrights.find(f => f.name === fellName);
             const titleEl = document.getElementById('celebration-title');
             const subEl = document.getElementById('celebration-subtitle');
@@ -665,6 +689,8 @@
             if (celebrationTimeout) clearTimeout(celebrationTimeout);
             celebrationTimeout = setTimeout(() => {
                 hideCelebration();
+                celebrationTimeout = null;
+                if (typeof onTimeout === 'function') onTimeout();
             }, displayMs);
         }
 
@@ -1088,6 +1114,7 @@
         // results are calculated at import, independently of the animation.
         function startReplay(routeId) {
             stopReplay();
+            clearReplayCelebrations();
             const route = savedRoutes.find(r => String(r.id) === String(routeId));
             if (!route || !Array.isArray(route.trackPoints) || route.trackPoints.length < 2) return;
             const pts = route.trackPoints;
@@ -1115,10 +1142,6 @@
                 dot: L.circleMarker(start, {radius: 7, color: '#1E2A38', weight: 2,
                     fillColor: '#FFFBF7', fillOpacity: 1, interactive: false})
             };
-            document.getElementById('replay-panel').classList.remove('hidden');
-            document.getElementById('replay-name').textContent = route.name;
-            document.getElementById('replay-progress').style.width = '0%';
-            document.getElementById('replay-percent').textContent = '0%';
             renderAllMapRoutes();
             map.closePopup();
             map.fitBounds(L.latLngBounds(pts), {padding: [35, 35], maxZoom: 14, animate: false});
@@ -1137,7 +1160,7 @@
             for (const event of r.celebrations) {
                 if (!event.fired && event.at <= target) {
                     event.fired = true;
-                    triggerCelebration(event.name, 1400);
+                    queueReplayCelebration(event.name);
                 }
             }
             r.travelled = target;
@@ -1172,9 +1195,6 @@
             r.line.setLatLngs(visible);
             r.casing.setLatLngs(visible);
             r.dot.setLatLng(pos);
-            const pct = Math.round(100 * r.travelled / r.length);
-            document.getElementById('replay-progress').style.width = pct + '%';
-            document.getElementById('replay-percent').textContent = pct + '%';
         }
 
         function finishReplay() {
@@ -1186,8 +1206,6 @@
         function stopReplay() {
             if (replayFrame !== null) { cancelAnimationFrame(replayFrame); replayFrame = null; }
             replay = null;
-            const panel = document.getElementById('replay-panel');
-            if (panel) panel.classList.add('hidden');
             if (tracksLayerGroup) renderAllMapRoutes();
         }
 
