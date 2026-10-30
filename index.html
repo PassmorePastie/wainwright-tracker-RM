@@ -52,6 +52,24 @@
         #celebration-modal {
             transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
+        /* Map credits must remain visible; map tile licences require attribution. */
+        .leaflet-control-attribution {
+            background: rgba(255, 251, 247, 0.94) !important;
+            color: #1E2A38 !important;
+            font-size: 10px !important;
+            padding: 3px 6px !important;
+            line-height: 1.3 !important;
+            max-width: min(96vw, 800px);
+        }
+        #settings-panel a { color: #0876a6; text-decoration: underline; }
+        #settings-panel a:focus-visible, #settings-panel button:focus-visible,
+        #settings-panel input:focus-visible, #settings-toggle:focus-visible {
+            outline: 3px solid #D49B53;
+            outline-offset: 2px;
+        }
+        @media (max-width: 767px) {
+            .leaflet-bottom.leaflet-right { bottom: 57px; }
+        }
     </style>
 </head>
 <body class="h-screen w-screen relative flex flex-col">
@@ -99,7 +117,7 @@
             <div>
                 <div class="flex items-center gap-1.5 leading-tight">
                     <h1 class="font-extrabold text-xs md:text-sm text-[#1E2A38] tracking-tight brand-font">Wainwright Bagger</h1>
-                    <span class="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-[#1E2A38]/10 text-[#1E2A38]">v2.5.0</span>
+                    <span class="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-[#1E2A38]/10 text-[#1E2A38]">v2.6.0</span>
                 </div>
                 <p id="header-progress-txt" class="text-[10px] text-[#5B7B7A] font-bold">0 / 214 Bagged (0%)</p>
             </div>
@@ -109,11 +127,48 @@
             <button onclick="toggleUnits()" id="unit-toggle" class="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-xl bg-[#1E2A38] text-[#F4EFEB] hover:bg-[#374151] transition shadow-sm">
                 Metric
             </button>
-            <button onclick="toggleDrawer()" id="menu-btn" class="md:hidden px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-xl bg-[#5B7B7A] text-white hover:bg-[#4a6463] transition shadow-sm flex items-center gap-1">
-                <i class="fa-solid fa-bars-staggered text-[10px]"></i> Menu
+            <button type="button" onclick="toggleSettings()" id="settings-toggle" aria-label="Open settings" aria-expanded="false" aria-controls="settings-panel" title="Settings & map styles" class="px-2.5 py-1 text-[13px] font-bold rounded-xl bg-[#5B7B7A] text-white hover:bg-[#4a6463] transition shadow-sm flex items-center justify-center min-w-[34px] min-h-[29px]">
+                <i class="fa-solid fa-bars" aria-hidden="true"></i>
             </button>
         </div>
     </header>
+
+    <!-- Settings dropdown, separate from the explorer drawer. The map's own attribution stays visible. -->
+    <section id="settings-panel" class="hidden absolute top-16 right-3 z-50 w-[min(370px,calc(100vw-24px))] max-h-[calc(100dvh-80px)] overflow-y-auto bg-[#FFFBF7]/98 backdrop-blur-md border-2 border-[#1E2A38]/20 shadow-2xl rounded-2xl p-4 text-[#1E2A38]" role="dialog" aria-modal="false" aria-labelledby="settings-title" aria-hidden="true">
+        <div class="flex items-center justify-between mb-3">
+            <div>
+                <h2 id="settings-title" class="font-extrabold text-sm brand-font">Settings</h2>
+                <p class="text-[11px] text-[#1E2A38]/60 font-medium">Wainwright Bagger · v2.6.0</p>
+            </div>
+            <button type="button" onclick="closeSettings()" id="settings-close" aria-label="Close settings" class="rounded-lg p-2 hover:bg-[#EAE3DC] text-[#1E2A38]"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+        </div>
+        <button type="button" onclick="closeSettings(); toggleDrawer();" class="md:hidden mb-3 w-full text-left text-xs font-bold px-3 py-2 rounded-xl bg-[#1E2A38] text-white"><i class="fa-solid fa-compass mr-2" aria-hidden="true"></i>Open / close Expedition Control Panel</button>
+        <fieldset class="space-y-2">
+            <legend class="text-xs uppercase tracking-wider font-extrabold mb-2">Map style</legend>
+            <label class="flex gap-3 items-start p-3 rounded-xl bg-[#FAF7F2] border border-[#1E2A38]/15 cursor-pointer hover:border-[#5B7B7A]">
+                <input type="radio" class="accent-[#5B7B7A] mt-0.5" name="map-style" value="topo" onchange="setMapStyle('topo')" checked>
+                <span class="flex flex-col gap-0.5"><strong class="text-xs">OpenTopoMap</strong><span class="text-[11px] text-[#1E2A38]/65">Contours, hill shading and mountain terrain (default)</span></span>
+            </label>
+            <label class="flex gap-3 items-start p-3 rounded-xl bg-[#FAF7F2] border border-[#1E2A38]/15 cursor-pointer hover:border-[#5B7B7A]">
+                <input type="radio" class="accent-[#5B7B7A] mt-0.5" name="map-style" value="streets" onchange="setMapStyle('streets')">
+                <span class="flex flex-col gap-0.5"><strong class="text-xs">OpenStreetMap</strong><span class="text-[11px] text-[#1E2A38]/65">Standard streets, villages and paths</span></span>
+            </label>
+            <label class="flex gap-3 items-start p-3 rounded-xl bg-[#FAF7F2] border border-[#1E2A38]/15 cursor-pointer hover:border-[#5B7B7A]">
+                <input type="radio" class="accent-[#5B7B7A] mt-0.5" name="map-style" value="cyclosm" onchange="setMapStyle('cyclosm')">
+                <span class="flex flex-col gap-0.5"><strong class="text-xs">CyclOSM</strong><span class="text-[11px] text-[#1E2A38]/65">An alternative OpenStreetMap style with route and cycle-path detail</span></span>
+            </label>
+            <p class="text-[10px] text-[#1E2A38]/65 pt-1">Your choice is saved for this browser. All three styles need an internet connection; community tile servers have usage limits.</p>
+        </fieldset>
+        <div class="border-t border-[#1E2A38]/15 mt-4 pt-3">
+            <h3 class="text-xs uppercase tracking-wider font-extrabold mb-2">Credits &amp; Licences</h3>
+            <div class="text-[11px] leading-relaxed space-y-2 text-[#1E2A38]/80">
+                <p><strong>Hill data:</strong> <a href="https://www.hills-database.co.uk/" target="_blank" rel="noopener noreferrer">Database of British and Irish Hills (DoBIH)</a>, with Wainwright references cross-checked using <a href="https://openfell.co.uk/lists/wainwrights/" target="_blank" rel="noopener noreferrer">OpenFell</a>. Check current source attribution and licence terms before public/commercial release.</p>
+                <p><strong>Map data:</strong> © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a> (Open Database Licence). <strong>Map styles:</strong> <a href="https://opentopomap.org/" target="_blank" rel="noopener noreferrer">OpenTopoMap</a> (CC BY-SA, SRTM / Sonny terrain), OpenStreetMap Standard and <a href="https://www.cyclosm.org/" target="_blank" rel="noopener noreferrer">CyclOSM</a> / OpenStreetMap France. Provider-specific credits also appear on the map.</p>
+                <p><strong>App libraries:</strong> <a href="https://leafletjs.com/" target="_blank" rel="noopener noreferrer">Leaflet</a> (BSD-2-Clause), <a href="https://tailwindcss.com/" target="_blank" rel="noopener noreferrer">Tailwind CSS</a> (MIT), <a href="https://fontawesome.com/license/free" target="_blank" rel="noopener noreferrer">Font Awesome Free</a>, <a href="https://github.com/catdad/canvas-confetti" target="_blank" rel="noopener noreferrer">canvas-confetti</a> (ISC), and Google Fonts (font-specific open licences).</p>
+                <p class="italic text-[#1E2A38]/60">Initial credits section — verify all attribution, licence notices and hosted-map usage terms before publishing widely.</p>
+            </div>
+        </div>
+    </section>
 
     <!-- FLOATING BOTTOM SHEET / EXPLORER DRAWER -->
     <aside id="explore-drawer" class="absolute bottom-0 left-0 right-0 md:left-4 md:right-auto md:w-[420px] md:bottom-4 md:top-16 bg-[#FFFBF7] border-2 border-[#1E2A38]/20 rounded-t-3xl md:rounded-3xl shadow-2xl z-30 flex flex-col max-h-[80vh] md:max-h-none overflow-hidden transform translate-y-[calc(100%-56px)] md:translate-y-0">
@@ -232,6 +287,28 @@
 
     <script>
         let map;
+        // Leaflet draws the map; the chosen tile provider supplies its background.
+        // Switching only swaps the basemap, retaining all 214 markers and GPX tracks.
+        const MAP_STYLE_KEY = 'wainwright_map_style';
+        const MAP_STYLES = {
+            topo: {
+                url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+                options: { maxNativeZoom: 17, maxZoom: 20, subdomains: 'abc',
+                    attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>, SRTM, Sonny | Style: &copy; <a href="https://opentopomap.org/">OpenTopoMap</a> (CC BY-SA)' }
+            },
+            streets: {
+                url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                options: { maxNativeZoom: 19, maxZoom: 20,
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>' }
+            },
+            cyclosm: {
+                url: 'https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png',
+                options: { maxNativeZoom: 20, maxZoom: 20, subdomains: 'abc',
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a> | <a href="https://www.cyclosm.org/">CyclOSM</a> / OpenStreetMap France' }
+            }
+        };
+        let currentMapStyle = 'topo';
+        let activeTileLayer = null;
         let unitSystem = 'metric';
         let baggingRadius = 100;
         let currentTab = 'all';
@@ -525,6 +602,7 @@
 
         window.onload = function() {
             initMap();
+            setupSettings();
             loadHistoryFromStorage();
             plotAllFellsOnMap();
             renderFellList();
@@ -586,16 +664,79 @@
             }
         }
 
+        function readSavedMapStyle() {
+            try {
+                const saved = localStorage.getItem(MAP_STYLE_KEY);
+                return Object.prototype.hasOwnProperty.call(MAP_STYLES, saved) ? saved : 'topo';
+            } catch (_) { return 'topo'; }
+        }
+
+        function setMapStyle(style) {
+            if (!Object.prototype.hasOwnProperty.call(MAP_STYLES, style) || !map) return;
+            if (activeTileLayer && currentMapStyle === style) return;
+            const config = MAP_STYLES[style];
+            const newLayer = L.tileLayer(config.url, config.options);
+            // Add the new basemap first so changing styles never removes GPX overlays.
+            newLayer.addTo(map);
+            newLayer.bringToBack();
+            const previous = activeTileLayer;
+            activeTileLayer = newLayer;
+            currentMapStyle = style;
+            if (previous && map.hasLayer(previous)) map.removeLayer(previous);
+            document.querySelectorAll('input[name="map-style"]').forEach(input => {
+                input.checked = input.value === style;
+            });
+            try { localStorage.setItem(MAP_STYLE_KEY, style); } catch (_) { /* private browsing may block storage */ }
+        }
+
+        function setupSettings() {
+            const saved = readSavedMapStyle();
+            // The selected style is already initialised by initMap(). Keep radios in sync.
+            document.querySelectorAll('input[name="map-style"]').forEach(input => {
+                input.checked = input.value === saved;
+            });
+            document.addEventListener('pointerdown', event => {
+                const panel = document.getElementById('settings-panel');
+                const toggle = document.getElementById('settings-toggle');
+                if (panel && !panel.classList.contains('hidden') &&
+                    !panel.contains(event.target) && !toggle.contains(event.target)) closeSettings();
+            });
+            document.addEventListener('keydown', event => {
+                if (event.key === 'Escape') closeSettings();
+            });
+        }
+
+        function toggleSettings() {
+            const panel = document.getElementById('settings-panel');
+            if (panel.classList.contains('hidden')) {
+                panel.classList.remove('hidden');
+                panel.setAttribute('aria-hidden', 'false');
+                document.getElementById('settings-toggle').setAttribute('aria-expanded', 'true');
+                document.getElementById('settings-toggle').setAttribute('aria-label', 'Close settings');
+                document.getElementById('settings-close').focus();
+            } else closeSettings();
+        }
+
+        function closeSettings() {
+            const panel = document.getElementById('settings-panel');
+            if (panel.classList.contains('hidden')) return;
+            panel.classList.add('hidden');
+            panel.setAttribute('aria-hidden', 'true');
+            const toggle = document.getElementById('settings-toggle');
+            toggle.setAttribute('aria-expanded', 'false');
+            toggle.setAttribute('aria-label', 'Open settings');
+        }
+
         function initMap() {
-            const openTopo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { maxZoom: 17 });
-            
+            currentMapStyle = readSavedMapStyle();
+            const cfg = MAP_STYLES[currentMapStyle];
+            activeTileLayer = L.tileLayer(cfg.url, cfg.options);
             map = L.map('map', {
                 center: [54.48, -3.10],
                 zoom: 10,
-                layers: [openTopo, baggedLayerGroup, nearMissLayerGroup, plannedLayerGroup, unvisitedLayerGroup, tracksLayerGroup],
+                layers: [activeTileLayer, baggedLayerGroup, nearMissLayerGroup, plannedLayerGroup, unvisitedLayerGroup, tracksLayerGroup],
                 zoomControl: false
             });
-
             setTimeout(() => { map.invalidateSize(); }, 250);
         }
 
