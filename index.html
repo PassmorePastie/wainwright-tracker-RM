@@ -109,7 +109,7 @@
             <div>
                 <div class="flex items-center gap-1.5 leading-tight">
                     <h1 class="font-extrabold text-xs md:text-sm text-[#1E2A38] tracking-tight brand-font">Wainwright Bagger</h1>
-                    <span class="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-[#1E2A38]/10 text-[#1E2A38]">v2.7.1</span>
+                    <span class="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-[#1E2A38]/10 text-[#1E2A38]">v2.7.2</span>
                 </div>
                 <p id="header-progress-txt" class="text-[10px] text-[#5B7B7A] font-bold">0 / 214 Bagged (0%)</p>
             </div>
@@ -130,7 +130,7 @@
         <div class="flex items-center justify-between mb-3">
             <div>
                 <h2 id="settings-title" class="font-extrabold text-sm brand-font">Settings</h2>
-                <p class="text-[11px] text-[#1E2A38]/60 font-medium">Wainwright Bagger · v2.7.1</p>
+                <p class="text-[11px] text-[#1E2A38]/60 font-medium">Wainwright Bagger · v2.7.2</p>
             </div>
             <button type="button" onclick="closeSettings()" id="settings-close" aria-label="Close settings" class="rounded-lg p-2 hover:bg-[#EAE3DC] text-[#1E2A38]"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
         </div>
@@ -978,13 +978,32 @@
             if (map) map.closePopup();
         }
 
+        // Collapse the Expedition Control Panel on mobile before showing a new GPX.
+        // Set the closed state explicitly rather than toggling (which could reopen it).
+        function collapseDrawerForGPXUpload() {
+            if (window.innerWidth >= 768) return false; // desktop drawer remains unchanged
+            const drawer = document.getElementById('explore-drawer');
+            const chevron = document.getElementById('drawer-chevron');
+            isDrawerOpen = false;
+            if (drawer) drawer.style.transform = 'translateY(calc(100% - 56px))';
+            if (chevron) chevron.classList.remove('rotate-180');
+            closeSettings();
+            return true;
+        }
+
         function setupUploadInputs() {
-            document.getElementById('gpx-completed-input').addEventListener('change', (e) => {
-                if (e.target.files.length > 0) handleFiles(e.target.files, 'completed');
-            });
-            document.getElementById('gpx-planned-input').addEventListener('change', (e) => {
-                if (e.target.files.length > 0) handleFiles(e.target.files, 'planned');
-            });
+            function onGPXSelected(event, type) {
+                if (!event.target.files || !event.target.files.length) return;
+                const files = Array.from(event.target.files);
+                event.target.value = ''; // allow selecting the same GPX again later
+                const onMobile = collapseDrawerForGPXUpload();
+                // Let the 300ms drawer closing transition finish before fitBounds/replay.
+                // No delay on desktop, and cancelling the file picker does nothing.
+                if (onMobile) setTimeout(() => handleFiles(files, type), 330);
+                else handleFiles(files, type);
+            }
+            document.getElementById('gpx-completed-input').addEventListener('change', (e) => onGPXSelected(e, 'completed'));
+            document.getElementById('gpx-planned-input').addEventListener('change', (e) => onGPXSelected(e, 'planned'));
         }
 
         function handleFiles(files, type) {
