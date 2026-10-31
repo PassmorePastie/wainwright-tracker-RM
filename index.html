@@ -99,6 +99,25 @@
         @media (min-width: 768px) {
             #region-view-indicator { top: 69px; }
         }
+
+        /* v2.9.1: Fell details are a dedicated sheet on phones, not a Leaflet bubble
+           competing with the fixed header, map view selector and bottom drawer. */
+        #mobile-fell-overlay[hidden] { display: none !important; }
+        @media (min-width: 768px) { #mobile-fell-overlay { display: none !important; } }
+        @media (max-width: 767px) {
+            body.mobile-fell-open #app-header,
+            body.mobile-fell-open #map-view-toolbar,
+            body.mobile-fell-open #region-view-indicator,
+            body.mobile-fell-open #explore-drawer,
+            body.mobile-fell-open #settings-panel { visibility: hidden !important; pointer-events: none !important; }
+            #mobile-fell-sheet { max-height: min(76dvh, 650px); overflow-y: auto; overscroll-behavior: contain; }
+            #mobile-fell-content { overflow-wrap: anywhere; }
+            #mobile-fell-content .fell-popup-close { display: none !important; }
+            #mobile-fell-content .fell-date-actions { flex-wrap: wrap; }
+            #mobile-fell-content .fell-date-actions input[type="date"] { min-width: 0; max-width: 100%; flex: 1 1 165px; }
+            #mobile-fell-content .fell-date-actions button { min-height: 40px; flex-shrink: 0; }
+            #mobile-fell-content .target-toggle { min-height: 42px; }
+        }
     </style>
 </head>
 <body class="h-screen w-screen relative flex flex-col">
@@ -107,6 +126,18 @@
     <main class="absolute inset-0 z-0">
         <div id="map" class="w-full h-full"></div>
     </main>
+
+    <!-- v2.9.1: mobile-only summit detail sheet, outside Leaflet's transformed map panes. -->
+    <div id="mobile-fell-overlay" hidden class="fixed inset-0 z-[70] md:hidden" role="dialog" aria-modal="true" aria-label="Summit information">
+        <button type="button" onclick="closeFellPopup(event)" class="absolute inset-0 w-full h-full bg-[#1E2A38]/55" aria-label="Close summit information"></button>
+        <section id="mobile-fell-sheet" class="absolute bottom-3 left-3 right-3 rounded-3xl bg-[#FFFBF7] border-2 border-[#1E2A38]/20 shadow-2xl p-4 text-[#1E2A38]" role="document">
+            <div class="flex items-center justify-between gap-3 mb-2 pb-2 border-b border-[#1E2A38]/15">
+                <span class="text-[10px] font-extrabold text-[#5B7B7A] uppercase tracking-widest">Summit details</span>
+                <button type="button" id="mobile-fell-close" onclick="closeFellPopup(event)" class="min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center bg-[#EAE3DC] text-[#1E2A38] hover:bg-[#DCD3CA]" aria-label="Close summit details"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+            </div>
+            <div id="mobile-fell-content"></div>
+        </section>
+    </div>
 
     <!-- FLOATING CELEBRATION ACHIEVEMENT MODAL -->
     <div id="celebration-modal" class="fixed top-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 scale-90 translate-y-[-20px] transition-all duration-300">
@@ -138,7 +169,7 @@
             <div>
                 <div class="flex items-center gap-1.5 leading-tight">
                     <h1 class="font-extrabold text-xs md:text-sm text-[#1E2A38] tracking-tight brand-font">SummitTally</h1>
-                    <span class="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-[#1E2A38]/10 text-[#1E2A38]">v2.9.0</span>
+                    <span class="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-[#1E2A38]/10 text-[#1E2A38]">v2.9.1</span>
                 </div>
                 <p id="header-progress-txt" class="text-[10px] text-[#5B7B7A] font-bold">0 / 214 Wainwrights (0%)</p>
             </div>
@@ -181,7 +212,7 @@
         <div class="flex items-center justify-between mb-3">
             <div>
                 <h2 id="settings-title" class="font-extrabold text-sm brand-font">Settings</h2>
-                <p class="text-[11px] text-[#1E2A38]/60 font-medium">SummitTally · v2.9.0</p>
+                <p class="text-[11px] text-[#1E2A38]/60 font-medium">SummitTally · v2.9.1</p>
             </div>
             <button type="button" onclick="closeSettings()" id="settings-close" aria-label="Close settings" class="rounded-lg p-2 hover:bg-[#EAE3DC] text-[#1E2A38]"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
         </div>
@@ -703,7 +734,7 @@
         ];
 
         // Collection registry: future hill lists can share one summit record by ID.
-        // Only Wainwrights are active in v2.9.0; no additional summits are loaded.
+        // Only Wainwrights are active in v2.9.1; no additional summits are loaded.
         const HILL_COLLECTIONS = Object.freeze({
             wainwrights: {id: 'wainwrights', label: 'Wainwrights', region: 'Lake District', total: 214}
         });
@@ -722,6 +753,7 @@
             targetSummitIds = readTargetSummits();
             mapMode = readMapMode();
             initMap();
+            setupMobileFellSheet();
             setupSettings();
             loadHistoryFromStorage();
             plotAllFellsOnMap();
@@ -886,6 +918,7 @@
         }
         function setMapMode(nextMode) {
             if (!MAP_MODES.includes(nextMode)) return;
+            closeMobileFellSheet();
             if (activeRegion) clearRegionView();
             mapMode = nextMode;
             try { localStorage.setItem(MAP_MODE_KEY, mapMode); } catch (_) {}
@@ -899,6 +932,7 @@
             if (targetSummitIds.has(summitId)) targetSummitIds.delete(summitId);
             else targetSummitIds.add(summitId);
             try {localStorage.setItem(TARGET_SUMMITS_KEY, JSON.stringify([...targetSummitIds]));} catch (_) {}
+            closeMobileFellSheet();
             plotAllFellsOnMap();
             renderFellList();
             updateTargetUI();
@@ -1059,7 +1093,7 @@
                     <div class="text-[#1E2A38] p-1 max-w-xs font-sans">
                         <div class="flex items-start justify-between gap-3">
                             <h4 class="font-extrabold text-sm brand-font pr-1">${fell.name}</h4>
-                            <button type="button" onclick="closeFellPopup(event)" aria-label="Close fell popup" title="Close popup" class="flex-shrink-0 w-6 h-6 -mt-1 -mr-1 rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-900 flex items-center justify-center">
+                            <button type="button" onclick="closeFellPopup(event)" aria-label="Close fell popup" title="Close popup" class="fell-popup-close flex-shrink-0 w-6 h-6 -mt-1 -mr-1 rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-900 flex items-center justify-center">
                                 <i class="fa-solid fa-xmark"></i>
                             </button>
                         </div>
@@ -1075,7 +1109,7 @@
                         </div>
                         <div class="mt-2.5 pt-2 border-t border-[#1E2A38]/15">
                             <label class="block text-[10px] font-bold text-[#1E2A38]/70 uppercase tracking-wider mb-1">Completion Date:</label>
-                            <div class="flex items-center gap-1.5">
+                            <div class="fell-date-actions flex items-center gap-1.5">
                                 <input type="date" id="date-input-${CSS.escape(fell.name)}" value="${completionDate}" class="bg-[#FAF7F2] text-[#1E2A38] border-2 border-[#1E2A38]/20 rounded-lg px-2 py-1 text-xs font-medium focus:outline-none flex-1" />
                                 ${isBagged ? `
                                     <button onclick="markFellManual(${fellNameArg}, true)" class="bg-[#5B7B7A] hover:bg-[#4a6463] text-white px-2.5 py-1 rounded-lg text-xs font-bold transition shadow-sm">Update</button>
@@ -1086,7 +1120,15 @@
                             </div>
                         </div>
                     </div>
-                `, { closeButton: false, autoClose: true, closeOnClick: true, maxWidth: 320 });
+                `, { closeButton: false, autoClose: true, closeOnClick: true, autoPan: window.innerWidth >= 768, maxWidth: 320 });
+                // The desktop Leaflet popup is unchanged. On phones, transfer its
+                // contents into a separate sheet so no HUD floats over the details.
+                marker.on('popupopen', event => {
+                    if (window.innerWidth >= 768) return;
+                    const html = event.popup.getContent();
+                    map.closePopup();
+                    showMobileFellSheet(html);
+                });
 
                 targetGroup.addLayer(marker);
                 fellMarkers[fell.name] = marker;
@@ -1111,12 +1153,40 @@
             }
         }
 
-        // Use one explicit popup close handler so the X works consistently for every fell.
+        // Mobile sheets are in the document, outside Leaflet panes and their transforms.
+        function setupMobileFellSheet() {
+            document.addEventListener('keydown', event => {
+                if (event.key === 'Escape') closeMobileFellSheet();
+            });
+            window.addEventListener('resize', () => {
+                if (window.innerWidth >= 768) closeMobileFellSheet();
+            });
+        }
+        function showMobileFellSheet(html) {
+            if (window.innerWidth >= 768) return;
+            closeSettings();
+            closeAchievements();
+            collapseDrawerForGPXUpload();
+            const overlay = document.getElementById('mobile-fell-overlay');
+            const content = document.getElementById('mobile-fell-content');
+            if (!overlay || !content) return;
+            content.innerHTML = html;
+            overlay.hidden = false;
+            document.body.classList.add('mobile-fell-open');
+            document.getElementById('mobile-fell-close')?.focus({preventScroll:true});
+        }
+        function closeMobileFellSheet() {
+            const overlay = document.getElementById('mobile-fell-overlay');
+            if (overlay) overlay.hidden = true;
+            document.body.classList.remove('mobile-fell-open');
+        }
+        // Use one explicit popup close handler for both desktop and mobile.
         function closeFellPopup(event) {
             if (event) {
                 event.preventDefault();
                 event.stopPropagation();
             }
+            closeMobileFellSheet();
             if (map) map.closePopup();
         }
 
@@ -1128,6 +1198,7 @@
             manual[fellName] = dateVal;
             localStorage.setItem('wainwright_manual_bagged', JSON.stringify(manual));
 
+            closeMobileFellSheet();
             plotAllFellsOnMap();
             renderFellList();
             updateOverallProgress();
@@ -1145,6 +1216,7 @@
                 delete manual[fellName];
                 localStorage.setItem('wainwright_manual_bagged', JSON.stringify(manual));
             }
+            closeMobileFellSheet();
             plotAllFellsOnMap();
             renderFellList();
             updateOverallProgress();
@@ -1326,6 +1398,7 @@
         // An automatic replay is a visualisation only: the GPX is saved and bagging
         // results are calculated at import, independently of the animation.
         function startReplay(routeId) {
+            closeFellPopup();
             stopReplay();
             clearReplayCelebrations();
             const route = savedRoutes.find(r => String(r.id) === String(routeId));
