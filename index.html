@@ -43,6 +43,28 @@
         .pin-bagged { background-color: #5B7B7A; }
         .pin-planned { background-color: #9333ea; }
         .pin-unvisited { background-color: #94a3b8; opacity: 0.8; }
+        /* Summit flags: one recognisable icon, coloured by status, with a gold target indicator. */
+        .summit-flag-pin {
+            display: flex; align-items: center; justify-content: center; position: relative;
+            height: 30px; width: 30px; border-radius: 11px 11px 11px 3px;
+            transform: rotate(-7deg); color: #fff; border: 2px solid #fff;
+            box-shadow: 0 2px 7px rgba(21,36,51,.55);
+        }
+        .summit-flag-pin i { transform: rotate(7deg); font-size: 14px; }
+        .summit-flag-pin.flag-uncompleted { background: #64748b; }
+        .summit-flag-pin.flag-planned { background: #7e22ce; }
+        .summit-flag-pin.flag-bagged { background: #42766d; }
+        .summit-flag-pin.flag-target::after {
+            content: ''; position: absolute; top: -5px; right: -5px; width: 10px; height: 10px;
+            background: #D49B53; border: 2px solid #fff; border-radius: 50%;
+        }
+        .map-view-btn { padding: 8px 10px; border-radius: 10px; font-weight: 800; font-size: 11px; white-space: nowrap; }
+        .map-view-btn.is-active { background: #1E2A38; color: #FFFBF7; }
+        .map-view-btn:not(.is-active) { color: #1E2A38; }
+        .map-view-btn:focus-visible, .target-toggle:focus-visible { outline: 3px solid #D49B53; outline-offset: 2px; }
+        #map-view-toolbar { top: 142px; }
+        @media (min-width:768px) { #map-view-toolbar { top: 69px; right: 12px; left: auto; } }
+        #map-view-hint { max-width: 330px; }
 
         #explore-drawer {
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -116,7 +138,7 @@
             <div>
                 <div class="flex items-center gap-1.5 leading-tight">
                     <h1 class="font-extrabold text-xs md:text-sm text-[#1E2A38] tracking-tight brand-font">SummitTally</h1>
-                    <span class="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-[#1E2A38]/10 text-[#1E2A38]">v2.8.1</span>
+                    <span class="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-[#1E2A38]/10 text-[#1E2A38]">v2.9.0</span>
                 </div>
                 <p id="header-progress-txt" class="text-[10px] text-[#5B7B7A] font-bold">0 / 214 Wainwrights (0%)</p>
             </div>
@@ -144,12 +166,22 @@
         <button type="button" onclick="clearRegionView()" class="rounded-lg border border-white/40 px-3 py-2 text-[11px] font-bold flex-shrink-0 hover:bg-white/15" aria-label="Back to all Wainwright regions">Show all</button>
     </div>
 
+    <!-- Focused summit map: visibility is separate from GPX detection and saved completions. -->
+    <div id="map-view-toolbar" class="absolute left-3 right-3 z-[25] pointer-events-auto flex flex-col items-start md:items-end gap-1.5" aria-label="Summit map view selector">
+        <div class="flex items-center gap-0.5 p-1 border-2 border-[#1E2A38]/20 bg-[#FFFBF7]/95 shadow-xl backdrop-blur-md rounded-2xl">
+            <button type="button" id="map-view-targets" class="map-view-btn is-active" onclick="setMapMode('targets')" aria-pressed="true"><i class="fa-solid fa-bullseye mr-1" aria-hidden="true"></i>Targets <span id="map-target-count">(0)</span></button>
+            <button type="button" id="map-view-explore" class="map-view-btn" onclick="setMapMode('explore')" aria-pressed="false">Explore All</button>
+            <button type="button" id="map-view-completed" class="map-view-btn" onclick="setMapMode('completed')" aria-pressed="false">Completed</button>
+        </div>
+        <p id="map-view-hint" class="hidden text-[11px] leading-snug font-semibold text-[#1E2A38] bg-[#FFFBF7]/95 rounded-xl px-3 py-2 shadow-lg border border-[#1E2A38]/15">No targets selected yet. Choose <strong>Explore All</strong>, then tap a flag to add your first summit.</p>
+    </div>
+
     <!-- Settings dropdown, separate from the explorer drawer. The map's own attribution stays visible. -->
     <section id="settings-panel" class="hidden absolute top-16 right-3 z-50 w-[min(370px,calc(100vw-24px))] max-h-[calc(100dvh-80px)] overflow-y-auto bg-[#FFFBF7]/98 backdrop-blur-md border-2 border-[#1E2A38]/20 shadow-2xl rounded-2xl p-4 text-[#1E2A38]" role="dialog" aria-modal="false" aria-labelledby="settings-title" aria-hidden="true">
         <div class="flex items-center justify-between mb-3">
             <div>
                 <h2 id="settings-title" class="font-extrabold text-sm brand-font">Settings</h2>
-                <p class="text-[11px] text-[#1E2A38]/60 font-medium">SummitTally · v2.8.1</p>
+                <p class="text-[11px] text-[#1E2A38]/60 font-medium">SummitTally · v2.9.0</p>
             </div>
             <button type="button" onclick="closeSettings()" id="settings-close" aria-label="Close settings" class="rounded-lg p-2 hover:bg-[#EAE3DC] text-[#1E2A38]"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
         </div>
@@ -191,7 +223,7 @@
                 <span class="flex-1 flex flex-col gap-0.5"><strong class="text-xs">Completed / Bagged</strong><span class="text-[11px] text-[#1E2A38]/65">Summits you have already bagged</span></span>
                 <span id="visible-fell-count-completed" class="text-[11px] font-bold text-[#1E2A38]/65" aria-label="Completed fell count"></span>
             </label>
-            <p class="text-[10px] text-[#1E2A38]/65 pt-1">Filters only hide summit markers: GPX route lines, bagging history and progress remain unchanged. Your choices are saved on this device.</p>
+            <p class="text-[10px] text-[#1E2A38]/65 pt-1">These switches apply to Explore All. My Targets, Completed and regional views show their relevant pins regardless of these switches. GPX tracking and saved progress are never affected.</p>
         </fieldset>
         <div class="border-t border-[#1E2A38]/15 mt-4 pt-3">
             <h3 class="text-xs uppercase tracking-wider font-extrabold mb-2">Credits &amp; Licences</h3>
@@ -320,12 +352,17 @@
             </div>
 
             <div class="pt-2 border-t-2 border-[#1E2A38]/15 space-y-2.5">
+                <div class="flex items-center justify-between gap-2 bg-[#FFF6E7] border border-[#D49B53]/50 px-3 py-2 rounded-xl">
+                    <div class="text-xs font-bold"><i class="fa-solid fa-flag text-[#D49B53] mr-1" aria-hidden="true"></i>My Target Summits <span id="target-summary-count" class="text-[#5B7B7A]">(0)</span></div>
+                    <button type="button" onclick="openTargetPicker()" class="rounded-lg bg-[#1E2A38] px-2.5 py-2 text-white text-[11px] font-bold">Choose Fells</button>
+                </div>
                 <div class="relative">
                     <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-[#1E2A38]/50"></i>
                     <input type="text" id="fell-search" oninput="renderFellList()" placeholder="Search fell, hub or trailhead..." class="w-full bg-[#FAF7F2] border-2 border-[#1E2A38]/20 rounded-xl pl-8 pr-3 py-1.5 text-xs text-[#1E2A38] focus:outline-none font-medium" />
                 </div>
 
                 <div class="flex rounded-xl bg-[#FAF7F2] p-1 border-2 border-[#1E2A38]/20 text-xs">
+                    <button id="tab-targets" onclick="switchTab('targets')" class="flex-1 py-1 rounded-lg font-bold text-[#1E2A38]/70 transition">Targets (<span id="count-tab-targets">0</span>)</button>
                     <button id="tab-bagged" onclick="switchTab('bagged')" class="flex-1 py-1 rounded-lg font-bold text-[#1E2A38]/70 transition">Bagged (<span id="count-tab-bagged">0</span>)</button>
                     <button id="tab-all" onclick="switchTab('all')" class="flex-1 py-1 bg-[#1E2A38] text-[#F4EFEB] rounded-lg font-bold transition">All 214</button>
                 </div>
@@ -340,6 +377,12 @@
         let map;
         // Leaflet draws the map; the chosen tile provider supplies its background.
         // Switching only swaps the basemap, retaining all 214 markers and GPX tracks.
+        const TARGET_SUMMITS_KEY = 'summittally_targets_v1';
+        const MAP_MODE_KEY = 'summittally_map_mode_v1';
+        const MAP_MODES = ['targets', 'explore', 'completed'];
+        let targetSummitIds = new Set();
+        let mapMode = 'targets';
+        // Old Wainwright completion and route storage keys deliberately stay unchanged.
         const FELL_VISIBILITY_KEY = 'wainwright_map_fell_visibility';
         const DEFAULT_FELL_VISIBILITY = {uncompleted: true, planned: true, completed: true};
         let fellVisibility = {...DEFAULT_FELL_VISIBILITY};
@@ -660,7 +703,7 @@
         ];
 
         // Collection registry: future hill lists can share one summit record by ID.
-        // Only Wainwrights are active in v2.8.1; no additional summits are loaded.
+        // Only Wainwrights are active in v2.9.0; no additional summits are loaded.
         const HILL_COLLECTIONS = Object.freeze({
             wainwrights: {id: 'wainwrights', label: 'Wainwrights', region: 'Lake District', total: 214}
         });
@@ -676,12 +719,15 @@
         }
 
         window.onload = function() {
+            targetSummitIds = readTargetSummits();
+            mapMode = readMapMode();
             initMap();
             setupSettings();
             loadHistoryFromStorage();
             plotAllFellsOnMap();
             renderFellList();
             updateOverallProgress();
+            updateTargetUI();
             setupUploadInputs();
         };
 
@@ -806,6 +852,70 @@
             } catch (_) { return {...DEFAULT_FELL_VISIBILITY}; }
         }
 
+        // Map display is a user preference, not a bagging rule. GPX checks always
+        // use the entire summit database regardless of visible layers or target selection.
+        function readTargetSummits() {
+            try {
+                const values = JSON.parse(localStorage.getItem(TARGET_SUMMITS_KEY) || '[]');
+                return new Set(Array.isArray(values) ? values.filter(id => summitById.has(id)) : []);
+            } catch (_) { return new Set(); }
+        }
+        function readMapMode() {
+            try {
+                const mode = localStorage.getItem(MAP_MODE_KEY);
+                return MAP_MODES.includes(mode) ? mode : 'targets';
+            } catch (_) { return 'targets'; }
+        }
+        function updateTargetUI() {
+            const count = targetSummitIds.size;
+            const countLabel = document.getElementById('map-target-count');
+            const summaryLabel = document.getElementById('target-summary-count');
+            const tabLabel = document.getElementById('count-tab-targets');
+            if (countLabel) countLabel.textContent = `(${count})`;
+            if (summaryLabel) summaryLabel.textContent = `(${count})`;
+            if (tabLabel) tabLabel.textContent = String(count);
+            const hint = document.getElementById('map-view-hint');
+            if (hint) hint.classList.toggle('hidden', Boolean(activeRegion || mapMode !== 'targets' || count));
+            for (const mode of MAP_MODES) {
+                const btn = document.getElementById(`map-view-${mode}`);
+                if (!btn) continue;
+                btn.classList.toggle('is-active', mode === mapMode);
+                btn.setAttribute('aria-pressed', String(mode === mapMode));
+            }
+            document.getElementById('map-view-toolbar')?.classList.toggle('hidden', Boolean(activeRegion));
+        }
+        function setMapMode(nextMode) {
+            if (!MAP_MODES.includes(nextMode)) return;
+            if (activeRegion) clearRegionView();
+            mapMode = nextMode;
+            try { localStorage.setItem(MAP_MODE_KEY, mapMode); } catch (_) {}
+            plotAllFellsOnMap();
+            updateTargetUI();
+        }
+        function toggleTarget(summitId, event) {
+            if (event) { event.preventDefault(); event.stopPropagation(); }
+            if (!summitById.has(summitId)) return;
+            const fell = summitById.get(summitId);
+            if (targetSummitIds.has(summitId)) targetSummitIds.delete(summitId);
+            else targetSummitIds.add(summitId);
+            try {localStorage.setItem(TARGET_SUMMITS_KEY, JSON.stringify([...targetSummitIds]));} catch (_) {}
+            plotAllFellsOnMap();
+            renderFellList();
+            updateTargetUI();
+            // On Explore All keep the popup available so a selection can be undone.
+            if (mapMode === 'explore' && fellMarkers[fell.name] && map.hasLayer(fellMarkers[fell.name])) {
+                fellMarkers[fell.name].openPopup();
+            }
+        }
+        function openTargetPicker() {
+            if (activeRegion) clearRegionView();
+            setMapMode('explore');
+            switchTab('all');
+            const search = document.getElementById('fell-search');
+            if (window.innerWidth < 768 && !isDrawerOpen) toggleDrawer();
+            if (search) { search.scrollIntoView({behavior: 'smooth', block: 'center'}); search.focus({preventScroll: true}); }
+        }
+
         // Show/hide marker groups, rather than deleting markers or touching route lines.
         function applyFellVisibilityFilters() {
             if (!map) return;
@@ -818,7 +928,7 @@
                 for (const layer of layers) {
                     // When deliberately exploring one region, temporarily reveal all its summits
                     // regardless of global pin visibility. Preferences are unchanged on return.
-                    if (activeRegion || fellVisibility[category]) {
+                    if (activeRegion || mapMode !== 'explore' || fellVisibility[category]) {
                         if (!map.hasLayer(layer)) map.addLayer(layer);
                     } else if (map.hasLayer(layer)) {
                         map.removeLayer(layer);
@@ -918,18 +1028,23 @@
 
             wainwrights.forEach(fell => {
                 if (activeRegion && fell.region !== activeRegion) return;
+                if (!activeRegion && mapMode === 'targets' && !targetSummitIds.has(fell.id)) return;
                 const isBagged = baggedMap.has(fell.name);
+                if (!activeRegion && mapMode === 'completed' && !isBagged) return;
+                const isTarget = targetSummitIds.has(fell.id);
                 const completionDate = baggedMap.get(fell.name) || new Date().toISOString().split('T')[0];
-                const isPlanned = !isBagged && plannedNames.has(fell.name);
+                const isPlanned = !isBagged && (plannedNames.has(fell.name) || isTarget);
 
-                let pinClass = "pin-unvisited", targetGroup = unvisitedLayerGroup;
-                if (isBagged) { pinClass = "pin-bagged"; targetGroup = baggedLayerGroup; }
-                else if (isPlanned) { pinClass = "pin-planned"; targetGroup = plannedLayerGroup; }
+                let targetGroup = unvisitedLayerGroup;
+                if (isBagged) targetGroup = baggedLayerGroup;
+                else if (isPlanned) targetGroup = plannedLayerGroup;
 
+                // Flag colours follow the same bagging/planning statuses in every map view.
+                const flagStatus = isBagged ? 'bagged' : isPlanned ? 'planned' : 'uncompleted';
                 const icon = L.divIcon({
-                    className: 'custom-div-icon',
-                    html: `<div class="custom-pin ${pinClass} w-6 h-6 text-[10px]"><i class="fa-solid ${activeRegion ? 'fa-flag' : 'fa-mountain'}"></i></div>`,
-                    iconSize: [24, 24], iconAnchor: [12, 12]
+                    className: 'summit-flag-container',
+                    html: `<div class="summit-flag-pin flag-${flagStatus} ${isTarget ? 'flag-target' : ''}" aria-hidden="true"><i class="fa-solid fa-flag"></i></div>`,
+                    iconSize: [30, 30], iconAnchor: [15, 30]
                 });
 
                 const accomQuery = encodeURIComponent(`${fell.gateway} Lake District accommodation hotels guesthouses`);
@@ -949,6 +1064,7 @@
                             </button>
                         </div>
                         <p class="text-xs text-[#1E2A38]/70">Elevation: <strong>${formatElevation(fell.elevation)}</strong> | Region: <strong>${fell.region}</strong></p>
+                        <button type="button" onclick="toggleTarget('${fell.id}', event)" class="target-toggle mt-2 w-full rounded-lg border border-[#D49B53] bg-[#FFF6E7] text-[#1E2A38] px-3 py-2 text-xs font-bold hover:bg-[#FCE8C8]" aria-label="${isTarget ? 'Remove' : 'Add'} ${escapeHtml(fell.name)} ${isTarget ? 'from' : 'to'} my targets"><i class="fa-solid fa-flag mr-1 text-[#A87325]"></i> ${isTarget ? 'Remove from My Targets' : 'Add to My Targets'}</button>
                         <div class="mt-2 pt-2 border-t border-[#1E2A38]/15 space-y-1">
                             <p class="text-xs"><strong>Gateway hub:</strong> <span class="text-[#5B7B7A] font-bold">${fell.gateway}</span></p>
                             <p class="text-xs"><strong>Common start area:</strong> <span class="font-semibold">${fell.trailhead}</span></p>
@@ -986,6 +1102,7 @@
             }
             // Redrawing markers must never reset a user's visibility choices.
             applyFellVisibilityFilters();
+            updateTargetUI();
             if (activeRegion) {
                 const regionFells = wainwrights.filter(f => f.region === activeRegion);
                 const doneIds = getUniqueBaggedSummitIds();
@@ -1472,6 +1589,7 @@
             document.getElementById('region-view-name').textContent = region + ' Fells';
             document.getElementById('region-view-count').textContent = `${done} / ${regionFells.length} bagged · approximate region outline`;
             document.getElementById('region-view-indicator').classList.remove('hidden');
+            updateTargetUI();
             setTimeout(() => {
                 map.invalidateSize();
                 map.fitBounds(L.latLngBounds(outline), {
@@ -1491,6 +1609,7 @@
                 map.setView(regionViewPreviousMap.center, regionViewPreviousMap.zoom);
             }
             regionViewPreviousMap = null;
+            updateTargetUI();
         }
 
         function renderAchievements() {
@@ -1706,7 +1825,7 @@
 
         function switchTab(tab) {
             currentTab = tab;
-            ['bagged', 'all'].forEach(t => {
+            ['targets', 'bagged', 'all'].forEach(t => {
                 const btn = document.getElementById(`tab-${t}`);
                 btn.className = (t === tab) ? "flex-1 py-1 bg-[#1E2A38] text-[#F4EFEB] rounded-lg font-bold transition" : "flex-1 py-1 text-[#1E2A38]/70 font-bold transition";
             });
@@ -1717,28 +1836,33 @@
             const container = document.getElementById('fell-list');
             const search = document.getElementById('fell-search').value.toLowerCase();
             const baggedMap = getGlobalBaggedFellsWithDates();
+            const plannedNames = getGlobalPlannedFellNames();
 
             let list = wainwrights.filter(f => [f.name, f.region, f.gateway, f.trailhead].some(value => String(value || '').toLowerCase().includes(search)));
             if (currentTab === 'bagged') list = list.filter(f => baggedMap.has(f.name));
-            else if (currentTab === 'near') list = list.filter(f => nearSet.has(f.name));
+            else if (currentTab === 'targets') list = list.filter(f => targetSummitIds.has(f.id));
 
             if (list.length === 0) {
-                container.innerHTML = `<p class="text-[#1E2A38]/60 italic text-xs text-center py-3">No matching fells found.</p>`;
+                container.innerHTML = `<p class="text-[#1E2A38]/60 italic text-xs text-center py-3">${currentTab === 'targets' && !search ? 'No targets yet. Use All 214 or Choose Fells to add some.' : 'No matching fells found.'}</p>`;
                 return;
             }
 
             container.innerHTML = list.map(f => {
                 const eleStr = formatElevation(f.elevation);
                 const fellNameArg = JSON.stringify(f.name).replace(/\"/g, '&quot;');
+                const isTarget = targetSummitIds.has(f.id);
+                const status = baggedMap.has(f.name) ? 'Bagged' : isTarget ? 'Target' : plannedNames.has(f.name) ? 'Planned' : 'Unvisited';
+                const statusStyle = status === 'Bagged' ? 'bg-[#5B7B7A] text-white' : (status === 'Target' || status === 'Planned') ? 'bg-[#9333ea] text-white' : 'bg-[#1E2A38]/10 text-[#1E2A38]';
                 return `
                     <div onclick="centerMapOnFell(${fellNameArg})" class="w-full bg-[#FAF7F2] hover:bg-[#EAE3DC]/50 border-2 border-[#1E2A38]/15 rounded-xl p-2.5 flex items-center justify-between cursor-pointer transition text-xs shadow-sm flex-shrink-0">
                         <div class="flex flex-col">
                             <p class="font-bold text-[#1E2A38] brand-font leading-tight">${f.name}</p>
                             <p class="text-[10px] text-[#1E2A38]/60 font-medium">${f.region} • ${eleStr}</p>
                         </div>
-                        <span class="text-[10px] font-bold px-2 py-0.5 rounded flex-shrink-0 ${baggedMap.has(f.name) ? 'bg-[#5B7B7A] text-white' : 'bg-[#1E2A38]/10 text-[#1E2A38]'}">
-                            ${baggedMap.has(f.name) ? 'Bagged' : 'Unvisited'}
-                        </span>
+                        <div class="flex items-center gap-1.5 flex-shrink-0">
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded ${statusStyle}">${status}</span>
+                            <button type="button" onclick="toggleTarget('${f.id}', event)" aria-pressed="${isTarget}" aria-label="${isTarget ? 'Remove' : 'Add'} ${escapeHtml(f.name)} ${isTarget ? 'from' : 'to'} targets" title="${isTarget ? 'Remove from targets' : 'Add to targets'}" class="target-toggle min-w-[38px] min-h-[38px] rounded-lg flex items-center justify-center border-2 ${isTarget ? 'bg-[#FFF0D5] border-[#D49B53] text-[#99702F]' : 'bg-white border-[#1E2A38]/20 text-[#94a3b8]'}"><i class="fa-solid fa-flag"></i></button>
+                        </div>
                     </div>
                 `;
             }).join('');
@@ -1746,6 +1870,8 @@
 
         function centerMapOnFell(name) {
             const fell = wainwrights.find(f => f.name === name);
+            if (fell && activeRegion && fell.region !== activeRegion) clearRegionView();
+            if (fell && !fellMarkers[name]) setMapMode('explore');
             if (fell && fellMarkers[name]) {
                 map.setView([fell.lat, fell.lng], 14);
                 const marker = fellMarkers[name];
